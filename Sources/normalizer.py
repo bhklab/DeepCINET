@@ -11,10 +11,6 @@ import shutil
 import utils
 
 
-def process_scan(scan_dir: os.DirEntry, output_dir: str):
-    print("Processing dir {}".format(scan_dir.name))
-
-
 def is_valid_dir(test_dir: os.DirEntry) -> bool:
     if not test_dir.is_dir():
         return False
@@ -54,6 +50,7 @@ def main(arguments: argparse.Namespace):
     print("{} valid dirs have been found".format(len(dirs)))
 
     normalizer = utils.ScanNormalizer(dirs, output_dir)
+    normalizer.process_images()
 
 
 if __name__ == "__main__":
@@ -77,6 +74,11 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
-    main(args)
+    try:
+        main(args)
+    except KeyboardInterrupt:
+        print()
+        print("----------------------------------")
+        print("Stopping due to keyboard interrupt")
+        print("THANKS FOR THE RIDE 😀")
 
