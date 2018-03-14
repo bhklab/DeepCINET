@@ -42,9 +42,12 @@ def main(arguments: argparse.Namespace):
     print("Input: " + input_dir)
     print("Output: " + output_dir)
 
-    # Remove the output and create it again to make sure it does not have anything
-    shutil.rmtree(output_dir)
-    os.makedirs(output_dir)
+    if arguments.overwrite:
+        # To overwrite remove the path then it will be created again
+        shutil.rmtree(output_dir)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     dirs = list(get_folders(input_dir))
     print("{} valid dirs have been found".format(len(dirs)))
@@ -71,6 +74,12 @@ if __name__ == "__main__":
         "--output_dir",
         help="Directory inside datasets_dir where the processed images will be saved ",
         default="HNK_processed"
+    )
+    parser.add_argument(
+        "--overwrite",
+        help="Overwrite destination directory",
+        default=False,
+        action="store_true",
     )
 
     args = parser.parse_args()
