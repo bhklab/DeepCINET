@@ -74,7 +74,33 @@ class CNNSurv:
             activation=tf.nn.relu
         )
 
-        
+        loss = self._negative_log_likelihood(data_step)
+
+    def _negative_log_likelihood(self, risk: tf.Tensor)-> tf.Tensor:
+        """
+        Negative log likelihood function with batch of elements
+
+        :param risk: Tensor of shape [batch_size, depth]
+        :return:
+        """
+        # For now use the same implementation as DeepSurv
+        hazard_ratio = tf.exp(risk)
+
+        batch_size, _ = risk.shape
+        # NOTE: This part has yet to be vectorized
+        cost = tf.Variable(0., tf.float32)
+        for i in range(batch_size):
+            if self.y_E[i] <= 0:
+                continue
+
+
+
+
+
+
+
+
+
 
 
 
