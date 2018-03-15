@@ -28,7 +28,7 @@ def get_folders(input_dir):
     return filter(is_valid_dir, os.scandir(input_dir))
 
 
-def main(arguments: argparse.Namespace):
+def main(arguments):
     datasets_dir = os.path.expandvars(arguments.datasets_dir)
     input_dir = os.path.join(datasets_dir, arguments.input_dir)
     output_dir = os.path.join(datasets_dir, arguments.output_dir)
