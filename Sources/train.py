@@ -1,6 +1,5 @@
 import argparse
 
-import utils
 
 def main(args):
     pass
