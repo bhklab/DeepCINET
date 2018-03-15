@@ -31,8 +31,10 @@ class CNNSurv:
         self.x_scalar = tf.placeholder(tf.float32, shape=(None, *data_input_size))
         self.dims = len(image_input_size) - 1  # Exclude the channels count
 
-        # The y_data contains the Time and the Event -> 2 dimensions
-        self.y_valid = tf.placeholder(tf.float32, shape=(None, 2))
+        # Y data contains two elements that are used in different ways
+        self.y_E = tf.placeholder(tf.float32, shape=(None, 1))
+        self.y_T = tf.placeholder(tf.float32, shape=(None, 1))
+
 
         # Create graph
         self._create_computation_graph()
