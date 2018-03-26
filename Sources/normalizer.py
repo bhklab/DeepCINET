@@ -59,7 +59,8 @@ def main(arguments):
 if __name__ == "__main__":
     # We are being called and not as a module
     # Parse arguments
-    parser = argparse.ArgumentParser(description="Normalize and slice images")
+    parser = argparse.ArgumentParser(description="Pre-process all the images by normalizing, "
+                                                 "slicing and rotating them")
     parser.add_argument(
         "--datasets_dir",
         help="Directory where all the datasets can be found",

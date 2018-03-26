@@ -1,23 +1,15 @@
 import os
 import math
+import collections
+from typing import Tuple
+
 import pydicom
 import numpy as np
 import skimage.transform as skt
 import shutil
 
 
-class BoundingBox:
-    def __init__(self, x_min=None, y_min=None, z_min=None, x_max=None, y_max=None, z_max=None):
-        self.x_min = int(x_min)
-        self.y_min = int(y_min)
-        self.z_min = int(z_min)
-        self.x_max = int(x_max)
-        self.y_max = int(y_max)
-        self.z_max = int(z_max)
-
-    def set_extreme(self):
-        self.x_min = self.y_min = self.z_min = math.inf
-        self.x_max = self.y_max = self.z_max = -math.inf
+BoundingBox = collections.namedtuple('BoundingBox', ['x_min', 'x_max', 'y_min', 'y_max', 'z_min', 'z_max'])
 
 
 class PseudoDir:
@@ -86,7 +78,16 @@ class ScanNormalizer:
 
         # Resize the normalized data
         sliced_norm = skt.resize(sliced_norm, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
-        np.save(os.path.join(temp_dir, "normalized_slice.npy"), sliced_norm)
+
+        # Rotate the image across the 3 axis for data augmentation
+        for i in range(4):
+            for j in range(4):
+                for k in range(4):
+                    save_name = os.path.join(temp_dir, "normalized_{:03}_{:03}_{:03}.npy".format(i*90, j*90, k*90))
+                    np.save(save_name, sliced_norm)
+                    sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
+                sliced_norm = np.rot90(sliced_norm, axes=(2, 0))
+            sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
 
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)
@@ -98,7 +99,12 @@ class ScanNormalizer:
         #
 
     @staticmethod
-    def compact_files(image_dir):
+    def compact_files(image_dir: os.DirEntry) -> Tuple[np.array, np.array]:
+        """
+        Get a numpy array containing the 3D image concatenating all the slices in the selected dir
+        :param image_dir: Directory containing all the images
+        :return: Tuple with the 3D image and the 3D mask as numpy arrays
+        """
         main_path = os.path.join(image_dir.path, image_dir.name)
         mask_path = main_path + "-MASS"
         total_main = [pydicom.dcmread(x.path).pixel_array for x in os.scandir(main_path)]
@@ -110,7 +116,12 @@ class ScanNormalizer:
         return main_stack, mask_stack
 
     @staticmethod
-    def get_bounding_box(mask_stack):
+    def get_bounding_box(mask_stack: np.array) -> BoundingBox:
+        """
+        Get the bounding box of all the area containing 1s
+        :param mask_stack: 3D numpy array
+        :return: Bounding box tuple with the minimum and maximum size in the 3 axis
+        """
         x = np.any(mask_stack, axis=(1, 2))
         y = np.any(mask_stack, axis=(0, 2))
         z = np.any(mask_stack, axis=(0, 1))
@@ -118,4 +129,4 @@ class ScanNormalizer:
         x_min, x_max = np.where(x)[0][[0, -1]]
         y_min, y_max = np.where(y)[0][[0, -1]]
         z_min, z_max = np.where(z)[0][[0, -1]]
-        return x_min, x_max, y_min, y_max, z_min, z_max
+        return BoundingBox(x_min, x_max, y_min, y_max, z_min, z_max)
