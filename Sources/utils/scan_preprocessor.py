@@ -1,15 +1,18 @@
+""""
+This script is not to be called directly but to be imported
+by other ones
+"""
+
+
 import os
-import math
-import collections
+import csv
 from typing import Tuple
+from joblib import Parallel, delayed
 
 import pydicom
 import numpy as np
 import skimage.transform as skt
 import shutil
-
-
-BoundingBox = collections.namedtuple('BoundingBox', ['x_min', 'x_max', 'y_min', 'y_max', 'z_min', 'z_max'])
 
 
 class PseudoDir:
@@ -30,20 +33,44 @@ class ScanNormalizer:
     Y_SIZE = 64
     Z_SIZE = 64
 
-    def __init__(self, dirs, output_dir, overwrite=False):
+    def __init__(self, dirs, output_dir, censor_info, overwrite=False):
         self.dirs = []
         self.output_dir = output_dir
         self.count = 0
+        self.censor_info = censor_info
         self.overwrite = overwrite
 
-        for d in dirs:
-            self.dirs.append(PseudoDir(d.name, d.path, d.is_dir()))
+        self.dirs = [PseudoDir(d.name, d.path, d.is_dir) for d in dirs]
+        self.dir_names = [d.name for d in self.dirs]
 
-    def process_images(self):
-        for i, image in enumerate(self.dirs):
-            self.process_single(image, i + 1)
+    def process_data(self):
 
-    def process_single(self, image_dir: os.DirEntry, count):
+        # Can be used as a parallel version or as a single core version, just comment the necessary lines of code
+        generator = (delayed(self.process_individual)(image, i + 1) for i, image in enumerate(self.dirs))
+        Parallel(n_jobs=-1, backend='multiprocessing')(generator)
+
+        # Use this part for testing purposes
+        # for i, image in enumerate(self.dirs):
+        #     self.process_single(image, i + 1)
+
+        # Get censored data information
+        read_file = open(self.censor_info)
+        write_file = open(os.path.join(self.output_dir, 'clinical_info.csv'))
+        reader = csv.reader(read_file, delimiter=',')
+
+
+
+        with open(self.censor_info) as file:
+            reader = csv.reader(file, delimiter=',')
+
+            for row in reader:
+                if row[0] in self.dir_names:
+                    rows.append({
+                        'id': row
+                    })
+
+
+    def process_individual(self, image_dir: PseudoDir, count):
 
         save_dir = os.path.join(self.output_dir, image_dir.name)
         temp_dir = os.path.join(self.output_dir, image_dir.name + "_temp")
@@ -57,6 +84,7 @@ class ScanNormalizer:
 
         print("Processing dataset {}, {} of {}".format(image_dir.name, count, len(self.dirs)))
 
+        # Remove existing temporary directory from previous runs
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
         os.makedirs(temp_dir)
@@ -80,26 +108,28 @@ class ScanNormalizer:
         sliced_norm = skt.resize(sliced_norm, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
 
         # Rotate the image across the 3 axis for data augmentation
-        for i in range(4):
-            for j in range(4):
-                for k in range(4):
-                    save_name = os.path.join(temp_dir, "normalized_{:03}_{:03}_{:03}.npy".format(i*90, j*90, k*90))
-                    np.save(save_name, sliced_norm)
-                    sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
-                sliced_norm = np.rot90(sliced_norm, axes=(2, 0))
-            sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
+
+        rotations = self.get_rotations(sliced_norm)
+        np.savez_compressed(os.path.join(temp_dir, "normalized.npz"), **rotations)
 
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)
 
-        # For debugging purposes it saves all the images
-        # for i in range(self.Z_SIZE):
-        #     print("Saving {} of {}".format(i + 1, self.Z_SIZE))
-        #     scipy.misc.imsave(os.path.join(save_dir, "deb_{}.png".format(i)), sliced_norm[:, :, i]*255)
-        #
+    @staticmethod
+    def get_rotations(sliced_norm: np.array):
+        temp_dict = {}
+        for i in range(4):
+            for j in range(4):
+                for k in range(4):
+                    name = "{:03}_{:03}_{:03}.npy".format(i * 90, j * 90, k * 90)
+                    temp_dict[name] = sliced_norm.copy()
+                    sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
+                sliced_norm = np.rot90(sliced_norm, axes=(2, 0))
+            sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
+        return temp_dict
 
     @staticmethod
-    def compact_files(image_dir: os.DirEntry) -> Tuple[np.array, np.array]:
+    def compact_files(image_dir: PseudoDir) -> Tuple[np.array, np.array]:
         """
         Get a numpy array containing the 3D image concatenating all the slices in the selected dir
         :param image_dir: Directory containing all the images
@@ -116,7 +146,7 @@ class ScanNormalizer:
         return main_stack, mask_stack
 
     @staticmethod
-    def get_bounding_box(mask_stack: np.array) -> BoundingBox:
+    def get_bounding_box(mask_stack: np.array) -> Tuple:
         """
         Get the bounding box of all the area containing 1s
         :param mask_stack: 3D numpy array
@@ -129,4 +159,4 @@ class ScanNormalizer:
         x_min, x_max = np.where(x)[0][[0, -1]]
         y_min, y_max = np.where(y)[0][[0, -1]]
         z_min, z_max = np.where(z)[0][[0, -1]]
-        return BoundingBox(x_min, x_max, y_min, y_max, z_min, z_max)
+        return x_min, x_max, y_min, y_max, z_min, z_max

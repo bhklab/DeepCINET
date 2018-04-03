@@ -79,11 +79,11 @@ def main(arguments):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    dirs = list(get_folders(input_dir))
+    dirs = list(get_folders(input_dir))[:20]
     print("{} valid dirs have been found".format(len(dirs)))
 
-    normalizer = utils.ScanNormalizer(dirs, output_dir)
-    normalizer.process_images()
+    normalizer = utils.ScanNormalizer(dirs, output_dir, os.path.join(input_dir, "clinical_info.csv"))
+    normalizer.process_data()
 
 
 if __name__ == "__main__":
