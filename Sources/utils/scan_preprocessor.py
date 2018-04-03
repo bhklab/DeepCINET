@@ -15,14 +15,18 @@ import skimage.transform as skt
 import shutil
 
 
+COL_ID = 0
+COL_AGE = 1
+COL_SEX = 2
+COL_EVENT = 35
+COL_TIME = 36
+
+
 class PseudoDir:
     def __init__(self, name, path, is_dir):
         self.name = name
         self.path = path
-        self._is_dir = is_dir
-
-    def is_dir(self):
-        return self._is_dir
+        self.is_dir = is_dir
 
 
 class ScanNormalizer:
@@ -40,35 +44,41 @@ class ScanNormalizer:
         self.censor_info = censor_info
         self.overwrite = overwrite
 
+        # self.dirs = []
+        # for d in dirs:
+        #     self.dirs.append(PseudoDir(d.name, d.path, d.is_dir))
         self.dirs = [PseudoDir(d.name, d.path, d.is_dir) for d in dirs]
         self.dir_names = [d.name for d in self.dirs]
 
     def process_data(self):
 
         # Can be used as a parallel version or as a single core version, just comment the necessary lines of code
+        print(self.dirs)
+        print(self.dirs[0].name, self.dirs[0].path)
         generator = (delayed(self.process_individual)(image, i + 1) for i, image in enumerate(self.dirs))
         Parallel(n_jobs=-1, backend='multiprocessing')(generator)
 
         # Use this part for testing purposes
         # for i, image in enumerate(self.dirs):
-        #     self.process_single(image, i + 1)
+        #     self.process_individual(image, i + 1)
 
         # Get censored data information
         read_file = open(self.censor_info)
-        write_file = open(os.path.join(self.output_dir, 'clinical_info.csv'))
+        write_file = open(os.path.join(self.output_dir, 'clinical_info.csv'), 'w')
         reader = csv.reader(read_file, delimiter=',')
+        writer = csv.writer(write_file, delimiter=',')
 
+        writer.writerow(['id', 'age', 'sex', 'event', 'time'])
 
+        for row in reader:
+            if row[0] in self.dir_names:
+                # The event we are given it has the 1 and 0 swapped
+                temp = [row[COL_ID], row[COL_AGE], row[COL_SEX], 1 - int(row[COL_EVENT]), row[COL_TIME]]
+                print(temp)
+                writer.writerow(temp)
 
-        with open(self.censor_info) as file:
-            reader = csv.reader(file, delimiter=',')
-
-            for row in reader:
-                if row[0] in self.dir_names:
-                    rows.append({
-                        'id': row
-                    })
-
+        read_file.close()
+        write_file.close()
 
     def process_individual(self, image_dir: PseudoDir, count):
 
