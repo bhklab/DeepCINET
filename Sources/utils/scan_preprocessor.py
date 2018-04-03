@@ -47,14 +47,12 @@ class ScanNormalizer:
         # self.dirs = []
         # for d in dirs:
         #     self.dirs.append(PseudoDir(d.name, d.path, d.is_dir))
-        self.dirs = [PseudoDir(d.name, d.path, d.is_dir) for d in dirs]
+        self.dirs = [PseudoDir(d.name, d.path, d.is_dir()) for d in dirs]
         self.dir_names = [d.name for d in self.dirs]
 
     def process_data(self):
 
         # Can be used as a parallel version or as a single core version, just comment the necessary lines of code
-        print(self.dirs)
-        print(self.dirs[0].name, self.dirs[0].path)
         generator = (delayed(self.process_individual)(image, i + 1) for i, image in enumerate(self.dirs))
         Parallel(n_jobs=-1, backend='multiprocessing')(generator)
 
