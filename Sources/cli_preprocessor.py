@@ -68,13 +68,11 @@ def main(arguments):
         print("ERROR: Not all the folder exist")
         exit(1)
 
+    print("Overwrite: " + str(arguments.overwrite))
+
     print("Datasets: " + datasets_dir)
     print("Input: " + input_dir)
     print("Output: " + output_dir)
-
-    if arguments.overwrite and os.path.exists(output_dir):
-        # To overwrite remove the path then it will be created again
-        shutil.rmtree(output_dir)
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -82,7 +80,12 @@ def main(arguments):
     dirs = list(get_folders(input_dir))
     print("{} valid dirs have been found".format(len(dirs)))
 
-    normalizer = utils.ScanNormalizer(dirs, output_dir, os.path.join(input_dir, "clinical_info.csv"))
+    normalizer = utils.ScanNormalizer(
+        dirs,
+        output_dir,
+        os.path.join(input_dir, "clinical_info.csv"),
+        overwrite=arguments.overwrite
+    )
     normalizer.process_data()
 
 
