@@ -14,7 +14,7 @@ import numpy as np
 import skimage.transform as skt
 import shutil
 
-
+# Columns from CSV sheet containing the info that we need
 COL_ID = 0
 COL_AGE = 1
 COL_SEX = 2
@@ -44,9 +44,6 @@ class ScanNormalizer:
         self.censor_info = censor_info
         self.overwrite = overwrite
 
-        # self.dirs = []
-        # for d in dirs:
-        #     self.dirs.append(PseudoDir(d.name, d.path, d.is_dir))
         self.dirs = [PseudoDir(d.name, d.path, d.is_dir()) for d in dirs]
         self.dir_names = [d.name for d in self.dirs]
 
@@ -56,7 +53,7 @@ class ScanNormalizer:
         generator = (delayed(self.process_individual)(image, i + 1) for i, image in enumerate(self.dirs))
         Parallel(n_jobs=-1, backend='multiprocessing')(generator)
 
-        # Use this part for testing purposes
+        # Use this part for debugging purposes
         # for i, image in enumerate(self.dirs):
         #     self.process_individual(image, i + 1)
 
