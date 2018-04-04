@@ -3,17 +3,16 @@ This script is not to be called directly but to be imported
 by other ones
 """
 
-
+import shutil
 import os
-import csv
+import os.path as path
 from typing import Tuple, Dict
-from joblib import Parallel, delayed
-from os.path import join
 
 import pydicom
 import numpy as np
+import pandas as pd
 import skimage.transform as skt
-import shutil
+from joblib import Parallel, delayed
 
 # Columns from CSV sheet containing the info that we need
 COL_ID = 0
@@ -41,8 +40,8 @@ class ScanNormalizer:
     def __init__(self, dirs, output_dir, censor_info, overwrite=False):
         self.dirs = []
         self.output_dir = output_dir
-        self.output_temp_dir = join(output_dir, '.cache')  # Use a hidden folder for the cache
-        self.censor_info = censor_info
+        self.output_cache_dir = path.join(output_dir, '.cache')  # Use a hidden folder for the cache
+        self.medical_info_path = censor_info
         self.overwrite = overwrite
 
         self.dirs = [PseudoDir(d.name, d.path, d.is_dir()) for d in dirs]
@@ -50,8 +49,8 @@ class ScanNormalizer:
 
     def process_data(self):
         # Create the place where numpy to dycom images will be saved
-        if not os.path.exists(self.output_temp_dir):
-            os.makedirs(self.output_temp_dir)
+        if not os.path.exists(self.output_cache_dir):
+            os.makedirs(self.output_cache_dir)
 
         # Can be used as a parallel version or as a single core version, just comment the necessary lines of code
         generator = (delayed(self.process_individual)(image, i + 1) for i, image in enumerate(self.dirs))
@@ -62,27 +61,17 @@ class ScanNormalizer:
         #     self.process_individual(image, i + 1)
 
         # Get censored data information
-        read_file = open(self.censor_info)
-        write_file = open(os.path.join(self.output_dir, 'clinical_info.csv'), 'w')
-        reader = csv.reader(read_file, delimiter=',')
-        writer = csv.writer(write_file, delimiter=',')
-
-        writer.writerow(['id', 'age', 'sex', 'event', 'time'])
-
-        for row in reader:
-            if row[0] in self.dir_names:
-                # The event we are given it has the 1 and 0 swapped
-                temp = [row[COL_ID], row[COL_AGE], row[COL_SEX], 1 - int(row[COL_EVENT]), row[COL_TIME]]
-                print(temp)
-                writer.writerow(temp)
-
-        read_file.close()
-        write_file.close()
+        df = pd.read_csv(self.medical_info_path)
+        df = df.take([COL_ID, COL_AGE, COL_SEX, COL_EVENT, COL_TIME], axis=1)
+        df.columns = ['id', 'age', 'sex', 'event', 'time']
+        df = df[df['id'].isin(self.dir_names)]
+        df['event'] = 1 - df['event']
+        df.to_csv(path.join(self.output_dir, 'clinical_info.csv'))
 
     def process_individual(self, image_dir: PseudoDir, count):
 
-        save_dir = join(self.output_dir, image_dir.name)
-        temp_dir = join(self.output_dir, image_dir.name + "_temp")
+        save_dir = path.join(self.output_dir, image_dir.name)
+        temp_dir = path.join(self.output_dir, image_dir.name + "_temp")
 
         # Check if the directory exists to avoid overwriting it
         if os.path.exists(save_dir):
@@ -103,23 +92,23 @@ class ScanNormalizer:
         os.makedirs(temp_dir)
 
         # Get slice and normalize image
-        sliced_norm = self.normalize_image(*self.get_raw_files(image_dir))
+        sliced_norm = self.normalize_image(*self.get_raw_data(image_dir))
 
         # Rotate the image across the 3 axis for data augmentation
         rotations = self.get_rotations(sliced_norm)
-        np.savez_compressed(join(temp_dir, "normalized.npz"), **rotations)
+        np.savez_compressed(path.join(temp_dir, "normalized.npz"), **rotations)
 
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)
 
-    def get_raw_files(self, image_dir: PseudoDir):
+    def get_raw_data(self, image_dir: PseudoDir):
         """
         Return the raw data, stacking all the files and using a temporary cache
         :param image_dir:
         :return:
         """
-        numpy_file = join(self.output_temp_dir, image_dir.name + ".npz")
-        numpy_file_temp = join(self.output_temp_dir, image_dir.name + "_temp.npz")
+        numpy_file = path.join(self.output_cache_dir, image_dir.name + ".npz")
+        numpy_file_temp = path.join(self.output_cache_dir, image_dir.name + "_temp.npz")
 
         # Load .npz file instead of .dcm if we have already read it
         if os.path.exists(numpy_file):
@@ -181,7 +170,7 @@ class ScanNormalizer:
         :param image_dir: Directory containing all the images
         :return: Tuple with the 3D image and the 3D mask as numpy arrays
         """
-        main_path = join(image_dir.path, image_dir.name)
+        main_path = path.join(image_dir.path, image_dir.name)
         mask_path = main_path + "-MASS"
         total_main = [pydicom.dcmread(x.path).pixel_array for x in os.scandir(main_path)]
         total_mask = [pydicom.dcmread(x.path).pixel_array for x in os.scandir(mask_path)]

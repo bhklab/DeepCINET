@@ -22,6 +22,7 @@ matplotlib==2.2.0
 mccabe==0.6.1
 networkx==2.1
 numpy==1.14.2
+pandas==0.22.0
 parso==0.1.1
 pexpect==4.4.0
 pickleshare==0.7.4
