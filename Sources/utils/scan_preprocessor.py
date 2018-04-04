@@ -85,8 +85,11 @@ class ScanNormalizer:
         temp_dir = join(self.output_dir, image_dir.name + "_temp")
 
         # Check if the directory exists to avoid overwriting it
-        if os.path.exists(save_dir) and not self.overwrite:
-            return
+        if os.path.exists(save_dir):
+            if self.overwrite:
+                shutil.rmtree(save_dir)
+            else:
+                return
 
         # The directory should have the NAME and the NAME-MASS subdirectories which contain the files we need
         if not all(x in os.listdir(image_dir.path) for x in [image_dir.name, image_dir.name + "-MASS"]):
@@ -115,17 +118,22 @@ class ScanNormalizer:
         :param image_dir:
         :return:
         """
-        numpy_file = join(self.output_temp_dir, image_dir.name)
+        numpy_file = join(self.output_temp_dir, image_dir.name + ".npz")
+        numpy_file_temp = join(self.output_temp_dir, image_dir.name + "_temp.npz")
 
         # Load .npz file instead of .dcm if we have already read it
         if os.path.exists(numpy_file):
-            npz_file = np.load('compacted.npz')
+            print("File {} found reading npz file".format(numpy_file))
+            npz_file = np.load(numpy_file)
             main_stack = npz_file['main']
             mask_stack = npz_file['mask']
             npz_file.close()
         else:
+            print("File {} not found reading dcm file".format(numpy_file))
             main_stack, mask_stack = self.compact_files(image_dir)
-            np.savez_compressed(numpy_file, main=main_stack, mask=mask_stack)
+            print("Saving {} file".format(numpy_file_temp))
+            np.savez_compressed(numpy_file_temp, main=main_stack, mask=mask_stack)
+            os.rename(numpy_file_temp, numpy_file)  # Use a temp name to avoid problems when stopping the script
         return main_stack, mask_stack
 
     def normalize_image(self, main_stack: np.ndarray, mask_stack: np.ndarray) -> np.ndarray:
