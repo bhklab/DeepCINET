@@ -6,7 +6,7 @@ by other ones
 
 import os
 import csv
-from typing import Tuple
+from typing import Tuple, Dict
 from joblib import Parallel, delayed
 from os.path import join
 
@@ -99,23 +99,8 @@ class ScanNormalizer:
             shutil.rmtree(temp_dir)
         os.makedirs(temp_dir)
 
-        main_stack, mask_stack = self.compact_files(image_dir)
-
-        # Get sliced image
-        x_min, x_max, y_min, y_max, z_min, z_max = self.get_bounding_box(mask_stack)
-        sliced = main_stack[x_min:x_max, y_min:y_max, z_min:z_max]
-
-        # Normalize the sliced part
-        sliced = sliced.clip(self.MIN_BOUND, self.MAX_BOUND)
-        sliced_norm = (sliced - self.MIN_BOUND)/(self.MAX_BOUND - self.MIN_BOUND)
-
-        # Apply mask
-        sliced_norm *= mask_stack[x_min:x_max, y_min:y_max, z_min:z_max]
-
-        print("Volume: {}".format(sliced_norm.shape))
-
-        # Resize the normalized data
-        sliced_norm = skt.resize(sliced_norm, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
+        # Get slice and normalize image
+        sliced_norm = self.normalize_image(*self.get_raw_files(image_dir))
 
         # Rotate the image across the 3 axis for data augmentation
         rotations = self.get_rotations(sliced_norm)
@@ -124,8 +109,52 @@ class ScanNormalizer:
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)
 
+    def get_raw_files(self, image_dir: PseudoDir):
+        """
+        Return the raw data, stacking all the files and using a temporary cache
+        :param image_dir:
+        :return:
+        """
+        numpy_file = join(self.output_temp_dir, image_dir.name)
+
+        # Load .npz file instead of .dcm if we have already read it
+        if os.path.exists(numpy_file):
+            npz_file = np.load('compacted.npz')
+            main_stack = npz_file['main']
+            mask_stack = npz_file['mask']
+            npz_file.close()
+        else:
+            main_stack, mask_stack = self.compact_files(image_dir)
+            np.savez_compressed(numpy_file, main=main_stack, mask=mask_stack)
+        return main_stack, mask_stack
+
+    def normalize_image(self, main_stack: np.ndarray, mask_stack: np.ndarray) -> np.ndarray:
+        """
+        Slices the tumour using the mask and then
+        normalizes the image (variance = 1 and mean = 0)
+        :param main_stack: 3D vector containing the main image
+        :param mask_stack: 3D vector containing the mask image where the tumour is marked
+        :return: Slice of the tumour normalized
+        """
+        # Get sliced image
+        x_min, x_max, y_min, y_max, z_min, z_max = self.get_bounding_box(mask_stack)
+        sliced = main_stack[x_min:x_max, y_min:y_max, z_min:z_max]
+
+        # Normalize the sliced part
+        sliced = sliced.clip(self.MIN_BOUND, self.MAX_BOUND)
+        sliced_norm = (sliced - self.MIN_BOUND) / (self.MAX_BOUND - self.MIN_BOUND)
+
+        # Apply mask
+        sliced_norm *= mask_stack[x_min:x_max, y_min:y_max, z_min:z_max]
+
+        print("Volume: {}".format(sliced_norm.shape))
+
+        # Resize the normalized data
+        sliced_norm = skt.resize(sliced_norm, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
+        return sliced_norm
+
     @staticmethod
-    def get_rotations(sliced_norm: np.array):
+    def get_rotations(sliced_norm: np.array) -> Dict[str, np.ndarray]:
         temp_dict = {}
         for i in range(4):
             for j in range(4):
@@ -138,7 +167,7 @@ class ScanNormalizer:
         return temp_dict
 
     @staticmethod
-    def compact_files(image_dir: PseudoDir) -> Tuple[np.array, np.array]:
+    def compact_files(image_dir: PseudoDir) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get a numpy array containing the 3D image concatenating all the slices in the selected dir
         :param image_dir: Directory containing all the images
@@ -155,7 +184,7 @@ class ScanNormalizer:
         return main_stack, mask_stack
 
     @staticmethod
-    def get_bounding_box(mask_stack: np.array) -> Tuple:
+    def get_bounding_box(mask_stack: np.ndarray) -> Tuple:
         """
         Get the bounding box of all the area containing 1s
         :param mask_stack: 3D numpy array
