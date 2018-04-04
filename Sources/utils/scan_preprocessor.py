@@ -9,6 +9,7 @@ import os.path as path
 from typing import Tuple, Dict
 
 import pydicom
+import scipy.misc
 import numpy as np
 import pandas as pd
 import skimage.transform as skt
@@ -67,6 +68,26 @@ class ScanNormalizer:
         df = df[df['id'].isin(self.dir_names)]
         df['event'] = 1 - df['event']
         df.to_csv(path.join(self.output_dir, 'clinical_info.csv'))
+
+        censored_count = df[df['event'] == 0].count()[0]
+        uncensored_count = df.count()[0] - censored_count
+
+        censored_pairs = censored_count*uncensored_count
+        uncensored_pairs = scipy.misc.comb(uncensored_count, 2, exact=True)
+
+        censored_pairs_augmented = censored_pairs*(4**3)*(4**3)
+        uncensored_pairs_augmented = uncensored_pairs*(4**3)*(4**3)
+
+        print("Total censored: {}".format(censored_count))
+        print("Total uncensored: {}".format(uncensored_count))
+
+        print("Total censored pairs: {:,}".format(censored_pairs))
+        print("Total uncensored pairs: {:,}".format(uncensored_pairs))
+        print("Total pairs {:,}".format(censored_pairs + uncensored_pairs))
+
+        print("Total censored pairs augmented: {:,}".format(censored_pairs_augmented))
+        print("Total uncensored pairs augmented: {:,}".format(uncensored_pairs_augmented))
+        print("Total pairs augmented {:,}".format(censored_pairs_augmented + uncensored_pairs_augmented))
 
     def process_individual(self, image_dir: PseudoDir, count):
 
@@ -187,6 +208,7 @@ class ScanNormalizer:
         :param mask_stack: 3D numpy array
         :return: Bounding box tuple with the minimum and maximum size in the 3 axis
         """
+        # Code found in stack overflow
         x = np.any(mask_stack, axis=(1, 2))
         y = np.any(mask_stack, axis=(0, 2))
         z = np.any(mask_stack, axis=(0, 1))
