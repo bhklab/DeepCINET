@@ -72,7 +72,7 @@ def main(arguments):
     print("Input: " + input_dir)
     print("Output: " + output_dir)
 
-    if arguments.overwrite:
+    if arguments.overwrite and os.path.exists(output_dir):
         # To overwrite remove the path then it will be created again
         shutil.rmtree(output_dir)
 
