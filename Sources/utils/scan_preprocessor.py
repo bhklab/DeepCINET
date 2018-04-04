@@ -8,6 +8,7 @@ import os
 import csv
 from typing import Tuple
 from joblib import Parallel, delayed
+from os.path import join
 
 import pydicom
 import numpy as np
@@ -40,7 +41,7 @@ class ScanNormalizer:
     def __init__(self, dirs, output_dir, censor_info, overwrite=False):
         self.dirs = []
         self.output_dir = output_dir
-        self.count = 0
+        self.output_temp_dir = join(output_dir, '.cache')  # Use a hidden folder for the cache
         self.censor_info = censor_info
         self.overwrite = overwrite
 
@@ -48,6 +49,9 @@ class ScanNormalizer:
         self.dir_names = [d.name for d in self.dirs]
 
     def process_data(self):
+        # Create the place where numpy to dycom images will be saved
+        if not os.path.exists(self.output_temp_dir):
+            os.makedirs(self.output_temp_dir)
 
         # Can be used as a parallel version or as a single core version, just comment the necessary lines of code
         generator = (delayed(self.process_individual)(image, i + 1) for i, image in enumerate(self.dirs))
@@ -77,13 +81,14 @@ class ScanNormalizer:
 
     def process_individual(self, image_dir: PseudoDir, count):
 
-        save_dir = os.path.join(self.output_dir, image_dir.name)
-        temp_dir = os.path.join(self.output_dir, image_dir.name + "_temp")
+        save_dir = join(self.output_dir, image_dir.name)
+        temp_dir = join(self.output_dir, image_dir.name + "_temp")
 
         # Check if the directory exists to avoid overwriting it
         if os.path.exists(save_dir) and not self.overwrite:
             return
 
+        # The directory should have the NAME and the NAME-MASS subdirectories which contain the files we need
         if not all(x in os.listdir(image_dir.path) for x in [image_dir.name, image_dir.name + "-MASS"]):
             raise FileNotFoundError("Dir {} does not have the necessary files".format(image_dir.name))
 
@@ -113,9 +118,8 @@ class ScanNormalizer:
         sliced_norm = skt.resize(sliced_norm, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
 
         # Rotate the image across the 3 axis for data augmentation
-
         rotations = self.get_rotations(sliced_norm)
-        np.savez_compressed(os.path.join(temp_dir, "normalized.npz"), **rotations)
+        np.savez_compressed(join(temp_dir, "normalized.npz"), **rotations)
 
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)
@@ -140,7 +144,7 @@ class ScanNormalizer:
         :param image_dir: Directory containing all the images
         :return: Tuple with the 3D image and the 3D mask as numpy arrays
         """
-        main_path = os.path.join(image_dir.path, image_dir.name)
+        main_path = join(image_dir.path, image_dir.name)
         mask_path = main_path + "-MASS"
         total_main = [pydicom.dcmread(x.path).pixel_array for x in os.scandir(main_path)]
         total_mask = [pydicom.dcmread(x.path).pixel_array for x in os.scandir(mask_path)]
