@@ -8,5 +8,6 @@ venv/
 .idea/
 .vscode/
 
-./Data
-./Data/
+Data
+Data/
+!Sources/data/
