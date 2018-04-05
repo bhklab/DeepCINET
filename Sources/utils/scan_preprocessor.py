@@ -117,7 +117,7 @@ class ScanNormalizer:
 
         # Rotate the image across the 3 axis for data augmentation
         rotations = self.get_rotations(sliced_norm)
-        np.savez_compressed(path.join(temp_dir, "normalized.npz"), **rotations)
+        np.savez_compressed(path.join(temp_dir, image_dir.name + ".npz"), **rotations)
 
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)

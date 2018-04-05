@@ -15,7 +15,6 @@ parses the arguments and then calls the previous class.
 
 import os
 import argparse
-import shutil
 from typing import Iterator
 
 import utils
