@@ -23,13 +23,6 @@ COL_EVENT = 35
 COL_TIME = 36
 
 
-class PseudoDir:
-    def __init__(self, name, path, is_dir):
-        self.name = name
-        self.path = path
-        self.is_dir = is_dir
-
-
 class ScanNormalizer:
     MIN_BOUND = -1000.0
     MAX_BOUND = 400.0
