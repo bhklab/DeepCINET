@@ -16,6 +16,13 @@ source virt/bin/activate
 pip install -r requirements.txt
 ```
 
+The dataset files are in the `Data` folder (which has to be created). The easiest way is to 
+create a symbolic link to where the data is located, if using Mordor it would be:
+
+```bash
+ln -s /mnt/work1/users/bhklab/Data/HNK Data
+```
+
 ## Directory structure
 
 When you call the preprocessor you can set the arguments for:
@@ -33,7 +40,7 @@ The `input` data directory has some rules:
 
 Example:
 ```
-Dataset
+HNK_raw
 ├── FHBO613
 │   ├── FHBO613
 │   │   ├── IMG0001.dcm
