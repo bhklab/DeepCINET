@@ -5,7 +5,7 @@ files
 import os
 from typing import Tuple, Iterator
 
-import pydicom
+import pydicom as dcm
 import numpy as np
 from joblib import Parallel, delayed
 
@@ -124,8 +124,8 @@ class RawData:
 
         main_path = os.path.join(image_dir.path, image_dir.name)
         mask_path = main_path + "-MASS"
-        total_main = [pydicom.dcmread(x.path).pixel_array for x in os.scandir(main_path)]
-        total_mask = [pydicom.dcmread(x.path).pixel_array for x in os.scandir(mask_path)]
+        total_main = [dcm.dcmread(x.path).pixel_array for x in os.scandir(main_path) if str(x.name).startswith("IMG")]
+        total_mask = [dcm.dcmread(x.path).pixel_array for x in os.scandir(mask_path) if str(x.name).startswith("IMG")]
 
         main_stack = np.stack(total_main, axis=2)
         mask_stack = np.stack(total_mask, axis=2)
