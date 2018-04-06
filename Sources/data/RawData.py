@@ -124,8 +124,20 @@ class RawData:
 
         main_path = os.path.join(image_dir.path, image_dir.name)
         mask_path = main_path + "-MASS"
-        total_main = [dcm.dcmread(x.path).pixel_array for x in os.scandir(main_path) if str(x.name).startswith("IMG")]
-        total_mask = [dcm.dcmread(x.path).pixel_array for x in os.scandir(mask_path) if str(x.name).startswith("IMG")]
+
+        files_main = [PseudoDir(x.name, x.path, x.is_dir()) for x in os.scandir(main_path)
+                      if str(x.name).startswith("IMG")]
+        files_main = sorted(files_main, key=lambda x: x.name)
+
+        files_mask = [PseudoDir(x.name, x.path, x.is_dir()) for x in os.scandir(mask_path)
+                      if str(x.name).startswith("IMG")]
+        files_mask = sorted(files_mask, key=lambda x: x.name)
+
+        print(files_main)
+        print(files_mask)
+
+        total_main = [dcm.dcmread(x.path).pixel_array for x in files_main]
+        total_mask = [dcm.dcmread(x.path).pixel_array for x in files_mask]
 
         main_stack = np.stack(total_main, axis=2)
         mask_stack = np.stack(total_mask, axis=2)
