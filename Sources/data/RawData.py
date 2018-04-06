@@ -133,9 +133,6 @@ class RawData:
                       if str(x.name).startswith("IMG")]
         files_mask = sorted(files_mask, key=lambda x: x.name)
 
-        print(files_main)
-        print(files_mask)
-
         total_main = [dcm.dcmread(x.path).pixel_array for x in files_main]
         total_mask = [dcm.dcmread(x.path).pixel_array for x in files_mask]
 
