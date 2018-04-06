@@ -16,6 +16,7 @@ parses the arguments and then calls the previous class.
 import os
 import argparse
 import settings
+import multiprocessing
 
 import data
 
@@ -33,6 +34,8 @@ def main(arguments):
     if not os.path.exists(input_dir):
         print("ERROR: The {} folder does not exist".format(input_dir))
         exit(1)
+
+    print("We have {} cores".format(multiprocessing.cpu_count()))
 
     print("Root dir: " + settings.APP_ROOT)
     print("Overwrite: " + str(arguments.overwrite))
