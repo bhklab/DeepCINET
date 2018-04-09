@@ -11,8 +11,8 @@ for this project. Once the project has been downloaded do:
 
 ```bash
 cd CNNSurv
-virtualenv virt
-source virt/bin/activate
+virtualenv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -23,13 +23,21 @@ create a symbolic link to where the data is located, if using Mordor it would be
 ln -s /mnt/work1/users/bhklab/Data/HNK Data
 ```
 
-## Directory structure
+## Data directories
 
-When you call the preprocessor you can set the arguments for:
+The `Data` folder should be located in the project's root directory. The input (raw) data is
+located in the `HNK_raw` directory. The pre-processed data is inside the `HNK_processed` dir.
 
- - The `datasets` directory
- - The `input` data directory, then the path will be datasets + input
- - The `output` data directory
+The structure after pre-processing should be:
+
+```
+Data
+├── .cache
+├── HNK_raw
+└── HNK_processed
+```
+
+### Input Directory structure
 
 The `input` data directory has some rules:
  - Each folder represents a patient
@@ -61,3 +69,25 @@ HNK_raw
         └── IMG0003.dcm
 ``` 
 
+### `.cache` Directory structure
+
+When pre-processing the `HNK_raw` files the `.cache` directory will be created. It contains all the images
+in the `.dcm` files but in a single file for each patient in a `.npz` file (numpy) that contains two arrays.
+Each array is a 3D array containing the whole 3D image.
+
+To load an array just use the `np.load` function provided by `numpy`:
+
+```python
+import numpy as np
+
+file = 'FHBO613.npz'
+npz_file = np.load(file)
+main_stack = npz_file['main']
+mask_stack = npz_file['mask']
+```
+
+
+## Data augmentation
+
+For now the only data augmentation technique that we are using is rotating the image in the 3 different axis,
+this means that we have `4x4x4=64` rotations for each image. All this rotations are saved into disk.
