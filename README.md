@@ -86,6 +86,21 @@ main_stack = npz_file['main']
 mask_stack = npz_file['mask']
 ```
 
+### `HNK_processed` directory
+Contains the pre-processed data. Each folder contains a `.npz` file with 64 arrays of 64x64x64. The arrays
+are the original image and all the possible rotations in the 3 axes. The name of each array is
+`<rot_x>_<rot_y>_<rot_z>`
+
+At the end, there's the file `clinical_info.csv` which contains the clinical info for the patients. The
+file can be loaded with `pandas` and it contains the fields: `id`, `age`, `time` and `event`.
+```
+HNK_processed
+├── FHBO613
+│   └── FHBO613.npz
+├── FHBO614
+│   └── FHBO614.npz
+└ clinical_info.csv
+```
 
 ## Data augmentation
 
