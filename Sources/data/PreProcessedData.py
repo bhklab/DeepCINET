@@ -40,9 +40,12 @@ class PreProcessedData:
         self.overwrite = overwrite
         self.raw_data.store_elements()
 
+        jobs = os.getenv("NSLOTS", -1)
+        print("Jobs: {}".format(jobs))
+
         generator = (delayed(self._process_individual)(image_dir, main_stack, mask_stack, i + 1)
                      for i, (image_dir, main_stack, mask_stack) in enumerate(self.raw_data.elements()))
-        Parallel(n_jobs=-1, backend="multiprocessing")(generator)
+        Parallel(n_jobs=jobs, backend="multiprocessing")(generator)
 
         # For debugging purposes
         # for i, (image_dir, main_stack, mask_stack) in enumerate(self.raw_data.elements()):
