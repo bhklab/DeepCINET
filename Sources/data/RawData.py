@@ -50,7 +50,8 @@ class RawData:
         if not os.path.exists(self.cache_path):
             os.makedirs(self.cache_path)
 
-        jobs = os.getenv("NSLOTS", -1)
+        # To pre-process on Mordor
+        jobs = int(os.getenv("NSLOTS", -1))
         print("Jobs: {}".format(jobs))
 
         generator = (delayed(self._generate_npz)(directory, i + 1) for i, directory in enumerate(self._valid_dirs))

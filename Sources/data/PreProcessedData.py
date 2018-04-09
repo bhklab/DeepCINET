@@ -40,7 +40,8 @@ class PreProcessedData:
         self.overwrite = overwrite
         self.raw_data.store_elements()
 
-        jobs = os.getenv("NSLOTS", -1)
+        # To pre-process on Mordor
+        jobs = int(os.getenv("NSLOTS", -1))
         print("Jobs: {}".format(jobs))
 
         generator = (delayed(self._process_individual)(image_dir, main_stack, mask_stack, i + 1)
