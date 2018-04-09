@@ -11,3 +11,5 @@ venv/
 Data
 Data/
 !Sources/data/
+
+*.pyc
