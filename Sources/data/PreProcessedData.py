@@ -142,7 +142,7 @@ class PreProcessedData:
         for i in range(4):
             for j in range(4):
                 for k in range(4):
-                    name = "{:03}_{:03}_{:03}.npy".format(i * 90, j * 90, k * 90)
+                    name = "{:03}_{:03}_{:03}".format(i * 90, j * 90, k * 90)
                     temp_dict[name] = sliced_norm.copy()
                     sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
                 sliced_norm = np.rot90(sliced_norm, axes=(2, 0))
