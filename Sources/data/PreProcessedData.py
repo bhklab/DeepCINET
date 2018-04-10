@@ -116,7 +116,6 @@ class PreProcessedData:
         df = df.take([COL_ID, COL_AGE, COL_SEX, COL_EVENT, COL_TIME], axis=1)
         df.columns = ['id', 'age', 'sex', 'event', 'time']
         df = df[df['id'].isin(self.raw_data.valid_dirs_path())]              # Remove elements that are not valid data
-        df['event'] = 1 - df['event']                                   # The event column is inverted, fix it
         df.to_csv(os.getenv('DATA_CLINICAL_PROCESSED'))
 
         # Compute number of possible pairs
