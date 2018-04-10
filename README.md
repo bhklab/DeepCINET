@@ -105,7 +105,7 @@ mask_stack = npz_file['mask']
 ```
 
 ### `${DATA_PROCESSED}` directory
-Contains the pre-processed data. Each folder contains a `.npz` file with 64 arrays of 64x64x64. The arrays
+Contains the pre-processed data. Each folder contains a `.npz` file with 4 arrays of 64x64x64. The arrays
 are the original image and all the possible rotations in the 3 axes. The name of each array is
 `<rot_x>_<rot_y>_<rot_z>`
 
@@ -124,5 +124,5 @@ the fields: `id`, `age`, `time` and `event`.
 
 ## Data augmentation
 
-For now the only data augmentation technique that we are using is rotating the image in the 3 different axis,
-this means that we have `4x4x4=64` rotations for each image. All this rotations are saved into disk.
+For now the only data augmentation technique that we are using is rotating the image in 1 axis,
+this means that we have `4` rotations for each image. All this rotations are saved into disk.
