@@ -18,7 +18,7 @@ class PairComp(NamedTuple):
     comp: bool
 
 
-class TrainData:
+class TrainTestPairs:
     """
     Divides the data in training and testing
     """
@@ -102,7 +102,7 @@ class TrainData:
         # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
         # That's why we swap random pairs
         random.shuffle(pairs)
-        return map(TrainData._swap_random, pairs)
+        return map(TrainTestPairs._swap_random, pairs)
 
     @staticmethod
     def _swap_random(tup: PairComp) -> PairComp:

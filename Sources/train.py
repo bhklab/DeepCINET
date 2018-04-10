@@ -5,7 +5,7 @@ import data
 
 
 def main(args):
-    dataset = data.TrainData()
+    dataset = data.TrainTestPairs()
     dataset.print_pairs()
 
 if __name__ == '__main__':
