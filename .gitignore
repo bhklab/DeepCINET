@@ -13,3 +13,5 @@ Data/
 !Sources/data/
 
 *.pyc
+
+.env
