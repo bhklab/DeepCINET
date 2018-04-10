@@ -1,9 +1,12 @@
 import argparse
 
+import settings
+import data
+
 
 def main(args):
-    pass
-
+    dataset = data.TrainData()
+    dataset.print_pairs()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Fit the data with a Tensorflow model")
@@ -20,6 +23,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     try:
+        # For now the arguments are ignored
         main(args)
     except KeyboardInterrupt:
         print()
