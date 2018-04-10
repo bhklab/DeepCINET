@@ -1,12 +1,21 @@
 import os
-from typing import Tuple, Iterator
-from itertools import combinations, product
-from random import shuffle
+import random
+from typing import Tuple, Iterator, NamedTuple
 
 import scipy
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+
+
+class PairComp(NamedTuple):
+    """
+    Class to compare pairs containing two ids and a comparison value saying if
+    T(p1) < T(p2)
+    """
+    p1: str
+    p2: str
+    comp: bool
 
 
 class TrainData:
@@ -28,10 +37,10 @@ class TrainData:
         self._train_data = self.clinical_data[self.clinical_data['id'].isin(train_id)]
         self._test_data = self.clinical_data[self.clinical_data['id'].isin(test_id)]
 
-    def train_pairs(self) -> Iterator[Tuple[str, str, bool]]:
+    def train_pairs(self) -> Iterator[PairComp]:
         return self._get_pairs(self._train_data)
 
-    def test_pairs(self) -> Iterator[Tuple[str, str, bool]]:
+    def test_pairs(self) -> Iterator[PairComp]:
         return self._get_pairs(self._test_data)
 
     def train_ids(self) -> np.ndarray:
@@ -54,9 +63,8 @@ class TrainData:
         df['Total'] = df.sum(axis=1)
         df.loc[df['Set'] == "TestTrain", 'Set'] = "Total"
 
+        print("Maximum number of pairs")
         print(df)
-        print(len(list(self.test_pairs()))*4)
-        # print(len(list(self.train_pairs())) * 4)
 
     @staticmethod
     def _possible_pairs(df: pd.DataFrame, data_augmentation=True) -> Tuple[int, int]:
@@ -74,47 +82,35 @@ class TrainData:
         return censored_pairs, uncensored_pairs
 
     @staticmethod
-    def _get_pairs(df: pd.DataFrame) -> Iterator[Tuple[str, str, bool]]:
+    def _get_pairs(df: pd.DataFrame) -> Iterator[PairComp]:
+        """
+        Get all the possible pairs for a DataFrame containing the clinical data, keeping in mind the censored
+        data
+        :param df: DataFrame containing all the clinical data
+        :return: Iterator over PairComp
+        """
         df = df.sort_values('time', ascending=True)
-        print(df)
+        df1 = df[df['event'] == 1]
 
         pairs = []
-        for idx, row in df.iterrows():
-            if row['event'] == 0:
-                values = df.loc[(df['time'] < row['time']) & (df['event'] == 1), 'id'].values
-                print(row['time'], values)
+        for _, row in df.iterrows():
+            values = df1.loc[(df1['time'] < row['time']), 'id'].values
+            elems = zip(values, [row['id']]*len(values), [True]*len(values))
+            pairs += [PairComp(*x) for x in elems]
+
+        # Since we have provided all the pairs sorted in the algorithm the output will be always
+        # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
+        # That's why we swap random pairs
+        random.shuffle(pairs)
+        return map(TrainData._swap_random, pairs)
+
+    @staticmethod
+    def _swap_random(tup: PairComp) -> PairComp:
+        if bool(random.getrandbits(1)):
+            return PairComp(tup.p2, tup.p1, tup.comp)
+        return tup
 
 
-        censored = df.loc[df['event'] == 0, 'id'].values
-        uncensored = df.loc[df['event'] == 1, 'id'].values
-
-        uncensored_pairs = list(combinations(uncensored, 2))
-        censored_pairs = list(product(censored, uncensored))
-        pairs = uncensored_pairs + censored_pairs
-        shuffle(pairs)
-        for p_1, p_2 in pairs:
-            d_1 = df.loc[df['id'] == p_1]
-            d_2 = df.loc[df['id'] == p_2]
-
-            t_1 = d_1['time'].values[0]
-            t_2 = d_2['time'].values[0]
-
-            # Censor information event=1 -> uncensored, event=0 -> censored
-            c_1 = bool(d_1['event'].values[0])
-            c_2 = bool(d_2['event'].values[0])
-
-            # Remove invalid pairs
-            if not (c_1 or c_2):
-                # Both elements are censored
-                continue
-            elif ((not c_1 and c_2) and t_1 < t_2) or ((not c_2 and c_1) and t_2 < t_1):
-                # One element is censored and not the other one and the censored time is smaller than the uncensored
-                continue
-
-            # Patient 1, Patient 2, P1 lives less than P2?
-            yield p_1, p_2, t_1 < t_2
-
-        return pairs
 
 
 
