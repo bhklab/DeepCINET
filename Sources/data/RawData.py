@@ -9,7 +9,7 @@ import pydicom as dcm
 import numpy as np
 from joblib import Parallel, delayed
 
-from .PseudoDir import PseudoDir
+from .DataStructures import PseudoDir
 
 
 class RawData:

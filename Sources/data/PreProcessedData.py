@@ -9,7 +9,7 @@ import skimage.transform as skt
 from joblib import Parallel, delayed
 
 from .RawData import RawData
-from .PseudoDir import PseudoDir
+from .DataStructures import PseudoDir
 
 # Columns from CSV sheet containing the info that we need
 COL_ID = 0

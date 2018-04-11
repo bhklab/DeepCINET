@@ -9,7 +9,6 @@ venv/
 .vscode/
 
 Data
-Data/
 !Sources/data/
 
 *.pyc

@@ -7,6 +7,9 @@ import data
 def main(args):
     dataset = data.SplitPairs()
     dataset.print_pairs()
+    batch = data.BatchData()
+    batch.nex_batch(dataset.train_pairs())
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Fit the data with a Tensorflow model")
@@ -21,10 +24,10 @@ if __name__ == '__main__':
         default="HNK_processed"
     )
 
-    args = parser.parse_args()
+    arguments = parser.parse_args()
     try:
         # For now the arguments are ignored
-        main(args)
+        main(arguments)
     except KeyboardInterrupt:
         print()
         print("----------------------------------")

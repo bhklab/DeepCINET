@@ -25,6 +25,7 @@ class CNNSurv:
     Create a model for survival prediction. In this case the model will combine an image and features extracted from
     this image
     """
+
     def __init__(self, image_input_size, data_input_size):
         # Create placeholders
         self.x_image = tf.placeholder(tf.float32, shape=(None, *image_input_size))
@@ -34,7 +35,6 @@ class CNNSurv:
         # Y data contains two elements that are used in different ways
         self.y_E = tf.placeholder(tf.float32, shape=(None, 1))
         self.y_T = tf.placeholder(tf.float32, shape=(None, 1))
-
 
         # Create graph
         self._create_computation_graph()
@@ -46,7 +46,7 @@ class CNNSurv:
         image_step = tf.layers.conv3d(
             self.x_image,
             filters=64,
-            kernel_size=(6,)*3,
+            kernel_size=(6,) * 3,
             strides=(2, 2, 2),
             activation=tf.nn.relu
         )
@@ -76,7 +76,7 @@ class CNNSurv:
 
         loss = self._negative_log_likelihood(data_step)
 
-    def _negative_log_likelihood(self, risk: tf.Tensor)-> tf.Tensor:
+    def _negative_log_likelihood(self, risk: tf.Tensor) -> tf.Tensor:
         """
         Negative log likelihood function with batch of elements
 
@@ -92,20 +92,3 @@ class CNNSurv:
         for i in range(batch_size):
             if self.y_E[i] <= 0:
                 continue
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

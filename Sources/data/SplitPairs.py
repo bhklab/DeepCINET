@@ -1,6 +1,6 @@
 import os
 import random
-from typing import Tuple, Iterator, NamedTuple
+from typing import Tuple, Iterator
 
 import scipy
 import pandas as pd
@@ -8,14 +8,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 
-class PairComp(NamedTuple):
-    """
-    Class to compare pairs containing two ids and a comparison value saying if
-    T(p1) < T(p2)
-    """
-    p1: str
-    p2: str
-    comp: bool
+from .DataStructures import PairComp
 
 
 class SplitPairs:
