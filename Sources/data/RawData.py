@@ -3,7 +3,7 @@ RawData class, useful to load the raw data, the images with all the slices in di
 files
 """
 import os
-from typing import Tuple, Iterator
+from typing import Tuple, Iterator, List
 
 import pydicom as dcm
 import numpy as np
@@ -21,25 +21,28 @@ class RawData:
 
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
         self._valid_dirs = [PseudoDir(x.name, x.path, x.is_dir()) for x in valid_dirs]
-        self._valid_dirs_path = [str(x.name) for x in self._valid_dirs]
+        self._valid_ids = [str(x.name) for x in self._valid_dirs]
         print("{} valid dirs have been found".format(len(self._valid_dirs)))
 
     def total_elements(self):
         return len(self._valid_dirs)
 
-    def valid_dirs_path(self):
-        return self._valid_dirs_path
+    def valid_ids(self):
+        return self._valid_ids
 
-    def elements(self) -> Iterator[Tuple[PseudoDir, np.ndarray, np.ndarray]]:
+    def elements(self, names: List[str]=None) -> Iterator[Tuple[str, np.ndarray, np.ndarray]]:
         if not self.elements_stored:
             raise ValueError("To iterate over the elements first they have to be stored")
 
         if not os.path.exists(self.data_path):
             raise FileNotFoundError("The data folder {} does not exist".format(self.data_path))
 
-        for directory in self._valid_dirs:
-            main_stack, mask_stack = self._get_mask_main_stack(directory)
-            yield directory, main_stack, mask_stack
+        if names is None:
+            names = [d.name for d in self._valid_dirs]
+
+        for name in names:
+            main_stack, mask_stack = self._get_mask_main_stack(name)
+            yield name, main_stack, mask_stack
 
     def store_elements(self):
         """
@@ -50,11 +53,19 @@ class RawData:
         if not os.path.exists(self.cache_path):
             os.makedirs(self.cache_path)
 
+        # Get the files that have to be created
+        to_create = []
+        for d in self._valid_dirs:
+            name = os.path.join(self.cache_path, d.name + ".npz")
+            if not os.path.exists(name):
+                to_create.append(d)
+
         # To pre-process on Mordor
         jobs = int(os.getenv("NSLOTS", -1))
         print("Jobs: {}".format(jobs))
 
-        generator = (delayed(self._generate_npz)(directory, i + 1) for i, directory in enumerate(self._valid_dirs))
+        generator = (delayed(self._generate_npz)(directory, i + 1, len(to_create))
+                     for i, directory in enumerate(to_create))
         Parallel(n_jobs=jobs, backend='multiprocessing')(generator)
 
         self.elements_stored = True
@@ -81,27 +92,24 @@ class RawData:
         sub_dirs = list(filter(lambda x: x.is_dir() and str(x.name).startswith(name), os.scandir(test_dir.path)))
         return len(sub_dirs) >= 2
 
-    def _generate_npz(self, image_dir: PseudoDir, count: int):
+    def _generate_npz(self, image_dir: PseudoDir, count: int, total: int):
         numpy_file = os.path.join(self.cache_path, image_dir.name + ".npz")
         numpy_file_temp = os.path.join(self.cache_path, image_dir.name + "_temp.npz")
 
-        print("Reading {} of {}".format(count, len(self._valid_dirs)))
-
-        if os.path.exists(numpy_file):
-            return
+        print("Reading {} of {}".format(count, total))
 
         main_stack, mask_stack = self.compact_files(image_dir)
         print("Saving {} file".format(numpy_file_temp))
         np.savez_compressed(numpy_file_temp, main=main_stack, mask=mask_stack)
         os.rename(numpy_file_temp, numpy_file)  # Use a temp name to avoid problems when stopping the script
 
-    def _get_mask_main_stack(self, image_dir: PseudoDir):
+    def _get_mask_main_stack(self, image_name: str):
         """
         Return the raw data, stacking all the files and using a temporary cache
-        :param image_dir:
+        :param image_name:
         :return:
         """
-        numpy_file = os.path.join(self.cache_path, image_dir.name + ".npz")
+        numpy_file = os.path.join(self.cache_path, image_name + ".npz")
 
         # Load .npz file instead of .dcm if we have already read it
         if os.path.exists(numpy_file):

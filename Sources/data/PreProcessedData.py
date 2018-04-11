@@ -28,24 +28,35 @@ class PreProcessedData:
     Z_SIZE = 64
 
     def __init__(self):
-        self.data_path = os.getenv('DATA_PROCESSED')
-        self.clinical_info_path = os.getenv('DATA_CLINICAL')
-        self.overwrite = False
-        self.raw_data = RawData()
+        self._data_path = os.getenv('DATA_PROCESSED')
+        self._clinical_info_path = os.getenv('DATA_CLINICAL')
+        self._overwrite = False
+        self._raw_data = RawData()
 
     def store(self, overwrite=False) -> None:
         """
         Performs the pre process and stores all the data to disk
         """
-        self.overwrite = overwrite
-        self.raw_data.store_elements()
+        self._overwrite = overwrite
+        self._raw_data.store_elements()
+        to_create = []
+        for idx in self._raw_data.valid_ids():
+            save_dir = os.path.join(self._data_path, idx)
+
+            # Overwrite the directory if necessary
+            if os.path.exists(save_dir):
+                if self._overwrite:
+                    shutil.rmtree(save_dir)
+                    to_create.append(idx)
+            else:
+                to_create.append(idx)
 
         # To pre-process on Mordor
         jobs = int(os.getenv("NSLOTS", -1))
         print("Jobs: {}".format(jobs))
 
-        generator = (delayed(self._process_individual)(image_dir, main_stack, mask_stack, i + 1)
-                     for i, (image_dir, main_stack, mask_stack) in enumerate(self.raw_data.elements()))
+        generator = (delayed(self._process_individual)(idx, main_stack, mask_stack, i + 1, len(to_create))
+                     for i, (idx, main_stack, mask_stack) in enumerate(self._raw_data.elements(to_create)))
         Parallel(n_jobs=jobs, backend="multiprocessing")(generator)
 
         # For debugging purposes
@@ -54,18 +65,12 @@ class PreProcessedData:
 
         self._write_clinical_filtered()
         
-    def _process_individual(self, image_dir: PseudoDir, main_stack: np.ndarray, mask_stack: np.ndarray,  count: int):
-        save_dir = os.path.join(self.data_path, image_dir.name)
-        temp_dir = os.path.join(self.data_path, image_dir.name + "_temp")
+    def _process_individual(self, image_name: str, main_stack: np.ndarray, mask_stack: np.ndarray,
+                            count: int, total: int):
+        save_dir = os.path.join(self._data_path, image_name)
+        temp_dir = os.path.join(self._data_path, image_name + "_temp")
 
-        # Check if the directory exists to avoid overwriting it
-        if os.path.exists(save_dir):
-            if self.overwrite:
-                shutil.rmtree(save_dir)
-            else:
-                return
-
-        print("Processing dataset {}, {} of {}".format(image_dir.name, count, self.raw_data.total_elements()))
+        print("Processing dataset {}, {} of {}".format(image_name, count, total))
 
         # Remove existing temporary directory from previous runs
         if os.path.exists(temp_dir):
@@ -77,7 +82,7 @@ class PreProcessedData:
 
         # Rotate the image across the 3 axis for data augmentation
         rotations = self._get_rotations(sliced_norm)
-        np.savez_compressed(os.path.join(temp_dir, image_dir.name + ".npz"), **rotations)
+        np.savez_compressed(os.path.join(temp_dir, image_name + ".npz"), **rotations)
 
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)
@@ -109,13 +114,13 @@ class PreProcessedData:
         return sliced_norm
 
     def _write_clinical_filtered(self):
-        if not os.path.exists(self.clinical_info_path):
-            raise FileNotFoundError("The clinical info file has not been found at {}".format(self.clinical_info_path))
+        if not os.path.exists(self._clinical_info_path):
+            raise FileNotFoundError("The clinical info file has not been found at {}".format(self._clinical_info_path))
 
-        df = pd.read_csv(self.clinical_info_path)
+        df = pd.read_csv(self._clinical_info_path)
         df = df.take([COL_ID, COL_AGE, COL_SEX, COL_EVENT, COL_TIME], axis=1)
         df.columns = ['id', 'age', 'sex', 'event', 'time']
-        df = df[df['id'].isin(self.raw_data.valid_dirs_path())]              # Remove elements that are not valid data
+        df = df[df['id'].isin(self._raw_data.valid_ids())]              # Remove elements that are not valid data
         df.to_csv(os.getenv('DATA_CLINICAL_PROCESSED'))
 
         # Compute number of possible pairs
@@ -125,8 +130,8 @@ class PreProcessedData:
         censored_pairs = censored_count * uncensored_count
         uncensored_pairs = scipy.misc.comb(uncensored_count, 2, exact=True)
 
-        censored_pairs_augmented = censored_pairs * (4 ** 3) * (4 ** 3)
-        uncensored_pairs_augmented = uncensored_pairs * (4 ** 3) * (4 ** 3)
+        censored_pairs_augmented = censored_pairs * 4
+        uncensored_pairs_augmented = uncensored_pairs * 4
 
         print("Total censored: {}".format(censored_count))
         print("Total uncensored: {}".format(uncensored_count))
