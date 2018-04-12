@@ -1,0 +1,9 @@
+train module
+============
+
+.. automodule:: train
+    :members:
+    :private-members:
+    :undoc-members:
+    :show-inheritance:
+    :exclude-members: _source,_asdict,_fields,_field_defaults,_field_types,_replace,_make

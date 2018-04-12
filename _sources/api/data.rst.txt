@@ -1,0 +1,46 @@
+data package
+============
+
+Submodules
+----------
+
+data.data\_structures module
+----------------------------
+
+.. automodule:: data.data_structures
+    :members:
+    :private-members:
+    :undoc-members:
+    :show-inheritance:
+    :exclude-members: _source,_asdict,_fields,_field_defaults,_field_types,_replace,_make
+
+data.image\_data module
+-----------------------
+
+.. automodule:: data.image_data
+    :members:
+    :private-members:
+    :undoc-members:
+    :show-inheritance:
+    :exclude-members: _source,_asdict,_fields,_field_defaults,_field_types,_replace,_make
+
+data.pair\_data module
+----------------------
+
+.. automodule:: data.pair_data
+    :members:
+    :private-members:
+    :undoc-members:
+    :show-inheritance:
+    :exclude-members: _source,_asdict,_fields,_field_defaults,_field_types,_replace,_make
+
+
+Module contents
+---------------
+
+.. automodule:: data
+    :members:
+    :private-members:
+    :undoc-members:
+    :show-inheritance:
+    :exclude-members: _source,_asdict,_fields,_field_defaults,_field_types,_replace,_make

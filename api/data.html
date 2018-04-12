@@ -1,0 +1,842 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>data package &mdash; CNNSurv alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="preprocess module" href="preprocess.html" />
+    <link rel="prev" title="Sources" href="modules.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> CNNSurv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Sources</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">data package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-data.data_structures">data.data_structures module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-data.image_data">data.image_data module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-data.pair_data">data.pair_data module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-data">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="preprocess.html">preprocess module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html">settings module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="train.html">train module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="train.html">train module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CNNSurv</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">Sources</a> &raquo;</li>
+        
+      <li>data package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/data.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="data-package">
+<h1>data package<a class="headerlink" href="#data-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-data.data_structures">
+<span id="data-data-structures-module"></span><h2>data.data_structures module<a class="headerlink" href="#module-data.data_structures" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="data.data_structures.PairBatch">
+<em class="property">class </em><code class="descclassname">data.data_structures.</code><code class="descname">PairBatch</code><span class="sig-paren">(</span><em>pairs</em>, <em>images</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/data_structures.html#PairBatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data_structures.PairBatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#tuple" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<dl class="attribute">
+<dt id="data.data_structures.PairBatch.images">
+<code class="descname">images</code><a class="headerlink" href="#data.data_structures.PairBatch.images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.data_structures.PairBatch.pairs">
+<code class="descname">pairs</code><a class="headerlink" href="#data.data_structures.PairBatch.pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="data.data_structures.PairComp">
+<em class="property">class </em><code class="descclassname">data.data_structures.</code><code class="descname">PairComp</code><a class="reference internal" href="../_modules/data/data_structures.html#PairComp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data_structures.PairComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#tuple" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<p>Class to compare pairs containing two ids and a comparison value saying if
+T(p1) &lt; T(p2)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attr comp:</th><td class="field-body">True if T(p1) &lt; T(p2)</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="data.data_structures.PairComp.comp">
+<code class="descname">comp</code><a class="headerlink" href="#data.data_structures.PairComp.comp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.data_structures.PairComp.p1">
+<code class="descname">p1</code><a class="headerlink" href="#data.data_structures.PairComp.p1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.data_structures.PairComp.p2">
+<code class="descname">p2</code><a class="headerlink" href="#data.data_structures.PairComp.p2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="data.data_structures.PseudoDir">
+<em class="property">class </em><code class="descclassname">data.data_structures.</code><code class="descname">PseudoDir</code><a class="reference internal" href="../_modules/data/data_structures.html#PseudoDir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data_structures.PseudoDir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#tuple" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<p>Represent a pseudo directory, useful to store the information from a <a class="reference external" href="https://docs.python.org/3.6/library/os.html#os.DirEntry" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">os.DirEntry</span></code></a></p>
+<dl class="attribute">
+<dt id="data.data_structures.PseudoDir.is_dir">
+<code class="descname">is_dir</code><a class="headerlink" href="#data.data_structures.PseudoDir.is_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.data_structures.PseudoDir.name">
+<code class="descname">name</code><a class="headerlink" href="#data.data_structures.PseudoDir.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.data_structures.PseudoDir.path">
+<code class="descname">path</code><a class="headerlink" href="#data.data_structures.PseudoDir.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-data.image_data">
+<span id="data-image-data-module"></span><h2>data.image_data module<a class="headerlink" href="#module-data.image_data" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="data.image_data.PreProcessedData">
+<em class="property">class </em><code class="descclassname">data.image_data.</code><code class="descname">PreProcessedData</code><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.COL_AGE">
+<code class="descname">COL_AGE</code><em class="property"> = 1</em><a class="headerlink" href="#data.image_data.PreProcessedData.COL_AGE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Column with the age at clinical CSV file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.COL_EVENT">
+<code class="descname">COL_EVENT</code><em class="property"> = 35</em><a class="headerlink" href="#data.image_data.PreProcessedData.COL_EVENT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Column with the event at clinical CSV file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.COL_ID">
+<code class="descname">COL_ID</code><em class="property"> = 0</em><a class="headerlink" href="#data.image_data.PreProcessedData.COL_ID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Column with the Id at clinical CSV file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.COL_SEX">
+<code class="descname">COL_SEX</code><em class="property"> = 2</em><a class="headerlink" href="#data.image_data.PreProcessedData.COL_SEX" title="Permalink to this definition">¶</a></dt>
+<dd><p>Column with the sex at clinical CSV file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.COL_TIME">
+<code class="descname">COL_TIME</code><em class="property"> = 36</em><a class="headerlink" href="#data.image_data.PreProcessedData.COL_TIME" title="Permalink to this definition">¶</a></dt>
+<dd><p>Column with the time at clinical CSV file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.MAX_BOUND">
+<code class="descname">MAX_BOUND</code><em class="property"> = 400.0</em><a class="headerlink" href="#data.image_data.PreProcessedData.MAX_BOUND" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum bound for dycom file pixels values</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.MIN_BOUND">
+<code class="descname">MIN_BOUND</code><em class="property"> = -1000.0</em><a class="headerlink" href="#data.image_data.PreProcessedData.MIN_BOUND" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum bound for dycom file pixels values</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.X_SIZE">
+<code class="descname">X_SIZE</code><em class="property"> = 64</em><a class="headerlink" href="#data.image_data.PreProcessedData.X_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sliced box resized size at X axis</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.Y_SIZE">
+<code class="descname">Y_SIZE</code><em class="property"> = 64</em><a class="headerlink" href="#data.image_data.PreProcessedData.Y_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sliced box resized size at Y axis</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.image_data.PreProcessedData.Z_SIZE">
+<code class="descname">Z_SIZE</code><em class="property"> = 64</em><a class="headerlink" href="#data.image_data.PreProcessedData.Z_SIZE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sliced box resized size at Z axis</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="data.image_data.PreProcessedData._get_bounding_box">
+<em class="property">static </em><code class="descname">_get_bounding_box</code><span class="sig-paren">(</span><em>mask_stack</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData._get_bounding_box"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData._get_bounding_box" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the bounding box of all the area containing 1s for the provided 3D numpy array</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mask_stack</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>) – 3D numpy array</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Bounding box tuple with the minimum and maximum size in the 3 axis.
+It returns <code class="docutils literal notranslate"><span class="pre">x_min</span></code>, <code class="docutils literal notranslate"><span class="pre">x_max</span></code>, <code class="docutils literal notranslate"><span class="pre">y_min</span></code>, <code class="docutils literal notranslate"><span class="pre">y_max</span></code>, <code class="docutils literal notranslate"><span class="pre">z_min</span></code>, <code class="docutils literal notranslate"><span class="pre">z_max</span></code>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="data.image_data.PreProcessedData._get_rotations">
+<em class="property">static </em><code class="descname">_get_rotations</code><span class="sig-paren">(</span><em>sliced_norm</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData._get_rotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData._get_rotations" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Dict" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.PreProcessedData._normalize_image">
+<code class="descname">_normalize_image</code><span class="sig-paren">(</span><em>main_stack</em>, <em>mask_stack</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData._normalize_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData._normalize_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slices the tumour using the mask and then
+normalizes the image (variance = 1 and mean = 0)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>main_stack</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>) – 3D vector containing the main image</li>
+<li><strong>mask_stack</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>) – 3D vector containing the mask image where the tumour is marked</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Slice of the tumour normalized</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.PreProcessedData._process_individual">
+<code class="descname">_process_individual</code><span class="sig-paren">(</span><em>image_name</em>, <em>main_stack</em>, <em>mask_stack</em>, <em>count</em>, <em>total</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData._process_individual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData._process_individual" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.PreProcessedData._write_clinical_filtered">
+<code class="descname">_write_clinical_filtered</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData._write_clinical_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData._write_clinical_filtered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the clinical data in the file provided by the environment variable <code class="docutils literal notranslate"><span class="pre">DATA_CLINICAL_PROCESSED</span></code>.
+The columns that are saved into the file are <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">age</span></code>, <code class="docutils literal notranslate"><span class="pre">sex</span></code>, <code class="docutils literal notranslate"><span class="pre">event</span></code> and <code class="docutils literal notranslate"><span class="pre">time</span></code>.</p>
+<p>It also prints the number of maximum pairs that can be achieved with the current data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.PreProcessedData.store">
+<code class="descname">store</code><span class="sig-paren">(</span><em>overwrite=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData.store"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData.store" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the pre process and stores all the data to disk. The saved file name will be <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;/&lt;id&gt;.npz</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="docutils literal notranslate"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="data.image_data.RawData">
+<em class="property">class </em><code class="descclassname">data.image_data.</code><code class="descname">RawData</code><a class="reference internal" href="../_modules/data/image_data.html#RawData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>RAW data representation from the .dcm scans.</p>
+<dl class="staticmethod">
+<dt id="data.image_data.RawData._compact_files">
+<em class="property">static </em><code class="descname">_compact_files</code><span class="sig-paren">(</span><em>image_dir</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData._compact_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData._compact_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get both the mask and the raw image as a 3D <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a> by collecting all the different
+<code class="docutils literal notranslate"><span class="pre">.dcm</span></code> files and compacting them in a single 3D array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>image_dir</strong> (<a class="reference internal" href="#data.data_structures.PseudoDir" title="data.data_structures.PseudoDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">PseudoDir</span></code></a>) – Directory containing the <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;-MASS</span></code> directories</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>, <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>]</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Tuple with the 3D image and the 3D mask as numpy arrays</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.RawData._generate_npz">
+<code class="descname">_generate_npz</code><span class="sig-paren">(</span><em>image_dir</em>, <em>count=0</em>, <em>total=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData._generate_npz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData._generate_npz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Having a directory read the mask and the main folders, generate a <code class="docutils literal notranslate"><span class="pre">.npz</span></code> compressed file and store it
+to disk. The file will contain two arrays that can be later loaded.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">npz_file</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;filename.npz&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">main_array</span> <span class="o">=</span> <span class="n">npz_file</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mask_array</span> <span class="o">=</span> <span class="n">npz_file</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>image_dir</strong> (<a class="reference internal" href="#data.data_structures.PseudoDir" title="data.data_structures.PseudoDir"><code class="xref py py-class docutils literal notranslate"><span class="pre">PseudoDir</span></code></a>) – Directory containing the <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;-MASS</span></code> subdirectories</li>
+<li><strong>count</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – To keep track of progress, current job number</li>
+<li><strong>total</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – To keep track of progress, total number of jobs</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.RawData._get_mask_main_stack">
+<code class="descname">_get_mask_main_stack</code><span class="sig-paren">(</span><em>image_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData._get_mask_main_stack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData._get_mask_main_stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the raw data, stacking all the files and using a temporary cache</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>image_name</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="data.image_data.RawData._is_valid_dir">
+<em class="property">static </em><code class="descname">_is_valid_dir</code><span class="sig-paren">(</span><em>test_dir</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData._is_valid_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData._is_valid_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code> if it’s a valid directory</p>
+<p>Only some directories are valid, the ones that start with FHBO
+(which is our original Head and Neck dataset)
+and then only the only ones that have two sub dirs:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The scan directory</li>
+<li>The mask directory</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>test_dir</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DirEntry</span></code>) – Directory to be tested</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True or False depending on the folder conditions</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.RawData.elements">
+<code class="descname">elements</code><span class="sig-paren">(</span><em>names=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData.elements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData.elements" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>, <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>]]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.RawData.store_elements">
+<code class="descname">store_elements</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData.store_elements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData.store_elements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the npz files from the dcm files for faster readings</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.RawData.total_elements">
+<code class="descname">total_elements</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData.total_elements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData.total_elements" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.image_data.RawData.valid_ids">
+<code class="descname">valid_ids</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData.valid_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData.valid_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the valid ids in all the different folders. The rules for valid directories are defined i_is_valid_dir`.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list of ids that are valid</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-data.pair_data">
+<span id="data-pair-data-module"></span><h2>data.pair_data module<a class="headerlink" href="#module-data.pair_data" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="data.pair_data.BatchData">
+<em class="property">class </em><code class="descclassname">data.pair_data.</code><code class="descname">BatchData</code><a class="reference internal" href="../_modules/data/pair_data.html#BatchData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>This is a batch</p>
+<dl class="method">
+<dt id="data.pair_data.BatchData._batch_by_ids">
+<code class="descname">_batch_by_ids</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._batch_by_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._batch_by_ids" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Generator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code></a>[<a class="reference internal" href="#data.data_structures.PairBatch" title="data.data_structures.PairBatch"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairBatch</span></code></a>, <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">None</span></code>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.pair_data.BatchData._batch_by_pairs">
+<code class="descname">_batch_by_pairs</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._batch_by_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._batch_by_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Generator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code></a>[<a class="reference internal" href="#data.data_structures.PairBatch" title="data.data_structures.PairBatch"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairBatch</span></code></a>, <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">None</span></code>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.pair_data.BatchData._create_pair_batch">
+<code class="descname">_create_pair_batch</code><span class="sig-paren">(</span><em>pairs</em>, <em>ids</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._create_pair_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._create_pair_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
+npz files and the pairs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pairs</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterable" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]) – Pairs to be added to the PairBatch</li>
+<li><strong>ids</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Set" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Set</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]) – npz files’ ids that will be added to the PairBatch</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="#data.data_structures.PairBatch" title="data.data_structures.PairBatch"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairBatch</span></code></a></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">PairBatch containing the pairs and the requested npz files loaded</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="data.pair_data.BatchData._split">
+<em class="property">static </em><code class="descname">_split</code><span class="sig-paren">(</span><em>it</em>, <em>n</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._split" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an iterable create batches of size n</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>it</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterable" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code></a>[+T_co]) – Iterable</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Batch size</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterable" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterable" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code></a>[+T_co]]</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Batches of size n</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.pair_data.BatchData.batches">
+<code class="descname">batches</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size=64</em>, <em>group_by='ids'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData.batches"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData.batches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates batches based on all the pairs and the batch size</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pairs</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterable" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]) – </li>
+<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – </li>
+<li><strong>group_by</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Generator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code></a>[<a class="reference internal" href="#data.data_structures.PairBatch" title="data.data_structures.PairBatch"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairBatch</span></code></a>, <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">None</span></code>]</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="data.pair_data.SplitPairs">
+<em class="property">class </em><code class="descclassname">data.pair_data.</code><code class="descname">SplitPairs</code><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Divides the data in training and testing</p>
+<dl class="staticmethod">
+<dt id="data.pair_data.SplitPairs._get_pairs">
+<em class="property">static </em><code class="descname">_get_pairs</code><span class="sig-paren">(</span><em>df</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs._get_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs._get_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all the possible pairs for a DataFrame containing the clinical data, keeping in mind the censored
+data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>df</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>) – DataFrame containing all the clinical data</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Iterator over PairComp</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="data.pair_data.SplitPairs._possible_pairs">
+<em class="property">static </em><code class="descname">_possible_pairs</code><span class="sig-paren">(</span><em>df</em>, <em>data_augmentation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs._possible_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs._possible_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="data.pair_data.SplitPairs._swap_random">
+<em class="property">static </em><code class="descname">_swap_random</code><span class="sig-paren">(</span><em>tup</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs._swap_random"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs._swap_random" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.pair_data.SplitPairs.print_pairs">
+<code class="descname">print_pairs</code><span class="sig-paren">(</span><em>data_augmentation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.print_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.print_pairs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="data.pair_data.SplitPairs.test_ids">
+<code class="descname">test_ids</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.test_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.test_ids" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.pair_data.SplitPairs.test_pairs">
+<code class="descname">test_pairs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.test_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.test_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.pair_data.SplitPairs.train_ids">
+<code class="descname">train_ids</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.train_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.train_ids" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="data.pair_data.SplitPairs.train_pairs">
+<code class="descname">train_pairs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.train_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.train_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-data">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-data" title="Permalink to this headline">¶</a></h2>
+<p>This is a test</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="preprocess.html" class="btn btn-neutral float-right" title="preprocess module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules.html" class="btn btn-neutral" title="Sources" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, jmigual.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'alpha',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

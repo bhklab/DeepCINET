@@ -1,0 +1,11 @@
+Sources
+=======
+
+.. toctree::
+   :maxdepth: 4
+
+   data
+   preprocess
+   settings
+   train
+   train
