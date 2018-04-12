@@ -44,6 +44,7 @@ extensions = [
     'sphinx_autodoc_typehints',
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
+    'sphinx.ext.intersphinx'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -101,6 +102,11 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3.6', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

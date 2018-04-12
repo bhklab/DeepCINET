@@ -13,6 +13,9 @@ from data.data_structures import PseudoDir
 
 
 class RawData:
+    """
+    RAW data representation from the .dcm scans.
+    """
     def __init__(self):
         super().__init__()
         self.data_path = os.getenv('DATA_RAW')
@@ -24,10 +27,10 @@ class RawData:
         self._valid_ids = [str(x.name) for x in self._valid_dirs]
         print("{} valid dirs have been found".format(len(self._valid_dirs)))
 
-    def total_elements(self):
+    def total_elements(self) -> int:
         return len(self._valid_dirs)
 
-    def valid_ids(self):
+    def valid_ids(self) -> List[str]:
         return self._valid_ids
 
     def elements(self, names: List[str]=None) -> Iterator[Tuple[str, np.ndarray, np.ndarray]]:
@@ -47,8 +50,6 @@ class RawData:
     def store_elements(self):
         """
         Creates the npz files from the dcm files for faster readings
-
-        :return:
         """
 
         if not os.path.exists(self.cache_path):
@@ -162,18 +163,35 @@ class RawData:
 
 class PreProcessedData:
     MIN_BOUND = -1000.0
+    """Minimum bound for dycom file pixels values"""
+
     MAX_BOUND = 400.0
+    """Maximum bound for dycom file pixels values"""
 
     X_SIZE = 64
+    """Sliced box resized size at X axis"""
+
     Y_SIZE = 64
+    """Sliced box resized size at Y axis"""
+
     Z_SIZE = 64
+    """Sliced box resized size at Z axis"""
 
     # Columns from CSV sheet containing the info that we need
     COL_ID = 0
+    """Colum with the Id at clinical CSV file"""
+
     COL_AGE = 1
+    """Colum with the age at clinical CSV file"""
+
     COL_SEX = 2
+    """Colum with the sex at clinical CSV file"""
+
     COL_EVENT = 35
+    """Colum with the event at clinical CSV file"""
+
     COL_TIME = 36
+    """Colum with the time at clinical CSV file"""
 
     def __init__(self):
         self._data_path = os.getenv('DATA_PROCESSED')
@@ -183,7 +201,7 @@ class PreProcessedData:
 
     def store(self, overwrite=False) -> None:
         """
-        Performs the pre process and stores all the data to disk
+        Performs the pre process and stores all the data to disk. The saved file name will be ``<id>/<id>.npz``
         """
         self._overwrite = overwrite
         self._raw_data.store_elements()
@@ -312,11 +330,13 @@ class PreProcessedData:
         return temp_dict
 
     @staticmethod
-    def _get_bounding_box(mask_stack: np.ndarray) -> Tuple:
+    def _get_bounding_box(mask_stack: np.ndarray) -> Tuple[int, int, int, int, int, int]:
         """
-        Get the bounding box of all the area containing 1s
+        Get the bounding box of all the area containing 1s for the provided 3D numpy array
+
         :param mask_stack: 3D numpy array
-        :return: Bounding box tuple with the minimum and maximum size in the 3 axis
+        :return: Bounding box tuple with the minimum and maximum size in the 3 axis.
+                 It returns ``x_min``, ``x_max``, ``y_min``, ``y_max``, ``z_min``, ``z_max``.
         """
         # Code found in stack overflow
         x = np.any(mask_stack, axis=(1, 2))
