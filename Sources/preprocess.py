@@ -15,6 +15,8 @@ parses the arguments and then calls the previous class.
 
 import os
 import argparse
+
+import data.image_data
 import settings
 import multiprocessing
 
@@ -45,7 +47,7 @@ def main(arguments):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    pre_processed = data.PreProcessedData()
+    pre_processed = data.image_data.PreProcessedData()
     pre_processed.store(overwrite=arguments.overwrite)
 
 

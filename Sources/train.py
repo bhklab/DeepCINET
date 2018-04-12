@@ -1,13 +1,14 @@
 import argparse
 
+import data.pair_data
 import settings
 import data
 
 
 def main(args):
-    dataset = data.SplitPairs()
+    dataset = data.pair_data.SplitPairs()
     dataset.print_pairs()
-    batch = data.BatchData()
+    batch = data.pair_data.BatchData()
     batch.batches(list(dataset.train_pairs()))
 
 
