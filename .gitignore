@@ -16,3 +16,4 @@ Data
 .env
 
 docs_build/
+docs_source/api/
