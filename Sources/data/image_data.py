@@ -76,8 +76,8 @@ class RawData:
         Only some directories are valid, the ones that start with FHBO
         (which is our original Head and Neck dataset)
         and then only the only ones that have two sub dirs:
-         - The scan directory
-         - The mask directory
+        * The scan directory
+        * The mask directory
         :param test_dir: Directory to be tested
         :return: True or False depending on the folder conditions
         """
