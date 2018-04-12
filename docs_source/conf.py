@@ -19,14 +19,14 @@ sys.path.insert(0, os.path.abspath("../Sources"))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Sources'
+project = 'CNNSurv'
 copyright = '2018, jmigual'
 author = 'jmigual'
 
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = 'alpah'
+release = 'alpha'
 
 
 # -- General configuration ---------------------------------------------------
@@ -80,7 +80,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -112,7 +112,7 @@ intersphinx_mapping = {
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Sourcesdoc'
+htmlhelp_basename = 'CNNSurvdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -139,7 +139,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Sources.tex', 'Sources Documentation',
+    (master_doc, 'CNNSurv.tex', 'CNNSurv Documentation',
      'Author', 'manual'),
 ]
 
@@ -149,7 +149,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'sources', 'Sources Documentation',
+    (master_doc, 'sources', 'CNNSurv Documentation',
      [author], 1)
 ]
 
@@ -160,8 +160,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Sources', 'Sources Documentation',
-     author, 'Sources', 'One line description of project.',
+    (master_doc, 'CNNSurv', 'CNNSurv Documentation',
+     author, 'jmigual', 'Cool project.',
      'Miscellaneous'),
 ]
 
@@ -193,3 +193,4 @@ epub_exclude_files = ['search.html']
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+

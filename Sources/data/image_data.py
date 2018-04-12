@@ -31,6 +31,11 @@ class RawData:
         return len(self._valid_dirs)
 
     def valid_ids(self) -> List[str]:
+        """
+        Return the valid ids in all the different folders. The rules for valid directories are defined i_is_valid_dir`.
+
+        :return: A list of ids that are valid
+        """
         return self._valid_ids
 
     def elements(self, names: List[str]=None) -> Iterator[Tuple[str, np.ndarray, np.ndarray]]:
@@ -74,7 +79,7 @@ class RawData:
 
     @staticmethod
     def _is_valid_dir(test_dir: os.DirEntry) -> bool:
-        """returns if it's a valid directory
+        """Returns :const:`True` if it's a valid directory
 
         Only some directories are valid, the ones that start with FHBO
         (which is our original Head and Neck dataset)
@@ -97,13 +102,26 @@ class RawData:
         sub_dirs = list(filter(lambda x: x.is_dir() and str(x.name).startswith(name), os.scandir(test_dir.path)))
         return len(sub_dirs) >= 2
 
-    def _generate_npz(self, image_dir: PseudoDir, count: int, total: int):
+    def _generate_npz(self, image_dir: PseudoDir, count: int = 0, total: int = 0):
+        """
+        Having a directory read the mask and the main folders, generate a ``.npz`` compressed file and store it
+        to disk. The file will contain two arrays that can be later loaded.
+
+        >>> import numpy as np
+        >>> npz_file = np.load('filename.npz')
+        >>> main_array = npz_file['main']
+        >>> mask_array = npz_file['mask']
+
+        :param image_dir: Directory containing the ``<id>`` and ``<id>-MASS`` subdirectories
+        :param count: To keep track of progress, current job number
+        :param total: To keep track of progress, total number of jobs
+        """
         numpy_file = os.path.join(self.cache_path, image_dir.name + ".npz")
         numpy_file_temp = os.path.join(self.cache_path, image_dir.name + "_temp.npz")
 
         print("Reading {} of {}".format(count, total))
 
-        main_stack, mask_stack = self.compact_files(image_dir)
+        main_stack, mask_stack = self._compact_files(image_dir)
         print("Saving {} file".format(numpy_file_temp))
         np.savez_compressed(numpy_file_temp, main=main_stack, mask=mask_stack)
         os.rename(numpy_file_temp, numpy_file)  # Use a temp name to avoid problems when stopping the script
@@ -130,11 +148,12 @@ class RawData:
         return main_stack, mask_stack
 
     @staticmethod
-    def compact_files(image_dir: PseudoDir) -> Tuple[np.ndarray, np.ndarray]:
+    def _compact_files(image_dir: PseudoDir) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Get a numpy array containing the 3D image concatenating all the slices in the selected dir
+        Get both the mask and the raw image as a 3D :class:`numpy.ndarray` by collecting all the different
+        ``.dcm`` files and compacting them in a single 3D array.
 
-        :param image_dir: Directory containing all the images
+        :param image_dir: Directory containing the ``<id>`` and ``<id>-MASS`` directories
         :return: Tuple with the 3D image and the 3D mask as numpy arrays
         """
         # The directory should have the NAME and the NAME-MASS subdirectories which contain the files we need
@@ -179,19 +198,19 @@ class PreProcessedData:
 
     # Columns from CSV sheet containing the info that we need
     COL_ID = 0
-    """Colum with the Id at clinical CSV file"""
+    """Column with the Id at clinical CSV file"""
 
     COL_AGE = 1
-    """Colum with the age at clinical CSV file"""
+    """Column with the age at clinical CSV file"""
 
     COL_SEX = 2
-    """Colum with the sex at clinical CSV file"""
+    """Column with the sex at clinical CSV file"""
 
     COL_EVENT = 35
-    """Colum with the event at clinical CSV file"""
+    """Column with the event at clinical CSV file"""
 
     COL_TIME = 36
-    """Colum with the time at clinical CSV file"""
+    """Column with the time at clinical CSV file"""
 
     def __init__(self):
         self._data_path = os.getenv('DATA_PROCESSED')
@@ -281,6 +300,12 @@ class PreProcessedData:
         return sliced_norm
 
     def _write_clinical_filtered(self):
+        """
+        Write the clinical data in the file provided by the environment variable ``DATA_CLINICAL_PROCESSED``.
+        The columns that are saved into the file are ``id``, ``age``, ``sex``, ``event`` and ``time``.
+
+        It also prints the number of maximum pairs that can be achieved with the current data.
+        """
         if not os.path.exists(self._clinical_info_path):
             raise FileNotFoundError("The clinical info file has not been found at {}".format(self._clinical_info_path))
 

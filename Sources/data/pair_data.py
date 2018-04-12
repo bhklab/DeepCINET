@@ -1,7 +1,7 @@
 import os
 import random
 from itertools import takewhile, islice, repeat
-from typing import Iterator, Tuple, List, Generator, Iterable, Set
+from typing import Iterator, Tuple, Generator, Iterable, Set, Collection
 
 import numpy as np
 import pandas as pd
@@ -112,7 +112,7 @@ class BatchData:
     def __init__(self):
         self._data_path = os.getenv("DATA_PROCESSED")
 
-    def batches(self, pairs: List[PairComp], batch_size: int = 64, group_by: str = 'ids') \
+    def batches(self, pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids') \
             -> Generator[PairBatch, None, None]:
         """
         Generates batches based on all the pairs and the batch size
@@ -148,7 +148,7 @@ class BatchData:
 
             yield self._create_pair_batch(batch_pairs, ids)
 
-    def _batch_by_pairs(self, pairs: List[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
+    def _batch_by_pairs(self, pairs: Iterable[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
         for i, values in enumerate(self._split(pairs, batch_size)):
             print(type(values))
             values = list(values)
@@ -175,4 +175,5 @@ class BatchData:
         :param n: Batch size
         :return: Batches of size n
         """
-        return takewhile(bool, (list(islice(iter(it), n)) for _ in repeat(None)))
+        it = iter(it)
+        return takewhile(bool, (list(islice(it, n)) for _ in repeat(None)))
