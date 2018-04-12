@@ -16,7 +16,8 @@ help:
 
 docs: clean
 	rm -rf docs_source/api
-	SPHINX_APIDOC_OPTIONS='members,special-members,private-members,undoc-members,show-inheritance' sphinx-apidoc -o docs_source/api/ Sources
+	SPHINX_APIDOC_OPTIONS='members,private-members,undoc-members,show-inheritance,temp-to-change' sphinx-apidoc -o docs_source/api/ Sources
+	sed -i .bak "s/temp-to-change:/exclude-members: _source/" $(wildcard $(SOURCEDIR)/api/*.rst)
 	$(MAKE) html
 
 clean:
