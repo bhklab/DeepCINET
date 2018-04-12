@@ -13,6 +13,13 @@ class BatchData:
         self._data_path = os.getenv("DATA_PROCESSED")
 
     def batches(self, pairs: List[PairComp], batch_size: int = 64, group_by: str = 'ids') -> Generator[PairBatch]:
+        """
+        Generates batches based on all the pairs and the batch size
+        :param pairs:
+        :param batch_size:
+        :param group_by:
+        :return:
+        """
         if group_by == 'ids':
             return self._batch_by_ids(pairs, batch_size)
         else:
