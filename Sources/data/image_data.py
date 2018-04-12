@@ -47,6 +47,7 @@ class RawData:
     def store_elements(self):
         """
         Creates the npz files from the dcm files for faster readings
+
         :return:
         """
 
@@ -72,12 +73,15 @@ class RawData:
 
     @staticmethod
     def _is_valid_dir(test_dir: os.DirEntry) -> bool:
-        """
+        """returns if it's a valid directory
+
         Only some directories are valid, the ones that start with FHBO
         (which is our original Head and Neck dataset)
         and then only the only ones that have two sub dirs:
-        * The scan directory
-        * The mask directory
+
+          - The scan directory
+          - The mask directory
+
         :param test_dir: Directory to be tested
         :return: True or False depending on the folder conditions
         """
@@ -106,6 +110,7 @@ class RawData:
     def _get_mask_main_stack(self, image_name: str):
         """
         Return the raw data, stacking all the files and using a temporary cache
+
         :param image_name:
         :return:
         """
@@ -127,6 +132,7 @@ class RawData:
     def compact_files(image_dir: PseudoDir) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get a numpy array containing the 3D image concatenating all the slices in the selected dir
+
         :param image_dir: Directory containing all the images
         :return: Tuple with the 3D image and the 3D mask as numpy arrays
         """
@@ -233,6 +239,7 @@ class PreProcessedData:
         """
         Slices the tumour using the mask and then
         normalizes the image (variance = 1 and mean = 0)
+
         :param main_stack: 3D vector containing the main image
         :param mask_stack: 3D vector containing the mask image where the tumour is marked
         :return: Slice of the tumour normalized

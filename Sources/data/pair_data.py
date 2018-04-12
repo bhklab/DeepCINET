@@ -79,6 +79,7 @@ class SplitPairs:
         """
         Get all the possible pairs for a DataFrame containing the clinical data, keeping in mind the censored
         data
+
         :param df: DataFrame containing all the clinical data
         :return: Iterator over PairComp
         """
@@ -115,6 +116,7 @@ class BatchData:
             -> Generator[PairBatch, None, None]:
         """
         Generates batches based on all the pairs and the batch size
+
         :param pairs:
         :param batch_size:
         :param group_by:
@@ -156,6 +158,7 @@ class BatchData:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
+
         :param pairs: Pairs to be added to the PairBatch
         :param ids: npz files' ids that will be added to the PairBatch
         :return: PairBatch containing the pairs and the requested npz files loaded
@@ -167,6 +170,7 @@ class BatchData:
     def _split(it: Iterable, n: int) -> Iterable[Iterable]:
         """
         Given an iterable create batches of size n
+
         :param it: Iterable
         :param n: Batch size
         :return: Batches of size n
