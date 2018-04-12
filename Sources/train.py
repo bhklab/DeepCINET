@@ -8,7 +8,7 @@ def main(args):
     dataset = data.SplitPairs()
     dataset.print_pairs()
     batch = data.BatchData()
-    batch.batches(list(dataset.train_pairs())[:20])
+    batch.batches(list(dataset.train_pairs()))
 
 
 if __name__ == '__main__':

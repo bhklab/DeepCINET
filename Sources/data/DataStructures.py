@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, Dict
+from typing import NamedTuple, List, Dict, Iterable
 
 
 import numpy as np
@@ -21,5 +21,5 @@ class PairComp(NamedTuple):
 
 
 class PairBatch(NamedTuple):
-    pairs: List[PairComp]
+    pairs: Iterable[PairComp]
     images: Dict[str, List[np.ndarray]]
