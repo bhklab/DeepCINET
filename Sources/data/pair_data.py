@@ -164,8 +164,15 @@ class BatchData:
         :param ids: npz files' ids that will be added to the PairBatch
         :return: PairBatch containing the pairs and the requested npz files loaded
         """
-        images = {idx: np.load(os.path.join(self._data_path, idx, idx + ".npz")).items() for idx in ids}
-        return PairBatch(pairs=pairs, images=images)
+
+        # Convert ids from string to int index
+        ids_map = {idx: idx_num for idx_num, idx in enumerate(list(ids))}
+        pairs = [PairComp(ids_map[p.p1], ids_map[p.p2], p.comp) for p in pairs]
+
+        # TODO: Change this line
+        # images = {ids_map[idx]: np.load(os.path.join(self._data_path, idx, idx + ".npz")).items() for idx in ids}
+        images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
+        return PairBatch(pairs=pairs, images=images, ids_map=ids_map)
 
     @staticmethod
     def _split(it: Iterable, n: int) -> Iterable[Iterable]:
