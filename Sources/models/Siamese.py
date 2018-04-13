@@ -7,6 +7,8 @@ class Siamese:
         self.x = tf.placeholder(tf.float32, [None, 64, 64, 64, 1])
         self.y = tf.placeholder(tf.float32, [None, 1])
 
+        self.sister_out = self.sister(self.x)
+
     def build_model(self):
         pass
 
