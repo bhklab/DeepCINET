@@ -19,7 +19,7 @@ help:
 docs:
 	rm -rf docs_source/api
 	SPHINX_APIDOC_OPTIONS='members,private-members,undoc-members,show-inheritance,temp-to-change' sphinx-apidoc -o docs_source/api/ Sources
-	sed -i .bak "s/temp-to-change:/exclude-members: $(EXCLUDE_PRIVATE)/" $(wildcard $(SOURCEDIR)/api/*.rst)
+	sed -i .bak "s/temp-to-change:/exclude-members: $(EXCLUDE_PRIVATE)/" $(SOURCEDIR)/api/*.rst
 	$(MAKE) html latexpdf
 
 clean:
