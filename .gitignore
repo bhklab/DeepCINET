@@ -15,5 +15,6 @@ Data
 
 .env
 
+# Documentation
 docs_build/
 docs_source/api/
