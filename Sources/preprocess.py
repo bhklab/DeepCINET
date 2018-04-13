@@ -72,4 +72,3 @@ if __name__ == "__main__":
         print("----------------------------------")
         print("Stopping due to keyboard interrupt")
         print("THANKS FOR THE RIDE 😀")
-

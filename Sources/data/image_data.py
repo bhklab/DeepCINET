@@ -16,6 +16,7 @@ class RawData:
     """
     RAW data representation from the .dcm scans.
     """
+
     def __init__(self):
         super().__init__()
         self.data_path = os.getenv('DATA_RAW')
@@ -38,7 +39,7 @@ class RawData:
         """
         return self._valid_ids
 
-    def elements(self, names: List[str]=None) -> Iterator[Tuple[str, np.ndarray, np.ndarray]]:
+    def elements(self, names: List[str] = None) -> Iterator[Tuple[str, np.ndarray, np.ndarray]]:
         if not self.elements_stored:
             raise ValueError("To iterate over the elements first they have to be stored")
 
@@ -312,18 +313,18 @@ class PreProcessedData:
         df = pd.read_csv(self._clinical_info_path)
         df = df.take([self.COL_ID, self.COL_AGE, self.COL_SEX, self.COL_EVENT, self.COL_TIME], axis=1)
         df.columns = ['id', 'age', 'sex', 'event', 'time']
-        df = df[df['id'].isin(self._raw_data.valid_ids())]              # Remove elements that are not valid data
+        df = df[df['id'].isin(self._raw_data.valid_ids())]  # Remove elements that are not valid data
         df.to_csv(os.getenv('DATA_CLINICAL_PROCESSED'))
 
         # Compute number of possible pairs
         censored_count = df[df['event'] == 0].count()[0]
         uncensored_count = df.count()[0] - censored_count
 
-        censored_pairs = censored_count * uncensored_count
+        censored_pairs = censored_count*uncensored_count
         uncensored_pairs = scipy.misc.comb(uncensored_count, 2, exact=True)
 
-        censored_pairs_augmented = censored_pairs * 4
-        uncensored_pairs_augmented = uncensored_pairs * 4
+        censored_pairs_augmented = censored_pairs*4
+        uncensored_pairs_augmented = uncensored_pairs*4
 
         print("Total censored: {}".format(censored_count))
         print("Total uncensored: {}".format(uncensored_count))
@@ -340,7 +341,7 @@ class PreProcessedData:
     def _get_rotations(sliced_norm: np.array) -> Dict[str, np.ndarray]:
         temp_dict = {}
         for i in range(4):
-            name = "{:03}".format(i * 90)
+            name = "{:03}".format(i*90)
             temp_dict[name] = sliced_norm.copy()
             sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
 

@@ -109,6 +109,7 @@ class BatchData:
     """
     This is a batch
     """
+
     def __init__(self):
         self._data_path = os.getenv("DATA_PROCESSED")
 

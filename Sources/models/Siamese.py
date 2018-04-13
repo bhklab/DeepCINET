@@ -84,8 +84,3 @@ class Siamese:
         )
 
         return x
-
-
-
-
-

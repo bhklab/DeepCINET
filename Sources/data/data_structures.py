@@ -1,6 +1,5 @@
 from typing import NamedTuple, List, Dict, Iterable
 
-
 import numpy as np
 
 
