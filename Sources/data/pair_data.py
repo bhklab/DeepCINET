@@ -9,6 +9,7 @@ import scipy
 from sklearn.model_selection import train_test_split
 
 from data.data_structures import PairComp, PairBatch
+from settings import TOTAL_ROTATIONS
 
 
 class SplitPairs:
@@ -151,11 +152,11 @@ class BatchData:
 
     def _batch_by_pairs(self, pairs: Iterable[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
         for i, values in enumerate(self._split(pairs, batch_size)):
-            print(type(values))
             values = list(values)
             yield self._create_pair_batch(values, {idx for p in values for idx in (p.p1, p.p2)})
 
-    def _create_pair_batch(self, pairs: Iterable[PairComp], ids: Set[str]) -> PairBatch:
+    @staticmethod
+    def _create_pair_batch(pairs: Collection[PairComp], ids: Set[str]) -> PairBatch:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
@@ -165,14 +166,21 @@ class BatchData:
         :return: PairBatch containing the pairs and the requested npz files loaded
         """
 
-        # Convert ids from string to int index
-        ids_map = {idx: idx_num for idx_num, idx in enumerate(list(ids))}
-        pairs = [PairComp(ids_map[p.p1], ids_map[p.p2], p.comp) for p in pairs]
+        # Convert ids from string to int index. Since there can be multiple images with one pair this will mean that
+        # We have to return more indices related to the same pair so that's why we are using the TOTAL_ROTATIONS
+        # global variable to set the indices, the generated indices are in the range:
+        # idx*TOTAL_ROTATIONS ... (idx + 1)*TOTAL_ROTATIONS
+        ids_map = {idx: idx_num*TOTAL_ROTATIONS for idx_num, idx in enumerate(list(ids))}
+        pairs_a = [idx for p in pairs for idx in range(ids_map[p.p_a], ids_map[p.p_a] + TOTAL_ROTATIONS)]
+        pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + TOTAL_ROTATIONS)]
+        labels = [l for p in pairs for l in [p.comp]*TOTAL_ROTATIONS]
+        assert len(pairs_a) == len(pairs_b) == len(labels)
 
-        # TODO: Change this line
+        # TODO: Change to images again before setting it to production
         # images = {ids_map[idx]: np.load(os.path.join(self._data_path, idx, idx + ".npz")).items() for idx in ids}
         images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
-        return PairBatch(pairs=pairs, images=images, ids_map=ids_map)
+
+        return PairBatch(pairs_a=pairs_a, pairs_b=pairs_b, labels=labels, images=images, ids_map=ids_map)
 
     @staticmethod
     def _split(it: Iterable, n: int) -> Iterable[Iterable]:
