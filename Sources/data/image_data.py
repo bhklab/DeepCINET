@@ -10,6 +10,7 @@ from joblib import delayed, Parallel
 from skimage import transform as skt
 
 from data.data_structures import PseudoDir
+from settings import IMAGE_ROTATIONS
 
 
 class RawData:
@@ -340,19 +341,15 @@ class PreProcessedData:
     @staticmethod
     def _get_rotations(sliced_norm: np.array) -> Dict[str, np.ndarray]:
         temp_dict = {}
-        for i in range(4):
-            name = "{:03}".format(i*90)
-            temp_dict[name] = sliced_norm.copy()
-            sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
 
-        # for i in range(4):
-        #     for j in range(4):
-        #         for k in range(4):
-        #             name = "{:03}_{:03}_{:03}".format(i * 90, j * 90, k * 90)
-        #             temp_dict[name] = sliced_norm.copy()
-        #             sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
-        #         sliced_norm = np.rot90(sliced_norm, axes=(2, 0))
-        #     sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
+        for i in range(IMAGE_ROTATIONS['x']):
+            for j in range(IMAGE_ROTATIONS['y']):
+                for k in range(IMAGE_ROTATIONS['z']):
+                    name = "{:03}_{:03}_{:03}".format(i * 90, j * 90, k * 90)
+                    temp_dict[name] = sliced_norm.copy()
+                    sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
+                sliced_norm = np.rot90(sliced_norm, axes=(2, 0))
+            sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
         return temp_dict
 
     @staticmethod
