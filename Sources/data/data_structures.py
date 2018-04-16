@@ -29,5 +29,5 @@ class PairBatch(NamedTuple):
     pairs_b: List[int]
     labels: List[int]
     # TODO: Fix the status with the images
-    images: Dict[int, List[np.ndarray]]
+    images: np.ndarray
     ids_map: Dict[str, int]

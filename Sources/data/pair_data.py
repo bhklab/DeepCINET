@@ -155,8 +155,7 @@ class BatchData:
             values = list(values)
             yield self._create_pair_batch(values, {idx for p in values for idx in (p.p1, p.p2)})
 
-    @staticmethod
-    def _create_pair_batch(pairs: Collection[PairComp], ids: Set[str]) -> PairBatch:
+    def _create_pair_batch(self, pairs: Collection[PairComp], ids: Set[str]) -> PairBatch:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
@@ -170,15 +169,25 @@ class BatchData:
         # We have to return more indices related to the same pair so that's why we are using the TOTAL_ROTATIONS
         # global variable to set the indices, the generated indices are in the range:
         # idx*TOTAL_ROTATIONS ... (idx + 1)*TOTAL_ROTATIONS
-        ids_map = {idx: idx_num*TOTAL_ROTATIONS for idx_num, idx in enumerate(list(ids))}
+        ids_list = list(ids)
+        ids_map = {idx: idx_num*TOTAL_ROTATIONS for idx_num, idx in enumerate(ids_list)}
         pairs_a = [idx for p in pairs for idx in range(ids_map[p.p_a], ids_map[p.p_a] + TOTAL_ROTATIONS)]
         pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + TOTAL_ROTATIONS)]
-        labels = [l for p in pairs for l in [p.comp]*TOTAL_ROTATIONS]
+        labels = [[float(l)] for p in pairs for l in [p.comp]*TOTAL_ROTATIONS]
         assert len(pairs_a) == len(pairs_b) == len(labels)
 
-        # TODO: Change to images again before setting it to production
-        # images = {ids_map[idx]: np.load(os.path.join(self._data_path, idx, idx + ".npz")).items() for idx in ids}
-        images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
+        images = []
+        for idx in ids_list:
+            loaded = np.load(os.path.join(self._data_path, idx, idx + ".npz"))
+            for item in loaded:
+                images.append(loaded[item])
+            loaded.close()
+
+        images = np.array(images)
+        print(images.shape)
+        images = images.reshape((-1, 64, 64, 64, 1))
+        print(images.shape)
+        # images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
 
         return PairBatch(pairs_a=pairs_a, pairs_b=pairs_b, labels=labels, images=images, ids_map=ids_map)
 
