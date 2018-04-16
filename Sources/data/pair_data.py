@@ -101,7 +101,7 @@ class SplitPairs:
     @staticmethod
     def _swap_random(tup: PairComp) -> PairComp:
         if bool(random.getrandbits(1)):
-            return PairComp(tup.p2, tup.p1, tup.comp)
+            return PairComp(tup.p_b, tup.p_a, tup.comp)
         return tup
 
 
@@ -139,11 +139,11 @@ class BatchData:
             # Create a batch of batch_size ids
             while len(ids) < batch_size and len(total_pairs) > 0:
                 pair = total_pairs.pop()
-                ids |= {pair.p1, pair.p2}
+                ids |= {pair.p_a, pair.p_b}
                 batch_pairs.add(pair)
 
             # Get all the pairs that can be formed with those ids and then remove the batch pairs from the total pairs
-            batch_pairs |= {x for x in total_pairs if x.p1 in ids and x.p2 in ids}
+            batch_pairs |= {x for x in total_pairs if x.p_a in ids and x.p_b in ids}
             total_pairs -= batch_pairs
             assert len(batch_pairs)*2 >= len(ids)
 

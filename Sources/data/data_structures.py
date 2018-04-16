@@ -19,14 +19,14 @@ class PairComp(NamedTuple):
 
     :attr comp: True if T(p1) < T(p2)
     """
-    p1: str
-    p2: str
+    p_a: str
+    p_b: str
     comp: bool
 
 
 class PairBatch(NamedTuple):
-    p1: List[int]
-    p2: List[int]
+    pairs_a: List[int]
+    pairs_b: List[int]
     labels: List[int]
     # TODO: Fix the status with the images
     images: Dict[int, List[np.ndarray]]
