@@ -5,12 +5,12 @@ class Siamese:
 
     def __init__(self):
         self.x = tf.placeholder(tf.float32, [None, 64, 64, 64, 1])
-        self.y = tf.placeholder(tf.float32, [None, 1])
+        self.y = tf.placeholder(tf.float32, [None])
+        self.y = tf.reshape(self.y, [-1, 1])
+        self.pairs_a = tf.placeholder(tf.int32, [None])
+        self.pairs_b = tf.placeholder(tf.int32, [None])
 
         self.sister_out = self.sister(self.x)
-
-    def build_model(self):
-        pass
 
     @staticmethod
     def sister(x: tf.Tensor) -> tf.Tensor:
@@ -86,3 +86,12 @@ class Siamese:
         )
 
         return x
+
+    def loss(self):
+        gathered_a = tf.gather(self.sister_out, self.pairs_a)
+        gathered_b = tf.gather(self.sister_out, self.pairs_b)
+
+        loss = tf.tanh(gathered_a - gathered_b)
+        loss = tf.reduce_sum(loss)
+        loss = loss*(2*(1 - self.y) - 1)
+        return loss
