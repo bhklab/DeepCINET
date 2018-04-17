@@ -20,20 +20,22 @@ def main(args):
     train_pairs = list(dataset.train_pairs())[:1000]
     print(f"We have {len(train_pairs)} pairs")
 
+    c_index = siamese_model.c_index()
+
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
-        for i, batch in enumerate(batch_data.batches(train_pairs)):
+        for i, batch in enumerate(batch_data.batches(train_pairs, batch_size=32)):
             # print(batch.images)
-
-            _, loss = sess.run([minimize_step, loss_tensor], feed_dict={
+            print(f"Training batch {i}, pairs: {len(batch.pairs_a)}")
+            _, c_index_result, loss = sess.run([minimize_step, c_index, loss_tensor], feed_dict={
                 siamese_model.x: batch.images,
                 siamese_model.pairs_a: batch.pairs_a,
                 siamese_model.pairs_b: batch.pairs_b,
                 siamese_model.y: batch.labels
             })
 
-            print(f"Batch: {i}, loss: {loss}")
+            print(f"Batch: {i}, c-index: {c_index_result}, loss: {loss}")
 
 
 if __name__ == '__main__':

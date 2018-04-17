@@ -10,7 +10,14 @@ class Siamese:
         self.pairs_a = tf.placeholder(tf.int32, [None])
         self.pairs_b = tf.placeholder(tf.int32, [None])
 
+        self.batch_size = tf.cast(tf.shape(self.y)[0], tf.float32)
+
         self.sister_out = self.sister(self.x)
+
+        self.gathered_a = tf.gather(self.sister_out, self.pairs_a)
+        self.gathered_b = tf.gather(self.sister_out, self.pairs_b)
+
+        self.y_estimate = tf.tanh(self.gathered_a - self.gathered_b)
 
     @staticmethod
     def sister(x: tf.Tensor) -> tf.Tensor:
@@ -88,10 +95,11 @@ class Siamese:
         return x
 
     def loss(self):
-        gathered_a = tf.gather(self.sister_out, self.pairs_a)
-        gathered_b = tf.gather(self.sister_out, self.pairs_b)
-
-        loss = tf.tanh(gathered_a - gathered_b)
-        loss = tf.reduce_sum(loss)
-        loss = loss*(2*(1 - self.y) - 1)
+        loss = self.y_estimate*(2*(1 - self.y) - 1)
+        loss = tf.reduce_sum(loss)/self.batch_size
         return loss
+
+    def c_index(self):
+        c_index = ((self.y_estimate + 1)/2)*self.y
+        return tf.reduce_sum(c_index)/self.batch_size
+
