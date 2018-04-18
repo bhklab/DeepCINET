@@ -9,8 +9,17 @@ import scipy
 from joblib import delayed, Parallel
 from skimage import transform as skt
 
-import settings
+import utils
 from data.data_structures import PseudoDir
+from settings import \
+    DATA_PATH_CACHE, \
+    DATA_PATH_CLINICAL, \
+    DATA_PATH_CLINICAL_PROCESSED, \
+    DATA_PATH_PROCESSED, \
+    DATA_PATH_RAW, \
+    IMAGE_ROTATIONS
+
+logger = utils.get_logger('data.raw_data')
 
 
 class RawData:
@@ -20,14 +29,14 @@ class RawData:
 
     def __init__(self):
         super().__init__()
-        self.data_path = settings.DATA_RAW
-        self.cache_path = settings.DATA_CACHE
+        self.data_path = DATA_PATH_RAW
+        self.cache_path = DATA_PATH_CACHE
         self.elements_stored = False
 
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
         self._valid_dirs = [PseudoDir(x.name, x.path, x.is_dir()) for x in valid_dirs]
         self._valid_ids = [str(x.name) for x in self._valid_dirs]
-        print("{} valid dirs have been found".format(len(self._valid_dirs)))
+        logger.info("{} valid dirs have been found".format(len(self._valid_dirs)))
 
     def total_elements(self) -> int:
         return len(self._valid_dirs)
@@ -71,7 +80,7 @@ class RawData:
 
         # To pre-process on Mordor
         jobs = int(os.getenv("NSLOTS", -1))
-        print("Jobs: {}".format(jobs))
+        logger.debug("Jobs: {}".format(jobs))
 
         generator = (delayed(self._generate_npz)(directory, i + 1, len(to_create))
                      for i, directory in enumerate(to_create))
@@ -121,10 +130,10 @@ class RawData:
         numpy_file = os.path.join(self.cache_path, image_dir.name + ".npz")
         numpy_file_temp = os.path.join(self.cache_path, image_dir.name + "_temp.npz")
 
-        print("Reading {} of {}".format(count, total))
+        logger.info(f"Reading {count} of {total}")
 
         main_stack, mask_stack = self._compact_files(image_dir)
-        print("Saving {} file".format(numpy_file_temp))
+        logger.debug("Saving {} file".format(numpy_file_temp))
         np.savez_compressed(numpy_file_temp, main=main_stack, mask=mask_stack)
         os.rename(numpy_file_temp, numpy_file)  # Use a temp name to avoid problems when stopping the script
 
@@ -139,13 +148,13 @@ class RawData:
 
         # Load .npz file instead of .dcm if we have already read it
         if os.path.exists(numpy_file):
-            print("File {} found reading npz file".format(numpy_file))
+            logger.debug(f"File {numpy_file} found reading npz file")
             npz_file = np.load(numpy_file)
             main_stack = npz_file['main']
             mask_stack = npz_file['mask']
             npz_file.close()
         else:
-            raise FileNotFoundError("File {} does not exist, this should not happen".format(numpy_file))
+            raise FileNotFoundError(f"File {numpy_file} does not exist, this should not happen")
 
         return main_stack, mask_stack
 
@@ -215,8 +224,8 @@ class PreProcessedData:
     """Column with the time at clinical CSV file"""
 
     def __init__(self):
-        self._data_path = settings.DATA_PROCESSED
-        self._clinical_info_path = settings.DATA_CLINICAL
+        self._data_path = DATA_PATH_PROCESSED
+        self._clinical_info_path = DATA_PATH_CLINICAL
         self._overwrite = False
         self._raw_data = RawData()
 
@@ -240,7 +249,7 @@ class PreProcessedData:
 
         # To pre-process on Mordor
         jobs = int(os.getenv("NSLOTS", -1))
-        print("Jobs: {}".format(jobs))
+        logger.debug(f"Jobs: {jobs}")
 
         generator = (delayed(self._process_individual)(idx, main_stack, mask_stack, i + 1, len(to_create))
                      for i, (idx, main_stack, mask_stack) in enumerate(self._raw_data.elements(to_create)))
@@ -257,7 +266,7 @@ class PreProcessedData:
         save_dir = os.path.join(self._data_path, image_name)
         temp_dir = os.path.join(self._data_path, image_name + "_temp")
 
-        print("Processing dataset {}, {} of {}".format(image_name, count, total))
+        logger.info(f"Processing dataset {image_name}, {count} of {total}")
 
         # Remove existing temporary directory from previous runs
         if os.path.exists(temp_dir):
@@ -293,13 +302,13 @@ class PreProcessedData:
 
         # Normalize the sliced part (var = 1, mean = 0)
         sliced -= sliced.mean()
-        sliced_norm = sliced/sliced.std()
+        sliced /= sliced.std()
 
-        print("Volume: {}".format(sliced_norm.shape))
+        logger.debug("Volume: {}".format(sliced.shape))
 
         # Resize the normalized data
-        sliced_norm = skt.resize(sliced_norm, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
-        return sliced_norm
+        sliced = skt.resize(sliced, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
+        return sliced
 
     def _write_clinical_filtered(self):
         """
@@ -315,7 +324,7 @@ class PreProcessedData:
         df = df.take([self.COL_ID, self.COL_AGE, self.COL_SEX, self.COL_EVENT, self.COL_TIME], axis=1)
         df.columns = ['id', 'age', 'sex', 'event', 'time']
         df = df[df['id'].isin(self._raw_data.valid_ids())]  # Remove elements that are not valid data
-        df.to_csv(settings.DATA_CLINICAL_PROCESSED)
+        df.to_csv(DATA_PATH_CLINICAL_PROCESSED)
 
         # Compute number of possible pairs
         censored_count = df[df['event'] == 0].count()[0]
@@ -327,26 +336,25 @@ class PreProcessedData:
         censored_pairs_augmented = censored_pairs*4
         uncensored_pairs_augmented = uncensored_pairs*4
 
-        print("Total censored: {}".format(censored_count))
-        print("Total uncensored: {}".format(uncensored_count))
+        logger.info(f"Total censored: {censored_count}")
+        logger.info(f"Total uncensored: {uncensored_count}")
 
-        print("Total censored pairs: {:,}".format(censored_pairs))
-        print("Total uncensored pairs: {:,}".format(uncensored_pairs))
-        print("Total pairs {:,}".format(censored_pairs + uncensored_pairs))
+        logger.info(f"Total censored pairs: {censored_pairs:,}")
+        logger.info(f"Total uncensored pairs: {uncensored_pairs:,}")
+        logger.info(f"Total pairs {censored_pairs + uncensored_pairs:,}")
 
-        print("Total censored pairs augmented: {:,}".format(censored_pairs_augmented))
-        print("Total uncensored pairs augmented: {:,}".format(uncensored_pairs_augmented))
-        print("Total pairs augmented {:,}".format(censored_pairs_augmented + uncensored_pairs_augmented))
+        logger.info(f"Total censored pairs augmented: {censored_pairs_augmented:,}")
+        logger.info(f"Total uncensored pairs augmented: {uncensored_pairs_augmented:,}")
+        logger.info(f"Total pairs augmented {censored_pairs_augmented + uncensored_pairs_augmented:,}")
 
     @staticmethod
     def _get_rotations(sliced_norm: np.array) -> Dict[str, np.ndarray]:
         temp_dict = {}
 
-        rotations = settings.IMAGE_ROTATIONS
-        for i in range(rotations['x']):
-            for j in range(rotations['y']):
-                for k in range(rotations['z']):
-                    name = "{:03}_{:03}_{:03}".format(i * 90, j * 90, k * 90)
+        for i in range(IMAGE_ROTATIONS['x']):
+            for j in range(IMAGE_ROTATIONS['y']):
+                for k in range(IMAGE_ROTATIONS['z']):
+                    name = "{:03}_{:03}_{:03}".format(i*90, j*90, k*90)
                     temp_dict[name] = sliced_norm.copy()
                     sliced_norm = np.rot90(sliced_norm, axes=(0, 1))
                 sliced_norm = np.rot90(sliced_norm, axes=(2, 0))

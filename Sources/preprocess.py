@@ -29,8 +29,8 @@ def main(arguments):
     as a script
     :param arguments: Arguments provided by argparse.ArgumentParser 
     """
-    input_dir = settings.DATA_RAW
-    output_dir = settings.DATA_PROCESSED
+    input_dir = settings.DATA_PATH_RAW
+    output_dir = settings.DATA_PATH_PROCESSED
 
     # Check if folder exists
     if not os.path.exists(input_dir):

@@ -23,11 +23,11 @@ for var in required_vars:
 
 # Data variables
 DATA_PATH = os.path.abspath(os.getenv('DATA'))
-DATA_RAW = os.path.abspath(os.getenv('DATA_RAW'))
-DATA_CLINICAL = os.path.abspath(os.getenv('DATA_CLINICAL'))
-DATA_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
-DATA_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
-DATA_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
+DATA_PATH_RAW = os.path.abspath(os.getenv('DATA_RAW'))
+DATA_PATH_CLINICAL = os.path.abspath(os.getenv('DATA_CLINICAL'))
+DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
+DATA_PATH_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
+DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
 
 # Log dir, fallback to current directory
 LOG_DIR = os.path.abspath(os.getenv('LOG_DIR', './'))
