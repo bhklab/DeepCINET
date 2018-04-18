@@ -9,8 +9,8 @@ import scipy
 from joblib import delayed, Parallel
 from skimage import transform as skt
 
+import settings
 from data.data_structures import PseudoDir
-from settings import IMAGE_ROTATIONS
 
 
 class RawData:
@@ -20,8 +20,8 @@ class RawData:
 
     def __init__(self):
         super().__init__()
-        self.data_path = os.getenv('DATA_RAW')
-        self.cache_path = os.getenv('DATA_CACHE')
+        self.data_path = settings.DATA_RAW
+        self.cache_path = settings.DATA_CACHE
         self.elements_stored = False
 
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
@@ -215,8 +215,8 @@ class PreProcessedData:
     """Column with the time at clinical CSV file"""
 
     def __init__(self):
-        self._data_path = os.getenv('DATA_PROCESSED')
-        self._clinical_info_path = os.getenv('DATA_CLINICAL')
+        self._data_path = settings.DATA_PROCESSED
+        self._clinical_info_path = settings.DATA_CLINICAL
         self._overwrite = False
         self._raw_data = RawData()
 
@@ -315,7 +315,7 @@ class PreProcessedData:
         df = df.take([self.COL_ID, self.COL_AGE, self.COL_SEX, self.COL_EVENT, self.COL_TIME], axis=1)
         df.columns = ['id', 'age', 'sex', 'event', 'time']
         df = df[df['id'].isin(self._raw_data.valid_ids())]  # Remove elements that are not valid data
-        df.to_csv(os.getenv('DATA_CLINICAL_PROCESSED'))
+        df.to_csv(settings.DATA_CLINICAL_PROCESSED)
 
         # Compute number of possible pairs
         censored_count = df[df['event'] == 0].count()[0]
@@ -342,9 +342,10 @@ class PreProcessedData:
     def _get_rotations(sliced_norm: np.array) -> Dict[str, np.ndarray]:
         temp_dict = {}
 
-        for i in range(IMAGE_ROTATIONS['x']):
-            for j in range(IMAGE_ROTATIONS['y']):
-                for k in range(IMAGE_ROTATIONS['z']):
+        rotations = settings.IMAGE_ROTATIONS
+        for i in range(rotations['x']):
+            for j in range(rotations['y']):
+                for k in range(rotations['z']):
                     name = "{:03}_{:03}_{:03}".format(i * 90, j * 90, k * 90)
                     temp_dict[name] = sliced_norm.copy()
                     sliced_norm = np.rot90(sliced_norm, axes=(0, 1))

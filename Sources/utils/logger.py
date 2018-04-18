@@ -4,8 +4,8 @@ import sys
 
 import settings
 
-if not os.path.exists(os.getenv("LOG_DIR", None)):
-    os.makedirs(os.getenv("LOG_DIR"))
+if not os.path.exists(settings.LOG_DIR):
+    os.makedirs(settings.LOG_DIR)
 
 loggers = {}
 
@@ -18,7 +18,7 @@ def get_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
-    fh = logging.FileHandler(os.path.join(os.getenv("LOG_DIR"), name + ".log"))
+    fh = logging.FileHandler(os.path.join(settings.LOG_DIR, name + ".log"))
     fh.setLevel(logging.DEBUG)
 
     ch = logging.StreamHandler(sys.stdout)

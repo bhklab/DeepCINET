@@ -19,7 +19,7 @@ class SplitPairs:
 
     def __init__(self):
         # To divide into test and validation sets we only need the clinical data
-        self.clinical_data = pd.read_csv(os.getenv("DATA_CLINICAL_PROCESSED"), index_col=0)
+        self.clinical_data = pd.read_csv(settings.DATA_CLINICAL_PROCESSED, index_col=0)
 
         # http://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html
         total_x = self.clinical_data['id'].values
@@ -112,7 +112,7 @@ class BatchData:
     """
 
     def __init__(self):
-        self._data_path = os.getenv("DATA_PROCESSED")
+        self._data_path = settings.DATA_PROCESSED
 
     def batches(self, pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids') \
             -> Generator[PairBatch, None, None]:
