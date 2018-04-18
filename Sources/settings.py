@@ -43,6 +43,12 @@ IMAGE_ROTATIONS = {
 
 TOTAL_ROTATIONS = IMAGE_ROTATIONS['x']*IMAGE_ROTATIONS['y']*IMAGE_ROTATIONS['z']
 
+# 0: No
+# 1: Half -> Small value to not fill memory
+# 2: Half-full -> Use many operations in the GPU
+# 3: Full -> Use almost all the operations in the GPU
+USE_GPU = int(os.getenv('USE_GPU', 0))
+
 
 if __name__ == '__main__':
     print(IMAGE_ROTATIONS)
