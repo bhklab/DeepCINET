@@ -10,7 +10,6 @@ for k, v in list(os.environ.items()):
     if str(k).startswith('DATA'):
         os.environ[k] = os.path.abspath(os.getenv(k))
 
-
 # At least there should be an image rotation
 IMAGE_ROTATIONS = {
     'x': 1,
@@ -19,3 +18,5 @@ IMAGE_ROTATIONS = {
 }
 
 TOTAL_ROTATIONS = IMAGE_ROTATIONS['x']*IMAGE_ROTATIONS['y']*IMAGE_ROTATIONS['z']
+
+
