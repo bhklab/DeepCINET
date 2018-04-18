@@ -18,7 +18,7 @@ def get_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
-    fh = logging.FileHandler(os.path.join(settings.LOG_DIR, name + ".log"))
+    fh = logging.FileHandler(os.path.join(settings.LOG_DIR, name + ".log"), encoding="utf-8")
     fh.setLevel(logging.DEBUG)
 
     ch = logging.StreamHandler(sys.stdout)
@@ -30,6 +30,7 @@ def get_logger(name: str) -> logging.Logger:
 
     logger.addHandler(fh)
     logger.addHandler(ch)
+    logger.debug("---- Logger Initiated ----")
 
     loggers[name] = logger
     return logger

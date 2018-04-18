@@ -8,6 +8,7 @@ import settings
 import utils
 
 logger = utils.get_logger('train')
+tens_logger = utils.get_logger('tensorflow')
 
 
 def main(args):
@@ -67,7 +68,6 @@ if __name__ == '__main__':
         # For now the arguments are ignored
         main(arguments)
     except KeyboardInterrupt:
-        print()
-        print("----------------------------------")
-        print("Stopping due to keyboard interrupt")
-        print("THANKS FOR THE RIDE 😀")
+        logger.info("\n----------------------------------")
+        logger.info("Stopping due to keyboard interrupt")
+        logger.info("THANKS FOR THE RIDE 😀")
