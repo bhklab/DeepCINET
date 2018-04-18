@@ -17,17 +17,22 @@ def main(args):
     optimizer = tf.train.AdamOptimizer()
     loss_tensor = siamese_model.loss()
     minimize_step = optimizer.minimize(loss_tensor)
-    train_pairs = list(dataset.train_pairs())[:1000]
+    train_pairs = list(dataset.train_pairs())
     print(f"We have {len(train_pairs)} pairs")
 
     c_index = siamese_model.c_index()
+    conf = tf.ConfigProto()
+    conf.gpu_options.allow_growth = True
 
-    with tf.Session() as sess:
+    with tf.Session(config=conf) as sess:
         sess.run(tf.global_variables_initializer())
 
-        for i, batch in enumerate(batch_data.batches(train_pairs, batch_size=32)):
+        print("Starting training")
+
+        for i, batch in enumerate(batch_data.batches(train_pairs, batch_size=7)):
             # print(batch.images)
             print(f"Training batch {i}, pairs: {len(batch.pairs_a)}")
+
             _, c_index_result, loss = sess.run([minimize_step, c_index, loss_tensor], feed_dict={
                 siamese_model.x: batch.images,
                 siamese_model.pairs_a: batch.pairs_a,
@@ -36,6 +41,7 @@ def main(args):
             })
 
             print(f"Batch: {i}, c-index: {c_index_result}, loss: {loss}")
+            # break
 
 
 if __name__ == '__main__':
