@@ -7,6 +7,7 @@ import models
 import settings
 import utils
 
+_ = utils.get_logger("")  # Main Logger
 logger = utils.get_logger('train')
 tens_logger = utils.get_logger('tensorflow')
 

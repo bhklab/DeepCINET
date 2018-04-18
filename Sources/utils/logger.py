@@ -29,7 +29,8 @@ def get_logger(name: str) -> logging.Logger:
     ch.setFormatter(formatter)
 
     logger.addHandler(fh)
-    logger.addHandler(ch)
+    if len(name) > 0:
+        logger.addHandler(ch)
     logger.debug("---- Logger Initiated ----")
 
     loggers[name] = logger
