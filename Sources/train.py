@@ -5,6 +5,9 @@ import tensorflow as tf
 import data
 import models
 import settings
+import utils
+
+logger = utils.get_logger('train')
 
 
 def main(args):
@@ -18,7 +21,8 @@ def main(args):
     loss_tensor = siamese_model.loss()
     minimize_step = optimizer.minimize(loss_tensor)
     train_pairs = list(dataset.train_pairs())
-    print(f"We have {len(train_pairs)} pairs")
+    total_pairs = len(train_pairs)
+    logger.info(f"We have {total_pairs} pairs")
 
     c_index = siamese_model.c_index()
     conf = tf.ConfigProto()
@@ -27,11 +31,10 @@ def main(args):
     with tf.Session(config=conf) as sess:
         sess.run(tf.global_variables_initializer())
 
-        print("Starting training")
+        logger.info("Starting training")
 
         for i, batch in enumerate(batch_data.batches(train_pairs, batch_size=7)):
             # print(batch.images)
-            print(f"Training batch {i}, pairs: {len(batch.pairs_a)}")
 
             _, c_index_result, loss = sess.run([minimize_step, c_index, loss_tensor], feed_dict={
                 siamese_model.x: batch.images,
@@ -40,7 +43,9 @@ def main(args):
                 siamese_model.y: batch.labels
             })
 
-            print(f"Batch: {i}, c-index: {c_index_result}, loss: {loss}")
+            total_pairs -= len(batch.pairs_a)
+            logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
+                        f"c-index: {c_index_result}, loss: {loss}")
             # break
 
 
