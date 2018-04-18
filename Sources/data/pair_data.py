@@ -184,9 +184,7 @@ class BatchData:
             loaded.close()
 
         images = np.array(images)
-        print(images.shape)
         images = images.reshape((-1, 64, 64, 64, 1))
-        print(images.shape)
         # images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
 
         return PairBatch(pairs_a=pairs_a, pairs_b=pairs_b, labels=labels, images=images, ids_map=ids_map)
