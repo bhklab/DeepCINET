@@ -31,6 +31,9 @@ DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSE
 
 # Log dir, fallback to current directory
 LOG_DIR = os.path.abspath(os.getenv('LOG_DIR', './'))
+LOG_LEVEL_CONSOLE = int(os.getenv('LOG_LEVEL_CONSOLE', 20))
+LOG_LEVEL_FILE = int(os.getenv('LOG_LEVEL_FILE', 20))
+
 
 # Rotations for X, Y and Z axes
 # At least there should be a rotation for each axis
