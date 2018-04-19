@@ -5,7 +5,8 @@ from typing import List, Iterator, Tuple, Dict
 import numpy as np
 import pandas as pd
 import pydicom as dcm
-import scipy
+import scipy.misc
+import scipy.ndimage
 from joblib import delayed, Parallel
 from skimage import transform as skt
 
@@ -308,22 +309,31 @@ class PreProcessedData:
         :param mask_stack: 3D vector containing the mask image where the tumour is marked
         :return: Slice of the tumour normalized
         """
+
+        # Smooth mask
+        mask_stack = scipy.ndimage.gaussian_filter(mask_stack.astype(np.float64), 1)
+        mask_stack[mask_stack > 0] = 1
+
         # Get sliced image
         x_min, x_max, y_min, y_max, z_min, z_max = self._get_bounding_box(mask_stack)
         sliced = main_stack[x_min:x_max, y_min:y_max, z_min:z_max]
 
+        # Convert the image to a range from 0 to 1
+        sliced = np.clip(sliced, self.MIN_BOUND, self.MAX_BOUND)
+        sliced = (sliced - self.MIN_BOUND)/(self.MAX_BOUND - self.MIN_BOUND)
+
         # Apply mask
-        sliced = sliced*mask_stack[x_min:x_max, y_min:y_max, z_min:z_max]
-        sliced = sliced.astype(float)
+        sliced *= mask_stack[x_min:x_max, y_min:y_max, z_min:z_max]
+        original_volume = sliced.shape
+
+        # Resize the normalized data
+        sliced = skt.resize(sliced, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
 
         # Normalize the sliced part (var = 1, mean = 0)
         sliced -= sliced.mean()
         sliced /= sliced.std()
 
-        logger.debug("Volume: {}".format(sliced.shape))
-
-        # Resize the normalized data
-        sliced = skt.resize(sliced, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
+        logger.debug(f"Volume: {original_volume}")
         return sliced
 
     def _write_clinical_filtered(self):
