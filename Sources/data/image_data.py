@@ -226,14 +226,18 @@ class PreProcessedData:
     def __init__(self):
         self._data_path = DATA_PATH_PROCESSED
         self._clinical_info_path = DATA_PATH_CLINICAL
-        self._overwrite = False
         self._raw_data = RawData()
 
     def store(self, overwrite=False) -> None:
         """
-        Performs the pre process and stores all the data to disk. The saved file name will be ``<id>/<id>.npz``
+        Performs the pre process and stores all the data to disk. The saved file name will be ``<id>/<id>.npz``.
+        The save location is defined by the environment variable ``DATA_PROCESSED``. It also saves a CSV file
+        with the clinical information in the location defined by ``DATA_CLINICAL_PROCESSED``.
+
+        :param overwrite: If true overwrites the images that are being written, otherwise if an image is found
+                          it skips the image and creates the next one instead
+        :return:
         """
-        self._overwrite = overwrite
         self._raw_data.store_elements()
         to_create = []
         for idx in self._raw_data.valid_ids():
@@ -241,13 +245,14 @@ class PreProcessedData:
 
             # Overwrite the directory if necessary
             if os.path.exists(save_dir):
-                if self._overwrite:
+                if overwrite:
                     shutil.rmtree(save_dir)
                     to_create.append(idx)
             else:
                 to_create.append(idx)
 
-        # To pre-process on Mordor
+        # To pre-process on Mordor (computing cluster), this variable is defined with Sun Grid
+        # Engine and is the number of threads that we are allowed to use
         jobs = int(os.getenv("NSLOTS", -1))
         logger.debug(f"Jobs: {jobs}")
 
@@ -261,12 +266,23 @@ class PreProcessedData:
 
         self._write_clinical_filtered()
 
-    def _process_individual(self, image_name: str, main_stack: np.ndarray, mask_stack: np.ndarray,
-                            count: int, total: int):
-        save_dir = os.path.join(self._data_path, image_name)
-        temp_dir = os.path.join(self._data_path, image_name + "_temp")
+    def _process_individual(self, image_id: str, main_stack: np.ndarray, mask_stack: np.ndarray,
+                            count: int = 0, total: int = 0):
+        """
+        Processes a single image and stores it to disk
 
-        logger.info(f"Processing dataset {image_name}, {count} of {total}")
+        :param image_id: ID for image to be processed
+        :param main_stack: 3D Array containing the main image
+        :param mask_stack: 3D Array containing the mask with 1 in the pixels that contain tumour and 0
+                           for the pixels that do not contain tumour
+        :param count: For debugging purposes and show the progress, number of the image being processed
+        :param total: For debugging purposes and show the progress, total images being processed
+        :return: No return, saves the image to disk
+        """
+        save_dir = os.path.join(self._data_path, image_id)
+        temp_dir = os.path.join(self._data_path, image_id + "_temp")
+
+        logger.info(f"Processing dataset {image_id}, {count} of {total}")
 
         # Remove existing temporary directory from previous runs
         if os.path.exists(temp_dir):
@@ -278,7 +294,7 @@ class PreProcessedData:
 
         # Rotate the image across the 3 axis for data augmentation
         rotations = self._get_rotations(sliced_norm)
-        np.savez_compressed(os.path.join(temp_dir, image_name + ".npz"), **rotations)
+        np.savez_compressed(os.path.join(temp_dir, image_id + ".npz"), **rotations)
 
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)
@@ -349,6 +365,31 @@ class PreProcessedData:
 
     @staticmethod
     def _get_rotations(sliced_norm: np.array) -> Dict[str, np.ndarray]:
+        """
+        Creates different rotations for each 3D image, the number of rotations for each axis is defined
+        with the environment variable ``IMAGE_ROTATIONS`` which is a list separated by ``,`` Note that the
+        rotations mean multiples of 90 so if ``IMAGE_ROTATIONS=1,1,4`` this means that we will have the
+        following rotations:
+
+        +-----+-----+-----+-----+
+        | Num |   X |   Y |   Z |
+        +=====+=====+=====+=====+
+        |  1  |   0 |   0 |   0 |
+        +-----+-----+-----+-----+
+        |  2  |   0 |   0 |  90 |
+        +-----+-----+-----+-----+
+        |  3  |   0 |   0 | 180 |
+        +-----+-----+-----+-----+
+        |  4  |   0 |   0 | 270 |
+        +-----+-----+-----+-----+
+
+        :param sliced_norm: 3D array containing the 3D image values
+        :return: Dictionary where the key is the rotation id in the form ``<deg x>_<deg y>_<deg z>`` and the
+                 value is the image rotated in the corresponding axis the amount of degrees specified
+
+                 For example if the image is rotated 90 degrees in the x axis and 0 degrees in the other ones
+                 the key will bee ``090_000_000``.
+        """
         temp_dict = {}
 
         for i in range(IMAGE_ROTATIONS['x']):
