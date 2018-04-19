@@ -21,6 +21,10 @@ import settings
 import multiprocessing
 
 import data
+import utils
+
+
+logger = utils.init_logger('pre_process')
 
 
 def main(arguments):
@@ -37,12 +41,12 @@ def main(arguments):
         print("ERROR: The {} folder does not exist".format(input_dir))
         exit(1)
 
-    print("We have {} cores".format(multiprocessing.cpu_count()))
+    logger.debug("We have {} cores".format(multiprocessing.cpu_count()))
 
-    print("Root dir: " + settings.APP_ROOT)
-    print("Overwrite: " + str(arguments.overwrite))
-    print("Data raw dir: " + input_dir)
-    print("Data preprocessed dir: " + output_dir)
+    logger.info("Root dir: " + settings.APP_ROOT)
+    logger.info("Overwrite: " + str(arguments.overwrite))
+    logger.info("Data raw dir: " + input_dir)
+    logger.info("Data preprocessed dir: " + output_dir)
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -68,7 +72,6 @@ if __name__ == "__main__":
         main(args)
     except KeyboardInterrupt:
         # This avoids an ugly print on the terminal
-        print()
-        print("----------------------------------")
-        print("Stopping due to keyboard interrupt")
-        print("THANKS FOR THE RIDE 😀")
+        logger.info("----------------------------------")
+        logger.info("Stopping due to keyboard interrupt")
+        logger.info("THANKS FOR THE RIDE 😀")
