@@ -19,7 +19,7 @@ from settings import \
     DATA_PATH_RAW, \
     IMAGE_ROTATIONS
 
-logger = utils.get_logger('data.raw_data')
+logger = utils.get_logger('data.image_data')
 
 
 class RawData:
