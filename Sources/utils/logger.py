@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import os
 import sys
 
@@ -8,30 +9,34 @@ if not os.path.exists(settings.LOG_DIR):
     os.makedirs(settings.LOG_DIR)
 
 loggers = {}
+formatter = logging.Formatter("[%(asctime)s - %(name)s] %(levelname)s: %(message)s")
 
 
 def get_logger(name: str) -> logging.Logger:
-
     if name in loggers:
         return loggers.get(name)
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
+    loggers[name] = logger
+    logger.debug("---- Logger Initiated ----")
+    return logger
 
-    fh = logging.FileHandler(os.path.join(settings.LOG_DIR, name + ".log"), encoding="utf-8")
-    fh.setLevel(logging.DEBUG)
+
+def init_logger(app_name: str) -> logging.Logger:
+    logger = get_logger('')
+
+    fh = logging.FileHandler(os.path.join(settings.LOG_DIR, app_name + ".log"), encoding="utf-8")
+    fh.setLevel(settings.LOG_LEVEL_FILE)
+    fh.setFormatter(formatter)
 
     ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.INFO)
-
-    formatter = logging.Formatter("[%(asctime)s - %(name)s] %(levelname)s: %(message)s")
-    fh.setFormatter(formatter)
+    ch.setLevel(settings.LOG_LEVEL_CONSOLE)
     ch.setFormatter(formatter)
 
-    logger.addHandler(fh)
-    if len(name) > 0:
-        logger.addHandler(ch)
-    logger.debug("---- Logger Initiated ----")
+    logger.addHandler(logging.handlers.SocketHandler('127.0.0.1', 19996))
 
-    loggers[name] = logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
     return logger
+
