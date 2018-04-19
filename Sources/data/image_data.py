@@ -34,10 +34,16 @@ class RawData:
         self.cache_path = DATA_PATH_CACHE
         self.elements_stored = False
 
+        if not os.path.exists(DATA_PATH_CLINICAL):
+            raise FileNotFoundError("The clinical info file has not been found at {}".format(DATA_PATH_CLINICAL))
+
+        df = pd.read_csv(DATA_PATH_CLINICAL)
+        self.clinical_ids = set(df.iloc[:, 0].tolist())
+
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
         self._valid_dirs = [PseudoDir(x.name, x.path, x.is_dir()) for x in valid_dirs]
         self._valid_ids = [str(x.name) for x in self._valid_dirs]
-        logger.info("{} valid dirs have been found".format(len(self._valid_dirs)))
+        logger.info(f"{len(self._valid_dirs)} valid ids have been found")
 
     def total_elements(self) -> int:
         return len(self._valid_dirs)
@@ -89,8 +95,7 @@ class RawData:
 
         self.elements_stored = True
 
-    @staticmethod
-    def _is_valid_dir(test_dir: os.DirEntry) -> bool:
+    def _is_valid_dir(self, test_dir: os.DirEntry) -> bool:
         """Returns :const:`True` if it's a valid directory
 
         Only some directories are valid, the ones that start with FHBO
@@ -104,10 +109,9 @@ class RawData:
         :return: True or False depending on the folder conditions
         """
 
-        # Only names starting with FHBO are valid
-        # We are looking for directories
+        # We are looking for directories, only the ones that we have the clinical info are valid
         name = str(test_dir.name)
-        if not test_dir.is_dir() or not name.startswith("FHBO"):
+        if not test_dir.is_dir() or name not in self.clinical_ids:
             return False
 
         # Check if it has two sub dirs that start with the same name
