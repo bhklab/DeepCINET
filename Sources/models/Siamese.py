@@ -139,6 +139,6 @@ class Siamese:
         return out
 
     def c_index(self):
-        return self.good_predictions_count()/self.batch_size
+        return tf.cast(self.good_predictions_count(), tf.float32)/self.batch_size
 
 
