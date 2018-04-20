@@ -68,7 +68,7 @@ def main(args):
                         siamese_model.y: batch.labels
                     })
 
-                total_pairs -= len(batch.pairs_a)
+                total_pairs -= len(batch.pairs_a)/settings.TOTAL_ROTATIONS
                 logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
                             f"c-index: {c_index_result}, loss: {loss}")
 
@@ -93,7 +93,7 @@ def main(args):
                     })
 
                 correct_count += temp_sum
-                total_pairs -= len(batch.pairs_a)
+                total_pairs -= len(batch.pairs_a)/settings.TOTAL_ROTATIONS
                 logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
                             f"c-index: {c_index_result}")
 
