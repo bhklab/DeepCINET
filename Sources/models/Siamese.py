@@ -1,6 +1,3 @@
-import logging
-import os
-
 import tensorflow as tf
 
 import settings
@@ -41,10 +38,10 @@ class Siamese:
         """
         # In: [batch, 64, 64, 64, 1]
 
-        gpus = [f"/gpu:{i}" for i in range(settings.NUM_GPU)]
+        gpu = [f"/gpu:{i}" for i in range(settings.NUM_GPU)]
 
-        device = gpus if settings.USE_GPU >= 2 else '/cpu:0'
-        logging.debug(f"Using device: {device} for first conv layers")
+        device = gpu if settings.USE_GPU >= 2 else '/cpu:0'
+        logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
             # Out: [batch, 31, 31, 31, 30]
             x = tf.layers.conv3d(
@@ -65,8 +62,8 @@ class Siamese:
                 name="conv2"
             )
 
-        device = gpus if settings.USE_GPU >= 1 else '/cpu:0'
-        logging.debug(f"Using device: {device} for second conv layers")
+        device = gpu if settings.USE_GPU >= 1 else '/cpu:0'
+        logger.debug(f"Using device: {device} for second conv layers")
         with tf.device(device):
             # Out: [batch, 27, 27, 27, 40]
             x = tf.layers.conv3d(
@@ -86,8 +83,8 @@ class Siamese:
                 name="conv4"
             )
 
-        device = gpus if settings.USE_GPU >= 3 else '/cpu:0'
-        logging.debug(f"Using device: {device} for FC layers")
+        device = gpu if settings.USE_GPU >= 3 else '/cpu:0'
+        logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
             # Out: [batch, 25*25*25*50]
             x = tf.layers.flatten(
