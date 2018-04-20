@@ -33,6 +33,15 @@ def main(args):
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = True
 
+    # Create summaries
+    with tf.name_scope("summaries"):
+        tf.summary.scalar("loss", tensor_loss)
+        tf.summary.scalar("c-index", tensor_c_index)
+        tf.summary.histogram("loss", tensor_loss)
+        tf.summary.histogram("c-index", tensor_c_index)
+
+    summary_op = tf.summary.merge_all()
+
     saver = tf.train.Saver()
 
     with tf.Session(config=conf) as sess:
@@ -51,12 +60,14 @@ def main(args):
             # Train iterations
             for j, batch in enumerate(batch_data.batches(train_pairs, batch_size=settings.DATA_BATCH_SIZE)):
                 # Execute graph operations
-                _, c_index_result, loss = sess.run([tensor_minimize, tensor_c_index, tensor_loss], feed_dict={
-                    siamese_model.x: batch.images,
-                    siamese_model.pairs_a: batch.pairs_a,
-                    siamese_model.pairs_b: batch.pairs_b,
-                    siamese_model.y: batch.labels
-                })
+                _, c_index_result, loss, _ = sess.run(
+                    [tensor_minimize, tensor_c_index, tensor_loss, summary_op],
+                    feed_dict={
+                        siamese_model.x: batch.images,
+                        siamese_model.pairs_a: batch.pairs_a,
+                        siamese_model.pairs_b: batch.pairs_b,
+                        siamese_model.y: batch.labels
+                    })
 
                 total_pairs -= len(batch.pairs_a)
                 logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
@@ -72,12 +83,14 @@ def main(args):
             # Test iterations
             for j, batch in enumerate(batch_data.batches(test_pairs, batch_size=settings.DATA_BATCH_SIZE)):
                 # Execute test operations
-                temp_sum, c_index_result = sess.run([tensor_true_sum, tensor_c_index], feed_dict={
-                    siamese_model.x: batch.images,
-                    siamese_model.pairs_a: batch.pairs_a,
-                    siamese_model.pairs_b: batch.pairs_b,
-                    siamese_model.y: batch.labels
-                })
+                temp_sum, c_index_result = sess.run(
+                    [tensor_true_sum, tensor_c_index],
+                    feed_dict={
+                        siamese_model.x: batch.images,
+                        siamese_model.pairs_a: batch.pairs_a,
+                        siamese_model.pairs_b: batch.pairs_b,
+                        siamese_model.y: batch.labels
+                    })
 
                 correct_count += temp_sum
                 total_pairs -= len(batch.pairs_a)
