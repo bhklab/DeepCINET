@@ -117,7 +117,16 @@ class Siamese:
     def loss(self):
         return tf.losses.log_loss(self.y, self.y_prob)
 
+    def good_predictions_count(self):
+        # y ∈ {0, 1}   y_estimate ∈ {0, 1}
+        # The bad predictions are the ones that are not equal so if we subtract one with
+        # the other it should give us a result != 0, then counting the bad predictions
+        # is only a fact of summing all the bad values
+        bad_predictions = tf.abs(self.y - self.y_estimate)
+        bad_predictions_count = tf.reduce_sum(bad_predictions)
+        return self.batch_size - tf.reduce_sum(bad_predictions_count)
+
     def c_index(self):
-        return (self.y*self.y_estimate)/self.batch_size
+        return self.good_predictions_count()/self.batch_size
 
 
