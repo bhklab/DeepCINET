@@ -127,18 +127,18 @@ class Siamese:
         # is only a fact of summing all the bad values
 
         equals = tf.equal(self.y, self.y_estimate)
-        bad_predictions_count = tf.count_nonzero(equals)
+        bad_predictions_count = tf.cast(tf.count_nonzero(equals), tf.float32)
         out = self.batch_size - bad_predictions_count
 
         # Conditions that should always be met, a bit ugly but it seems that Tensorflow
         # does not have any other method
-        assert_op1 = tf.Assert(tf.assert_less_equal(self.y_estimate, 1.))
-        assert_op2 = tf.Assert(tf.assert_greater_equal(self.y_estimate, 0.))
-        with tf.control_dependencies([assert_op1, assert_op2], out):
+        assert_op1 = tf.assert_less_equal(self.y_estimate, 1.)
+        assert_op2 = tf.assert_greater_equal(self.y_estimate, 0.)
+        with tf.control_dependencies([assert_op1, assert_op2]):
             out = tf.identity(out)
         return out
 
     def c_index(self):
-        return tf.cast(self.good_predictions_count(), tf.float32)/self.batch_size
+        return self.good_predictions_count()/self.batch_size
 
 
