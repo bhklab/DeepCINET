@@ -114,17 +114,31 @@ class Siamese:
 
         return x
 
-    def loss(self):
+    def loss(self) -> tf.Tensor:
         return tf.losses.log_loss(self.y, self.y_prob)
 
-    def good_predictions_count(self):
+    def good_predictions_count(self) -> tf.Tensor:
+        """
+        Return the count of elements that have been a good prediction
+
+        :return:
+        """
         # y ∈ {0, 1}   y_estimate ∈ {0, 1}
         # The bad predictions are the ones that are not equal so if we subtract one with
         # the other it should give us a result != 0, then counting the bad predictions
         # is only a fact of summing all the bad values
-        bad_predictions = tf.abs(self.y - self.y_estimate)
-        bad_predictions_count = tf.reduce_sum(bad_predictions)
-        return self.batch_size - tf.reduce_sum(bad_predictions_count)
+
+        equals = tf.equal(self.y, self.y_estimate)
+        bad_predictions_count = tf.count_nonzero(equals)
+        out = self.batch_size - bad_predictions_count
+
+        # Conditions that should always be met, a bit ugly but it seems that Tensorflow
+        # does not have any other method
+        assert_op1 = tf.Assert(tf.assert_less_equal(self.y_estimate, 1.))
+        assert_op2 = tf.Assert(tf.assert_greater_equal(self.y_estimate, 0.))
+        with tf.control_dependencies([assert_op1, assert_op2], out):
+            out = tf.identity(out)
+        return out
 
     def c_index(self):
         return self.good_predictions_count()/self.batch_size
