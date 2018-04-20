@@ -51,6 +51,9 @@ TOTAL_ROTATIONS = IMAGE_ROTATIONS['x']*IMAGE_ROTATIONS['y']*IMAGE_ROTATIONS['z']
 # 2: Half-full -> Use many operations in the GPU
 # 3: Full -> Use almost all the operations in the GPU
 USE_GPU = int(os.getenv('USE_GPU', 0))
+NUM_GPU = int(os.getenv('NUM_GPU', 0))
+
+NUM_EPOCHS = int(os.getenv('NUM_EPOCHS', 1))
 
 
 if __name__ == '__main__':

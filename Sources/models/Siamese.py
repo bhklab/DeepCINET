@@ -41,7 +41,9 @@ class Siamese:
         """
         # In: [batch, 64, 64, 64, 1]
 
-        device = '/gpu:0' if settings.USE_GPU >= 2 else '/cpu:0'
+        gpus = [f"/gpu:{i}" for i in range(settings.NUM_GPU)]
+
+        device = gpus if settings.USE_GPU >= 2 else '/cpu:0'
         logging.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
             # Out: [batch, 31, 31, 31, 30]
@@ -63,7 +65,7 @@ class Siamese:
                 name="conv2"
             )
 
-        device = '/gpu:0' if settings.USE_GPU >= 1 else '/cpu:0'
+        device = gpus if settings.USE_GPU >= 1 else '/cpu:0'
         logging.debug(f"Using device: {device} for second conv layers")
         with tf.device(device):
             # Out: [batch, 27, 27, 27, 40]
@@ -84,7 +86,7 @@ class Siamese:
                 name="conv4"
             )
 
-        device = '/gpu:0' if settings.USE_GPU >= 3 else '/cpu:0'
+        device = gpus if settings.USE_GPU >= 3 else '/cpu:0'
         logging.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
             # Out: [batch, 25*25*25*50]
