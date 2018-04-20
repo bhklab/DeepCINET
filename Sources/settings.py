@@ -55,6 +55,11 @@ NUM_GPU = int(os.getenv('NUM_GPU', 0))
 
 NUM_EPOCHS = int(os.getenv('NUM_EPOCHS', 1))
 
+DATA_BATCH_SIZE = int(os.getenv('DATA_BATCH_SIZE', 2))
+assert DATA_BATCH_SIZE >= 2
+
+SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './model.ckpt')
+
 
 if __name__ == '__main__':
     print(IMAGE_ROTATIONS)
