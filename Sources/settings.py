@@ -59,6 +59,7 @@ DATA_BATCH_SIZE = int(os.getenv('DATA_BATCH_SIZE', 2))
 assert DATA_BATCH_SIZE >= 2
 
 SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './model.ckpt')
+SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', '.')
 
 
 if __name__ == '__main__':

@@ -41,6 +41,7 @@ def main(args):
         tf.summary.histogram("c-index", tensor_c_index)
 
     summary_op = tf.summary.merge_all()
+    train_writer = tf.summary.FileWriter(settings.SUMMARIES_DIR)
 
     saver = tf.train.Saver()
 
@@ -60,7 +61,7 @@ def main(args):
             # Train iterations
             for j, batch in enumerate(batch_data.batches(train_pairs, batch_size=settings.DATA_BATCH_SIZE)):
                 # Execute graph operations
-                _, c_index_result, loss, _ = sess.run(
+                _, c_index_result, loss, summary = sess.run(
                     [tensor_minimize, tensor_c_index, tensor_loss, summary_op],
                     feed_dict={
                         siamese_model.x: batch.images,
@@ -75,6 +76,7 @@ def main(args):
 
                 logger.debug("Saving weights")
                 saver.save(sess, settings.SESSION_SAVE_PATH)
+                train_writer.add_summary(summary)
 
             # After we iterate over all the data inspect the test error
             total_pairs = len(test_pairs)
