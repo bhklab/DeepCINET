@@ -128,7 +128,7 @@ class Siamese:
 
         equals = tf.equal(self.y, self.y_estimate)
         bad_predictions_count = tf.cast(tf.count_nonzero(equals), tf.float32)
-        out = self.batch_size - bad_predictions_count
+        out = bad_predictions_count
 
         # Conditions that should always be met, a bit ugly but it seems that Tensorflow
         # does not have any other method
