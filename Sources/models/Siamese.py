@@ -28,8 +28,8 @@ class Siamese:
             self.gathered_a = tf.gather(self.sister_out, self.pairs_a)
             self.gathered_b = tf.gather(self.sister_out, self.pairs_b)
 
-            # self.y_estimate = tf.sigmoid(self.gathered_a - self.gathered_b)
-            self.y_estimate = tf.tanh(self.gathered_a - self.gathered_b)
+            self.y_prob = tf.sigmoid(self.gathered_a - self.gathered_b)
+            self.y_estimate = tf.round(self.y_prob)
 
     @staticmethod
     def sister(x: tf.Tensor) -> tf.Tensor:
@@ -116,13 +116,9 @@ class Siamese:
         return x
 
     def loss(self):
-        # return tf.losses.log_loss(self.y, self.y_estimate)
-        loss = self.y_estimate*(2*(1 - self.y) - 1)
-        loss = tf.reduce_sum(loss)/self.batch_size
-        return loss
-        # return (1 - self.c_index())**2
+        return tf.losses.log_loss(self.y, self.y_prob)
 
     def c_index(self):
-        c_index = ((self.y_estimate + 1)/2)*self.y
-        return tf.reduce_sum(c_index)/self.batch_size
+        return (self.y*self.y_estimate)/self.batch_size
+
 
