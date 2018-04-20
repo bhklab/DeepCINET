@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import tensorflow as tf
 
@@ -35,7 +36,10 @@ def main(args):
     saver = tf.train.Saver()
 
     with tf.Session(config=conf) as sess:
-        sess.run(tf.global_variables_initializer())
+        if os.path.exists(settings.SESSION_SAVE_PATH) and not args.overwrite_weights:
+            saver.restore(sess, settings.SESSION_SAVE_PATH)
+        else:
+            sess.run(tf.global_variables_initializer())
 
         logger.info("Starting training")
 
@@ -54,11 +58,12 @@ def main(args):
                     siamese_model.y: batch.labels
                 })
 
-                saver.save(sess, settings.SESSION_SAVE_PATH)
-
                 total_pairs -= len(batch.pairs_a)
                 logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
                             f"c-index: {c_index_result}, loss: {loss}")
+
+                logger.debug("Saving weights")
+                saver.save(sess, settings.SESSION_SAVE_PATH)
 
             # After we iterate over all the data inspect the test error
             total_pairs = len(test_pairs)
@@ -85,14 +90,10 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Fit the data with a Tensorflow model")
     parser.add_argument(
-        "--datasets_dir",
-        help="Directory where all the datasets can be found",
-        default="$HOME/Documents/Datasets"
-    )
-    parser.add_argument(
-        "--input_dir",
-        help="Directory inside datasets_dir where the desired dataset is found",
-        default="HNK_processed"
+        "--overwrite_weights",
+        help="Overwrite the weights that have been stored between each iteration",
+        default=False,
+        action="store_true"
     )
 
     arguments = parser.parse_args()
