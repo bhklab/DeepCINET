@@ -26,15 +26,40 @@ ln -s /mnt/work1/users/bhklab/Data/HNK Data
 All the environment variables are defined in the .env file which should be located in the
 project's root dir. An example can be this one:
 
-```dotenv
-# All the entries starting with DATA will have their absolute path expanded
-ROOT_DIR= # your project's root dir here
+```bash
+ROOT_DIR=${HOME}/Documents/Projects/CNNSurv
+
+# Variables starting with DATA will have their path expanded
 DATA=${ROOT_DIR}/Data
 DATA_RAW=${DATA}/HNK_raw
 DATA_CLINICAL=${DATA}/HNK_raw/clinical_info.csv
 DATA_CACHE=${DATA}/.cache
 DATA_PROCESSED=${DATA}/HNK_processed
 DATA_CLINICAL_PROCESSED=${DATA_PROCESSED}/clinical_info.csv
+
+# Rotations for X, Y and Z axes
+# At least there should be a rotation for each axis
+IMAGE_ROTATIONS=1,1,4
+
+LOG_DIR=${DATA}/logs
+
+# Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
+LOG_LEVEL_CONSOLE=10
+LOG_LEVEL_FILE=10
+
+# 0: No
+# 1: Half -> Small value to not fill memory
+# 2: Half-full -> Use many operations in the GPU
+# 3: Full -> Use almost all the operations in the GPU
+USE_GPU=0
+NUM_GPU=1
+
+DATA_BATCH_SIZE=7
+
+SESSION_SAVE_PATH=${DATA}/model.ckpt
+SUMMARIES_DIR=${DATA}/Summaries
+
+NUM_EPOCHS=1
 ```
 
 ## Data directories
@@ -105,9 +130,23 @@ mask_stack = npz_file['mask']
 ```
 
 ### `${DATA_PROCESSED}` directory
-Contains the pre-processed data. Each folder contains a `.npz` file with 4 arrays of 64x64x64. The arrays
-are the original image and all the possible rotations in the 3 axes. The name of each array is
-`<rot_x>_<rot_y>_<rot_z>`
+Contains the pre-processed data. Each folder contains a `.npz` file with 4 arrays of 64x64x64.
+Each array has been pre-processed with the following process:
+
+1. Process mask
+    1. Smooth mask with Gaussian filter and set `1` for values `> 0`
+    2. Get mask bounding box for all the `1` values in the mask
+2. Slice main image with mask bounding box
+3. Set main image values to `0` to `1` range
+    1. Clip the minimum and maximum values to -1000 and 400 respectively
+    2. Convert image to a `0` to `1` range
+    3. Apply mask by setting to `0` main image values that are not inside the mask
+4. Resize image to `64x64x64`
+5. Normalize image by setting `mean = 0` and `std = 1`
+6. Rotate the image and create the image augmentation arrays  
+
+The arrays and the original image are stored then in the `npz` with the key corresponding
+to the rotation by `<rot_x>_<rot_y>_<rot_z>`
 
 ```
 ${DATA_PROCESSED}
@@ -118,6 +157,7 @@ ${DATA_PROCESSED}
 ```
 
 #### Clinical info
+
 The clinical info `csv` file is located at `${DATA_CLINICAL_PROCESSED}` (defined by your `.env` file)
 It contains the clinical info for the patients. The file can be loaded with `pandas` and it contains 
 the fields: `id`, `age`, `time` and `event`.
