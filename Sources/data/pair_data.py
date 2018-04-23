@@ -117,10 +117,8 @@ class BatchData:
     This is a batch
     """
 
-    def __init__(self):
-        self._data_path = DATA_PATH_PROCESSED
-
-    def batches(self, pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids') \
+    @staticmethod
+    def batches(pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids') \
             -> Generator[PairBatch, None, None]:
         """
         Generates batches based on all the pairs and the batch size
@@ -131,11 +129,12 @@ class BatchData:
         :return:
         """
         if group_by == 'ids':
-            return self._batch_by_ids(pairs, batch_size)
+            return BatchData._batch_by_ids(pairs, batch_size)
         else:
-            return self._batch_by_pairs(pairs, batch_size)
+            return BatchData._batch_by_pairs(pairs, batch_size)
 
-    def _batch_by_ids(self, pairs: Iterable[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
+    @staticmethod
+    def _batch_by_ids(pairs: Iterable[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
         total_pairs = set(pairs)
 
         # Extract bath_size ids
@@ -154,14 +153,16 @@ class BatchData:
             total_pairs -= batch_pairs
             assert len(batch_pairs)*2 >= len(ids)
 
-            yield self._create_pair_batch(batch_pairs, ids)
+            yield BatchData._create_pair_batch(batch_pairs, ids)
 
-    def _batch_by_pairs(self, pairs: Iterable[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
-        for i, values in enumerate(self._split(pairs, batch_size)):
+    @staticmethod
+    def _batch_by_pairs(pairs: Iterable[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
+        for i, values in enumerate(BatchData._split(pairs, batch_size)):
             values = list(values)
-            yield self._create_pair_batch(values, {idx for p in values for idx in (p.p1, p.p2)})
+            yield BatchData._create_pair_batch(values, {idx for p in values for idx in (p.p1, p.p2)})
 
-    def _create_pair_batch(self, pairs: Collection[PairComp], ids: Set[str]) -> PairBatch:
+    @staticmethod
+    def _create_pair_batch(pairs: Collection[PairComp], ids: Set[str]) -> PairBatch:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
@@ -184,7 +185,7 @@ class BatchData:
 
         images = []
         for idx in ids_list:
-            loaded = np.load(os.path.join(self._data_path, idx, idx + ".npz"))
+            loaded = np.load(os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz"))
             for item in loaded:
                 images.append(loaded[item])
             loaded.close()
