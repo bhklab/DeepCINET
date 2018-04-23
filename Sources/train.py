@@ -13,9 +13,6 @@ logger = utils.init_logger('train')
 
 
 def main(args):
-    dataset = data.pair_data.SplitPairs()
-    dataset.print_pairs()
-
     siamese_model = models.Siamese()
     optimizer = tf.train.AdamOptimizer()
 
@@ -26,9 +23,6 @@ def main(args):
     }
 
     tensors['minimize'] = optimizer.minimize(tensors['loss'])
-
-    train_pairs = list(dataset.train_pairs())
-    test_pairs = list(dataset.test_pairs())
 
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = True
@@ -59,11 +53,13 @@ def main(args):
         logger.debug(f"Num Epochs: {settings.NUM_EPOCHS}")
         logger.info("Starting training")
 
-        for i in range(settings.NUM_EPOCHS):
-            logger.info(f"Epoch: {i + 1}")
+        dataset = data.pair_data.SplitPairs()
+        for test_pairs, train_pairs in dataset.folds():
+            for j in range(settings.NUM_EPOCHS):
+                logger.info(f"Epoch: {j + 1}")
 
-            train_iterations(saver, sess, siamese_model, tensors, train_pairs, train_summary)
-            test_iterations(sess, siamese_model, tensors, test_pairs)
+                train_iterations(saver, sess, siamese_model, tensors, train_pairs, train_summary)
+                test_iterations(sess, siamese_model, tensors, test_pairs)
 
 
 def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Siamese, tensors: Dict[str, tf.Tensor],

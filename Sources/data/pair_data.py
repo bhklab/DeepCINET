@@ -1,12 +1,12 @@
 import os
 import random
 from itertools import takewhile, islice, repeat
-from typing import Iterator, Tuple, Generator, Iterable, Set, Collection
+from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List
 
 import numpy as np
 import pandas as pd
 import scipy
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
 
 from data.data_structures import PairComp, PairBatch
 from settings import DATA_PATH_CLINICAL_PROCESSED, TOTAL_ROTATIONS, DATA_PATH_PROCESSED, RANDOM_SEED
@@ -24,33 +24,8 @@ class SplitPairs:
         # To divide into test and validation sets we only need the clinical data
         self.clinical_data = pd.read_csv(DATA_PATH_CLINICAL_PROCESSED, index_col=0)
 
-        # http://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html
-        total_x = self.clinical_data['id'].values
-        total_y = self.clinical_data['event'].values
-
-        # NOTE: This part varies between executions unless a random state with a seed is passed
-        train_id, test_id = train_test_split(
-            total_x,
-            test_size=.2,
-            shuffle=True,
-            stratify=total_y,
-            random_state=RANDOM_SEED
-        )
-
-        self._train_data = self.clinical_data[self.clinical_data['id'].isin(train_id)]
-        self._test_data = self.clinical_data[self.clinical_data['id'].isin(test_id)]
-
-    def train_pairs(self) -> Iterator[PairComp]:
-        return self._get_pairs(self._train_data)
-
-    def test_pairs(self) -> Iterator[PairComp]:
-        return self._get_pairs(self._test_data)
-
-    def train_ids(self) -> np.ndarray:
-        return self._train_data['id'].values
-
-    def test_ids(self) -> np.ndarray:
-        return self._test_data['id'].values
+        self._train_data = pd.DataFrame()
+        self._test_data = pd.DataFrame()
 
     def print_pairs(self, data_augmentation=True):
         test_pairs_cens, test_pairs_uncens = self._possible_pairs(self._test_data, data_augmentation)
@@ -66,8 +41,23 @@ class SplitPairs:
         df['Total'] = df.sum(axis=1)
         df.loc[df['Set'] == "TestTrain", 'Set'] = "Total"
 
-        print("Maximum number of pairs")
-        print(df)
+        logger.info("Maximum number of pairs")
+        logger.info(df)
+
+    def folds(self, n_folds: int = 4) -> Iterator[Tuple[List[PairComp], List[PairComp]]]:
+        skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
+
+        total_x = self.clinical_data['id'].values
+        total_y = self.clinical_data['event'].values
+
+        for train_ids, test_ids in skf.split(total_x, total_y):
+            self._train_data = self.clinical_data.iloc[train_ids]
+            self._test_data = self.clinical_data.iloc[test_ids]
+
+            train_pairs = self._get_pairs(self._train_data)
+            test_pairs = self._get_pairs(self._test_data)
+
+            yield list(train_pairs), list(test_pairs)
 
     @staticmethod
     def _possible_pairs(df: pd.DataFrame, data_augmentation=True) -> Tuple[int, int]:
@@ -106,7 +96,7 @@ class SplitPairs:
         # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
         # That's why we swap random pairs
         random.shuffle(pairs)
-        logger.debug(pairs)
+        # logger.debug(pairs)
         return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
