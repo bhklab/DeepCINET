@@ -53,7 +53,7 @@ def main(args):
 
         for i in range(settings.NUM_EPOCHS):
 
-            total_pairs = len(train_pairs)
+            total_pairs = len(train_pairs)*settings.TOTAL_ROTATIONS
             logger.info(f"Epoch: {i + 1}\tWe have {total_pairs} pairs")
 
             # Train iterations
@@ -68,7 +68,7 @@ def main(args):
                         siamese_model.y: batch.labels
                     })
 
-                total_pairs -= len(batch.pairs_a)/settings.TOTAL_ROTATIONS
+                total_pairs -= len(batch.pairs_a)
                 logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
                             f"c-index: {c_index_result}, loss: {loss}")
 
@@ -77,7 +77,7 @@ def main(args):
                 train_writer.add_summary(summary)
 
             # After we iterate over all the data inspect the test error
-            total_pairs = len(test_pairs)
+            total_pairs = len(test_pairs)*settings.TOTAL_ROTATIONS
             correct_count = 0  # To store correct predictions
 
             # Test iterations
@@ -93,11 +93,11 @@ def main(args):
                     })
 
                 correct_count += temp_sum
-                total_pairs -= len(batch.pairs_a)/settings.TOTAL_ROTATIONS
+                total_pairs -= len(batch.pairs_a)
                 logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
                             f"c-index: {c_index_result}")
 
-            logger.info(f"Final c-index: {correct_count/len(test_pairs)}")
+            logger.info(f"Final c-index: {correct_count/(len(test_pairs)*settings.TOTAL_ROTATIONS)}")
 
 
 if __name__ == '__main__':
