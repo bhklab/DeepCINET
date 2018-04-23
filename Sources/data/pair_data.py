@@ -10,6 +10,9 @@ from sklearn.model_selection import train_test_split
 
 from data.data_structures import PairComp, PairBatch
 from settings import DATA_PATH_CLINICAL_PROCESSED, TOTAL_ROTATIONS, DATA_PATH_PROCESSED, RANDOM_SEED
+from utils import get_logger
+
+logger = get_logger('pair_data')
 
 
 class SplitPairs:
@@ -103,12 +106,13 @@ class SplitPairs:
         # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
         # That's why we swap random pairs
         random.shuffle(pairs)
+        logger.debug(pairs)
         return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
     def _swap_random(tup: PairComp) -> PairComp:
         if bool(random.getrandbits(1)):
-            return PairComp(tup.p_b, tup.p_a, tup.comp)
+            return PairComp(p_a=tup.p_b, p_b=tup.p_a, comp=not tup.comp)
         return tup
 
 

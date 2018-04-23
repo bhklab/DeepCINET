@@ -55,6 +55,8 @@ def main(args):
         else:
             sess.run(tf.global_variables_initializer())
 
+        logger.debug(f"Batch size: {settings.DATA_BATCH_SIZE}")
+        logger.debug(f"Num Epochs: {settings.NUM_EPOCHS}")
         logger.info("Starting training")
 
         for i in range(settings.NUM_EPOCHS):
@@ -85,7 +87,6 @@ def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Siam
         logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
                     f"c-index: {c_index_result}, loss: {loss}")
 
-        logger.debug("Saving weights")
         saver.save(sess, settings.SESSION_SAVE_PATH)
         summary_writer.add_summary(summary, i)
 
