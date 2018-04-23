@@ -63,7 +63,7 @@ assert DATA_BATCH_SIZE >= 2
 SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './model.ckpt')
 SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', '.')
 
-RANDOM_SEED = os.getenv('RANDOM_SEED', 0)
+RANDOM_SEED = int(os.getenv('RANDOM_SEED', 0))
 if RANDOM_SEED < 0:
     RANDOM_SEED = random.randint(0, 1000)
 else:
