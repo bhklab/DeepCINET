@@ -9,7 +9,7 @@ import scipy
 from sklearn.model_selection import train_test_split
 
 from data.data_structures import PairComp, PairBatch
-from settings import DATA_PATH_CLINICAL_PROCESSED, TOTAL_ROTATIONS, DATA_PATH_PROCESSED
+from settings import DATA_PATH_CLINICAL_PROCESSED, TOTAL_ROTATIONS, DATA_PATH_PROCESSED, RANDOM_SEED
 
 
 class SplitPairs:
@@ -26,7 +26,13 @@ class SplitPairs:
         total_y = self.clinical_data['event'].values
 
         # NOTE: This part varies between executions unless a random state with a seed is passed
-        train_id, test_id = train_test_split(total_x, test_size=.2, shuffle=True, stratify=total_y)
+        train_id, test_id = train_test_split(
+            total_x,
+            test_size=.2,
+            shuffle=True,
+            stratify=total_y,
+            random_state=RANDOM_SEED
+        )
 
         self._train_data = self.clinical_data[self.clinical_data['id'].isin(train_id)]
         self._test_data = self.clinical_data[self.clinical_data['id'].isin(test_id)]

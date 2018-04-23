@@ -1,4 +1,6 @@
 import os
+import random
+import numpy as np
 
 import dotenv
 
@@ -61,6 +63,10 @@ assert DATA_BATCH_SIZE >= 2
 SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './model.ckpt')
 SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', '.')
 
+RANDOM_SEED = os.getenv('RANDOM_SEED', 0)
+if RANDOM_SEED < 0:
+    RANDOM_SEED = random.randint(0, 1000)
+else:
+    random.seed(RANDOM_SEED)
+    np.random.seed(RANDOM_SEED)
 
-if __name__ == '__main__':
-    print(IMAGE_ROTATIONS)

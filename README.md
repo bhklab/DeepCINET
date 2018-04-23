@@ -60,6 +60,9 @@ SESSION_SAVE_PATH=${DATA}/model.ckpt
 SUMMARIES_DIR=${DATA}/Summaries
 
 NUM_EPOCHS=1
+
+# If seed < 0 system seed is used
+RANDOM_SEED=0
 ```
 
 ## Data directories
