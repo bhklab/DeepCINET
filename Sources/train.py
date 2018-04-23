@@ -38,12 +38,17 @@ def main(args):
         tf.summary.scalar("loss", tensors['loss'])
         tf.summary.scalar("c-index", tensors['c-index'])
 
+        for var in tf.trainable_variables():
+            tf.summary.histogram(var.name, var)
+
     tensors['summary'] = tf.summary.merge_all()
-    summary_writer = tf.summary.FileWriter(settings.SUMMARIES_DIR)
 
     saver = tf.train.Saver()
 
     with tf.Session(config=conf) as sess:
+        train_summary = tf.summary.FileWriter(os.path.join(settings.SUMMARIES_DIR, 'train'), sess.graph)
+
+        # Load the weights from the previous execution if we can
         if os.path.exists(settings.SESSION_SAVE_PATH) and not args.overwrite_weights:
             saver.restore(sess, settings.SESSION_SAVE_PATH)
             logger.info("Previous weights found and loaded")
@@ -55,17 +60,17 @@ def main(args):
         for i in range(settings.NUM_EPOCHS):
             logger.info(f"Epoch: {i + 1}")
 
-            train_iterations(saver, sess, siamese_model, tensors, train_pairs, summary_writer)
+            train_iterations(saver, sess, siamese_model, tensors, train_pairs, train_summary)
             test_iterations(sess, siamese_model, tensors, test_pairs)
 
 
-def train_iterations(saver: tf.train.Saver, sess: tf.Session, model, tensors: Dict[str, tf.Tensor],
+def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Siamese, tensors: Dict[str, tf.Tensor],
                      pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter):
 
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
     logger.info(f"We have {total_pairs} pairs")
     # Train iterations
-    for j, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.DATA_BATCH_SIZE)):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.DATA_BATCH_SIZE)):
         # Execute graph operations
         _, c_index_result, loss, summary = sess.run(
             [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
@@ -77,21 +82,23 @@ def train_iterations(saver: tf.train.Saver, sess: tf.Session, model, tensors: Di
             })
 
         total_pairs -= len(batch.pairs_a)
-        logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
+        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
                     f"c-index: {c_index_result}, loss: {loss}")
 
         logger.debug("Saving weights")
         saver.save(sess, settings.SESSION_SAVE_PATH)
-        summary_writer.add_summary(summary)
+        summary_writer.add_summary(summary, i)
 
 
-def test_iterations(sess: tf.Session, model: models.Siamese, tensors: Dict[str, tf.Tensor], pairs: List[data.PairComp]):
+def test_iterations(sess: tf.Session, model: models.Siamese, tensors: Dict[str, tf.Tensor],
+                    pairs: List[data.PairComp]):
     # After we iterate over all the data inspect the test error
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
     correct_count = 0  # To store correct predictions
+    pairs_count = 0
 
     # Test iterations
-    for j, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.DATA_BATCH_SIZE)):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.DATA_BATCH_SIZE)):
         # Execute test operations
         temp_sum, c_index_result = sess.run(
             [tensors['true-predictions'], tensors['c-index']],
@@ -104,8 +111,10 @@ def test_iterations(sess: tf.Session, model: models.Siamese, tensors: Dict[str, 
 
         correct_count += temp_sum
         total_pairs -= len(batch.pairs_a)
-        logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
-                    f"c-index: {c_index_result}")
+        pairs_count += len(batch.pairs_a)
+
+        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
+                    f"c-index: {c_index_result}, accum c-index:{correct_count/pairs_count}")
     logger.info(f"Final c-index: {correct_count/(len(pairs)*settings.TOTAL_ROTATIONS)}")
 
 
