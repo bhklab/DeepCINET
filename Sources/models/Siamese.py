@@ -13,21 +13,21 @@ class Siamese:
 
     def __init__(self):
         with tf.device('/cpu:0'):
-            self.x = tf.placeholder(tf.float32, [None, 64, 64, 64, 1])
-            self.y = tf.placeholder(tf.float32, [None])
-            self.y = tf.reshape(self.y, [-1, 1])
-            self.pairs_a = tf.placeholder(tf.int32, [None])
-            self.pairs_b = tf.placeholder(tf.int32, [None])
+            self.x = tf.placeholder(tf.float32, [None, 64, 64, 64, 1], name="X")
+            self.y = tf.placeholder(tf.float32, [None], name="Y")
+            self.y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
+            self.pairs_a = tf.placeholder(tf.int32, [None], name="pairs_a")
+            self.pairs_b = tf.placeholder(tf.int32, [None], name="pairs_b")
 
-            self.batch_size = tf.cast(tf.shape(self.y)[0], tf.float32)
+            self.batch_size = tf.cast(tf.shape(self.y)[0], tf.float32, name="batch_size_cast")
 
         self.sister_out = self.sister(self.x)
 
         with tf.device('/cpu:0'):
-            self.gathered_a = tf.gather(self.sister_out, self.pairs_a)
-            self.gathered_b = tf.gather(self.sister_out, self.pairs_b)
+            self.gathered_a = tf.gather(self.sister_out, self.pairs_a, name="gather_a")
+            self.gathered_b = tf.gather(self.sister_out, self.pairs_b, name="gather_b")
 
-            self.y_prob = tf.sigmoid(self.gathered_a - self.gathered_b)
+            self.y_prob = tf.sigmoid(self.gathered_a - self.gathered_b, name="sigmoid")
             self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
     @staticmethod
@@ -104,12 +104,14 @@ class Siamese:
             x = tf.layers.dense(
                 x,
                 50,
+                name="dense"
             )
 
             # Out: [batch, 1]
             x = tf.layers.dense(
                 x,
-                1
+                1,
+                name="dense1"
             )
 
         return x
