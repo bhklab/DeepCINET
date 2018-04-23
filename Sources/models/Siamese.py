@@ -9,6 +9,8 @@ logger = utils.get_logger('train.siamese')
 
 class Siamese:
 
+    THRESHOLD = .5
+
     def __init__(self):
         with tf.device('/cpu:0'):
             self.x = tf.placeholder(tf.float32, [None, 64, 64, 64, 1])
@@ -26,7 +28,7 @@ class Siamese:
             self.gathered_b = tf.gather(self.sister_out, self.pairs_b)
 
             self.y_prob = tf.sigmoid(self.gathered_a - self.gathered_b)
-            self.y_estimate = tf.round(self.y_prob)
+            self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
     @staticmethod
     def sister(x: tf.Tensor) -> tf.Tensor:
@@ -119,24 +121,14 @@ class Siamese:
         """
         Return the count of elements that have been a good prediction
 
-        :return:
+        :return: Tensorflow tensor with the count for good predictions. Then to get
+                 the c-index we only have to divide by the batch size
         """
-        # y ∈ {0, 1}   y_estimate ∈ {0, 1}
-        # The bad predictions are the ones that are not equal so if we subtract one with
-        # the other it should give us a result != 0, then counting the bad predictions
-        # is only a fact of summing all the bad values
+        # y ∈ {0, 1}   y_estimate ∈ {True, False}
+        y_bool = tf.greater_equal(self.y, self.THRESHOLD)
+        equals = tf.equal(y_bool, self.y_estimate)
 
-        equals = tf.equal(self.y, self.y_estimate)
-        bad_predictions_count = tf.cast(tf.count_nonzero(equals), tf.float32)
-        out = bad_predictions_count
-
-        # Conditions that should always be met, a bit ugly but it seems that Tensorflow
-        # does not have any other method
-        assert_op1 = tf.assert_less_equal(self.y_estimate, 1.)
-        assert_op2 = tf.assert_greater_equal(self.y_estimate, 0.)
-        with tf.control_dependencies([assert_op1, assert_op2]):
-            out = tf.identity(out)
-        return out
+        return tf.cast(tf.count_nonzero(equals), tf.float32)
 
     def c_index(self):
         return self.good_predictions_count()/self.batch_size
