@@ -1,5 +1,6 @@
 import argparse
 import os
+from typing import Dict, List
 
 import tensorflow as tf
 
@@ -14,16 +15,17 @@ logger = utils.init_logger('train')
 def main(args):
     dataset = data.pair_data.SplitPairs()
     dataset.print_pairs()
-    batch_data = data.pair_data.BatchData()
 
     siamese_model = models.Siamese()
-
-    tensor_loss = siamese_model.loss()
-    tensor_c_index = siamese_model.c_index()
-    tensor_true_sum = siamese_model.good_predictions_count()
-
     optimizer = tf.train.AdamOptimizer()
-    tensor_minimize = optimizer.minimize(tensor_loss)
+
+    tensors = {
+        'loss': siamese_model.loss(),
+        'c-index': siamese_model.c_index(),
+        'true-predictions': siamese_model.good_predictions_count(),
+    }
+
+    tensors['minimize'] = optimizer.minimize(tensors['loss'])
 
     train_pairs = list(dataset.train_pairs())
     test_pairs = list(dataset.test_pairs())
@@ -33,71 +35,78 @@ def main(args):
 
     # Create summaries
     with tf.name_scope("summaries"):
-        tf.summary.scalar("loss", tensor_loss)
-        tf.summary.scalar("c-index", tensor_c_index)
-        tf.summary.histogram("loss", tensor_loss)
-        tf.summary.histogram("c-index", tensor_c_index)
+        tf.summary.scalar("loss", tensors['loss'])
+        tf.summary.scalar("c-index", tensors['c-index'])
 
-    summary_op = tf.summary.merge_all()
-    train_writer = tf.summary.FileWriter(settings.SUMMARIES_DIR)
+    tensors['summary'] = tf.summary.merge_all()
+    summary_writer = tf.summary.FileWriter(settings.SUMMARIES_DIR)
 
     saver = tf.train.Saver()
 
     with tf.Session(config=conf) as sess:
         if os.path.exists(settings.SESSION_SAVE_PATH) and not args.overwrite_weights:
             saver.restore(sess, settings.SESSION_SAVE_PATH)
+            logger.info("Previous weights found and loaded")
         else:
             sess.run(tf.global_variables_initializer())
 
         logger.info("Starting training")
 
         for i in range(settings.NUM_EPOCHS):
+            logger.info(f"Epoch: {i + 1}")
 
-            total_pairs = len(train_pairs)*settings.TOTAL_ROTATIONS
-            logger.info(f"Epoch: {i + 1}\tWe have {total_pairs} pairs")
+            train_iterations(saver, sess, siamese_model, tensors, train_pairs, summary_writer)
+            test_iterations(sess, siamese_model, tensors, test_pairs)
 
-            # Train iterations
-            for j, batch in enumerate(batch_data.batches(train_pairs, batch_size=settings.DATA_BATCH_SIZE)):
-                # Execute graph operations
-                _, c_index_result, loss, summary = sess.run(
-                    [tensor_minimize, tensor_c_index, tensor_loss, summary_op],
-                    feed_dict={
-                        siamese_model.x: batch.images,
-                        siamese_model.pairs_a: batch.pairs_a,
-                        siamese_model.pairs_b: batch.pairs_b,
-                        siamese_model.y: batch.labels
-                    })
 
-                total_pairs -= len(batch.pairs_a)
-                logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
-                            f"c-index: {c_index_result}, loss: {loss}")
+def train_iterations(saver: tf.train.Saver, sess: tf.Session, model, tensors: Dict[str, tf.Tensor],
+                     pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter):
 
-                logger.debug("Saving weights")
-                saver.save(sess, settings.SESSION_SAVE_PATH)
-                train_writer.add_summary(summary)
+    total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
+    logger.info(f"We have {total_pairs} pairs")
+    # Train iterations
+    for j, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.DATA_BATCH_SIZE)):
+        # Execute graph operations
+        _, c_index_result, loss, summary = sess.run(
+            [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
+            feed_dict={
+                model.x: batch.images,
+                model.pairs_a: batch.pairs_a,
+                model.pairs_b: batch.pairs_b,
+                model.y: batch.labels
+            })
 
-            # After we iterate over all the data inspect the test error
-            total_pairs = len(test_pairs)*settings.TOTAL_ROTATIONS
-            correct_count = 0  # To store correct predictions
+        total_pairs -= len(batch.pairs_a)
+        logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
+                    f"c-index: {c_index_result}, loss: {loss}")
 
-            # Test iterations
-            for j, batch in enumerate(batch_data.batches(test_pairs, batch_size=settings.DATA_BATCH_SIZE)):
-                # Execute test operations
-                temp_sum, c_index_result = sess.run(
-                    [tensor_true_sum, tensor_c_index],
-                    feed_dict={
-                        siamese_model.x: batch.images,
-                        siamese_model.pairs_a: batch.pairs_a,
-                        siamese_model.pairs_b: batch.pairs_b,
-                        siamese_model.y: batch.labels
-                    })
+        logger.debug("Saving weights")
+        saver.save(sess, settings.SESSION_SAVE_PATH)
+        summary_writer.add_summary(summary)
 
-                correct_count += temp_sum
-                total_pairs -= len(batch.pairs_a)
-                logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
-                            f"c-index: {c_index_result}")
 
-            logger.info(f"Final c-index: {correct_count/(len(test_pairs)*settings.TOTAL_ROTATIONS)}")
+def test_iterations(sess: tf.Session, model: models.Siamese, tensors: Dict[str, tf.Tensor], pairs: List[data.PairComp]):
+    # After we iterate over all the data inspect the test error
+    total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
+    correct_count = 0  # To store correct predictions
+
+    # Test iterations
+    for j, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.DATA_BATCH_SIZE)):
+        # Execute test operations
+        temp_sum, c_index_result = sess.run(
+            [tensors['true-predictions'], tensors['c-index']],
+            feed_dict={
+                model.x: batch.images,
+                model.pairs_a: batch.pairs_a,
+                model.pairs_b: batch.pairs_b,
+                model.y: batch.labels
+            })
+
+        correct_count += temp_sum
+        total_pairs -= len(batch.pairs_a)
+        logger.info(f"Batch: {j}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
+                    f"c-index: {c_index_result}")
+    logger.info(f"Final c-index: {correct_count/(len(pairs)*settings.TOTAL_ROTATIONS)}")
 
 
 if __name__ == '__main__':
