@@ -82,8 +82,8 @@ class SplitPairs:
         Having the indices for the train and test sets, create the necessary List of PairComp
         for each set
 
-        :param train_ids: Ids for the train set should be between ``0`` and ``len(self.total_x) - ``
-        :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - ``
+        :param train_ids: Ids for the train set should be between ``0`` and ``len(self.total_x) - 1``
+        :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
         :return: List for the train set and list for the test set respectively
         """
         self._train_data = self.clinical_data.iloc[train_ids]

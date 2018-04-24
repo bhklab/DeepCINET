@@ -7,25 +7,22 @@ from .logger import get_logger, init_logger
 
 
 def movie(filename, array, fps=10, scale=1.0):
-    """Creates a gif given a stack of images using moviepy
+    """
     Notes
     -----
+
     works with current Github version of moviepy (not the pip version)
     https://github.com/Zulko/moviepy/commit/d4c9c37bc88261d8ed8b5d9b7c317d13b2cdf62e
+
     Usage
     -----
     >>> X = randn(100, 64, 64)
     >>> movie('test.gif', X)
-    Parameters
-    ----------
-    filename : string
-        The filename of the gif to write to
-    array : array_like
-        A numpy array that contains a sequence of images
-    fps : int
-        frames per second (default: 10)
-    scale : float
-        how much to rescale each image by (default: 1.0)
+
+    :param filename: The filename of the gif to write to
+    :param array: A numpy array that contains a squence of images
+    :param fps: frames per second (default: 10)
+    :param scale: how much to rescale each image by (default: 1.0)
     """
 
     # ensure that the file has the .gif extension
