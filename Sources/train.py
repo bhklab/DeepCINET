@@ -13,8 +13,7 @@ logger = utils.init_logger('train')
 
 
 def main():
-    args = settings.args
-    siamese_model = models.Siamese(args.gpu_level)
+    siamese_model = models.Siamese(settings.args.gpu_level)
     optimizer = tf.train.AdamOptimizer()
 
     tensors = {
@@ -44,19 +43,19 @@ def main():
         train_summary = tf.summary.FileWriter(os.path.join(settings.SUMMARIES_DIR, 'train'), sess.graph)
 
         # Load the weights from the previous execution if we can
-        if os.path.exists(settings.SESSION_SAVE_PATH) and not args.overwrite_weights:
+        if os.path.exists(settings.SESSION_SAVE_PATH) and not settings.args.overwrite_weights:
             saver.restore(sess, settings.SESSION_SAVE_PATH)
             logger.info("Previous weights found and loaded")
         else:
             sess.run(tf.global_variables_initializer())
 
-        logger.debug(f"Batch size: {settings.DATA_BATCH_SIZE}")
-        logger.debug(f"Num Epochs: {settings.NUM_EPOCHS}")
+        logger.debug(f"Batch size: {settings.args.batch_size}")
+        logger.debug(f"Num Epochs: {settings.args.num_epochs}")
         logger.info("Starting training")
 
         dataset = data.pair_data.SplitPairs()
-        for test_pairs, train_pairs in dataset.folds(args.cv_folds):
-            for j in range(settings.NUM_EPOCHS):
+        for test_pairs, train_pairs in dataset.folds(settings.args.cv_folds):
+            for j in range(settings.args.num_epochs):
                 logger.info(f"Epoch: {j + 1}")
 
                 train_iterations(saver, sess, siamese_model, tensors, train_pairs, train_summary)
@@ -147,10 +146,22 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--num-epochs",
-        help="Number of epochs to use when training. Times passed through the entire dataset"
+        help="Number of epochs to use when training. Times passed through the entire dataset",
+        default=1
     )
 
-    settings.add_args(parser)
+    parser.add_argument(
+        "--batch-size",
+        help="Batch size for each train iteration",
+        default=20
+    )
+
+    args = settings.add_args(parser)
+
+    if args.batch_size < 2:
+        logger.error("Batch size is too small! It should be at least 2. Exiting")
+        exit(1)
+
     try:
         # For now the arguments are ignored
         main()

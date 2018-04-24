@@ -52,8 +52,6 @@ TOTAL_ROTATIONS = IMAGE_ROTATIONS['x']*IMAGE_ROTATIONS['y']*IMAGE_ROTATIONS['z']
 
 args = argparse.Namespace()
 
-NUM_EPOCHS = int(os.getenv('NUM_EPOCHS', 1))
-
 DATA_BATCH_SIZE = int(os.getenv('DATA_BATCH_SIZE', 2))
 assert DATA_BATCH_SIZE >= 2
 
