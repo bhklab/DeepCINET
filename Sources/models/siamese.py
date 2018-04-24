@@ -1,17 +1,41 @@
 import tensorflow as tf
 
-import settings
 import utils
 
 
 logger = utils.get_logger('train.siamese')
 
 
-class Siamese:
+class BasicSiamese:
+    """
+    Class representing a basic siamese structure. It contains a few convolutional layers and then the
+    contrastive loss.
+
+    Convolutional Model
+    -------------------
+
+    It contains 4 convolutional layers and 3 FC layers
+
+        - 3^3 kernel with 30 filters and stride = 2
+        - 3^3 kernel with 40 filters and stride = 1
+        - 3^3 kernel with 40 filters and stride = 1
+        - 3^3 kernel with 50 filters and stride = 1
+        - 100 units, activation ReLU
+        - 50 units, activation ReLu
+        - 1 unit, activation ReLu
+    """
 
     THRESHOLD = .5
+    """
+    Threshold in when considering a float number between ``0`` and ``1`` a ``True`` value for classification
+    """
 
     def __init__(self, gpu_level):
+        """
+        Construct a BasicSiamese model.
+
+        :param gpu_level: Amount of GPU to be used with the model
+        """
         self.gpu_level = gpu_level
 
         device = '/gpu:0' if self.gpu_level >= 3 else '/cpu:0'
@@ -109,19 +133,31 @@ class Siamese:
             x = tf.layers.dense(
                 x,
                 50,
-                name="dense"
+                activation=tf.nn.relu,
+                name="fc2"
             )
 
             # Out: [batch, 1]
             x = tf.layers.dense(
                 x,
                 1,
-                name="dense1"
+                activation=tf.nn.relu,
+                name="fc3"
             )
 
         return x
 
     def loss(self) -> tf.Tensor:
+        r"""
+        Loss function for the model. It uses the negative log loss function:
+
+        .. math::
+            \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
+            \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) + (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
+            \quad m := \text{batch size}
+
+        :return: Scalar tensor with the negative log loss function for the model computed.
+        """
         return tf.losses.log_loss(self.y, self.y_prob)
 
     def good_predictions_count(self) -> tf.Tensor:

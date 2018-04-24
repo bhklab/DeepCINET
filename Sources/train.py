@@ -12,7 +12,7 @@ import utils
 logger = utils.init_logger('train')
 
 
-def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Siamese, tensors: Dict[str, tf.Tensor],
+def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
                      pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter):
 
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
@@ -37,7 +37,7 @@ def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Siam
         summary_writer.add_summary(summary, i)
 
 
-def test_iterations(sess: tf.Session, model: models.Siamese, tensors: Dict[str, tf.Tensor],
+def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
                     pairs: List[data.PairComp]):
     # After we iterate over all the data inspect the test error
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
@@ -66,7 +66,7 @@ def test_iterations(sess: tf.Session, model: models.Siamese, tensors: Dict[str, 
 
 
 def main():
-    siamese_model = models.Siamese(settings.args.gpu_level)
+    siamese_model = models.BasicSiamese(settings.args.gpu_level)
     optimizer = tf.train.AdamOptimizer()
 
     tensors = {
