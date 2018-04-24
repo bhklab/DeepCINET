@@ -1,12 +1,12 @@
 import os
 import random
 from itertools import takewhile, islice, repeat
-from typing import Iterator, Tuple, Generator, Iterable, Set, Collection
+from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List
 
 import numpy as np
 import pandas as pd
 import scipy
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
 from data.data_structures import PairComp, PairBatch
 from settings import DATA_PATH_CLINICAL_PROCESSED, TOTAL_ROTATIONS, DATA_PATH_PROCESSED, RANDOM_SEED
@@ -17,42 +17,25 @@ logger = get_logger('pair_data')
 
 class SplitPairs:
     """
-    Divides the data in training and testing
+    Divides the data in training and testing. It can be divided to use with CV or only with one train/test set
     """
 
     def __init__(self):
         # To divide into test and validation sets we only need the clinical data
         self.clinical_data = pd.read_csv(DATA_PATH_CLINICAL_PROCESSED, index_col=0)
 
-        # http://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html
-        total_x = self.clinical_data['id'].values
-        total_y = self.clinical_data['event'].values
+        self.total_x = self.clinical_data['id'].values
+        self.total_y = self.clinical_data['event'].values
 
-        # NOTE: This part varies between executions unless a random state with a seed is passed
-        train_id, test_id = train_test_split(
-            total_x,
-            test_size=.2,
-            shuffle=True,
-            stratify=total_y,
-            random_state=RANDOM_SEED
-        )
+        self._train_data = pd.DataFrame()
+        self._test_data = pd.DataFrame()
 
-        self._train_data = self.clinical_data[self.clinical_data['id'].isin(train_id)]
-        self._test_data = self.clinical_data[self.clinical_data['id'].isin(test_id)]
+    def print_pairs(self, data_augmentation: bool = True):
+        """
+        Print the number of possible pairs for the train and test sets
 
-    def train_pairs(self) -> Iterator[PairComp]:
-        return self._get_pairs(self._train_data)
-
-    def test_pairs(self) -> Iterator[PairComp]:
-        return self._get_pairs(self._test_data)
-
-    def train_ids(self) -> np.ndarray:
-        return self._train_data['id'].values
-
-    def test_ids(self) -> np.ndarray:
-        return self._test_data['id'].values
-
-    def print_pairs(self, data_augmentation=True):
+        :param data_augmentation: If data augmentation should be taken into account when counting the number of pairs
+        """
         test_pairs_cens, test_pairs_uncens = self._possible_pairs(self._test_data, data_augmentation)
         train_pairs_cens, train_pairs_uncens = self._possible_pairs(self._train_data, data_augmentation)
 
@@ -66,11 +49,61 @@ class SplitPairs:
         df['Total'] = df.sum(axis=1)
         df.loc[df['Set'] == "TestTrain", 'Set'] = "Total"
 
-        print("Maximum number of pairs")
-        print(df)
+        logger.info("Maximum number of pairs")
+        logger.info(df)
+
+    def folds(self, n_folds: int = 4) -> Iterator[Tuple[List[PairComp], List[PairComp]]]:
+        """
+        Creates different folds of data for use with CV
+
+        :param n_folds: Number of folds to be created
+        :return: Generator yielding a train/test pair
+        """
+        skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
+
+        for train_ids, test_ids in skf.split(self.total_x, self.total_y):
+            yield self._create_train_test(train_ids, test_ids)
+
+    def train_test_split(self, test_size: float = .25) -> Tuple[List[PairComp], List[PairComp]]:
+        """
+        Split data in train/test with the specified proportion
+
+        :param test_size: ``float`` between ``0`` and ``1`` with the test set size
+        :return: Tuple with the train set and the test set
+        """
+        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_SEED)
+
+        train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
+        return self._create_train_test(train_ids, test_ids)
+
+    def _create_train_test(self, train_ids: List[int], test_ids: List[int]) -> \
+            Tuple[List[PairComp], List[PairComp]]:
+        """
+        Having the indices for the train and test sets, create the necessary List of PairComp
+        for each set
+
+        :param train_ids: Ids for the train set should be between ``0`` and ``len(self.total_x) - 1``
+        :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
+        :return: List for the train set and list for the test set respectively
+        """
+        self._train_data = self.clinical_data.iloc[train_ids]
+        self._test_data = self.clinical_data.iloc[test_ids]
+
+        train_pairs = self._get_pairs(self._train_data)
+        test_pairs = self._get_pairs(self._test_data)
+
+        return list(train_pairs), list(test_pairs)
 
     @staticmethod
     def _possible_pairs(df: pd.DataFrame, data_augmentation=True) -> Tuple[int, int]:
+        """
+        Counts the number of possible pairs that can be generated (maximum límit)
+
+        :param df: Pandas data frame containing all the data, it should have at least the columns ``event`` and ``id``
+        :param data_augmentation: If data augmentation should be taken into account when counting the values.
+                                  The results will be multiplied by the ``TOTAL_ROTATIONS`` value
+        :return: Count with the number of possible censored pairs and the possible uncensored pairs
+        """
         count = df.groupby('event').count()['id']
         censored_count = count[0]
         uncensored_count = count[1]
@@ -79,8 +112,8 @@ class SplitPairs:
         uncensored_pairs = scipy.misc.comb(uncensored_count, 2, exact=True)
         if data_augmentation:
             # For now we will only be using 4 rotations in one axis to avoid having too much data
-            censored_pairs *= 4
-            uncensored_pairs *= 4
+            censored_pairs *= TOTAL_ROTATIONS
+            uncensored_pairs *= TOTAL_ROTATIONS
 
         return censored_pairs, uncensored_pairs
 
@@ -106,7 +139,7 @@ class SplitPairs:
         # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
         # That's why we swap random pairs
         random.shuffle(pairs)
-        logger.debug(pairs)
+        # logger.debug(pairs)
         return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
@@ -118,7 +151,7 @@ class SplitPairs:
 
 class BatchData:
     """
-    This is a batch
+    Useful methods for working with batch data
     """
 
     @staticmethod

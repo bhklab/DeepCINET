@@ -11,8 +11,12 @@ class Siamese:
 
     THRESHOLD = .5
 
-    def __init__(self):
-        with tf.device('/cpu:0'):
+    def __init__(self, gpu_level):
+        self.gpu_level = gpu_level
+
+        device = '/gpu:0' if self.gpu_level >= 3 else '/cpu:0'
+        logger.debug(f"Using device: {device} for parameters")
+        with tf.device(device):
             self.x = tf.placeholder(tf.float32, [None, 64, 64, 64, 1], name="X")
             self.y = tf.placeholder(tf.float32, [None], name="Y")
             self.y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
@@ -23,15 +27,16 @@ class Siamese:
 
         self.sister_out = self.sister(self.x)
 
-        with tf.device('/cpu:0'):
+        device = '/gpu:0' if self.gpu_level >= 3 else '/cpu:0'
+        logger.debug(f"Using device: {device} for results")
+        with tf.device(device):
             self.gathered_a = tf.gather(self.sister_out, self.pairs_a, name="gather_a")
             self.gathered_b = tf.gather(self.sister_out, self.pairs_b, name="gather_b")
 
             self.y_prob = tf.sigmoid(self.gathered_a - self.gathered_b, name="sigmoid")
             self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
-    @staticmethod
-    def sister(x: tf.Tensor) -> tf.Tensor:
+    def sister(self, x: tf.Tensor) -> tf.Tensor:
         """
         Build one branch (sister) of the siamese network
 
@@ -40,7 +45,7 @@ class Siamese:
         """
         # In: [batch, 64, 64, 64, 1]
 
-        device = '/gpu:0' if settings.USE_GPU >= 2 else '/cpu:0'
+        device = '/gpu:0' if self.gpu_level >= 2 else '/cpu:0'
         logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
             # Out: [batch, 31, 31, 31, 30]
@@ -62,7 +67,7 @@ class Siamese:
                 name="conv2"
             )
 
-        device = '/gpu:0' if settings.USE_GPU >= 1 else '/cpu:0'
+        device = '/gpu:0' if self.gpu_level >= 1 else '/cpu:0'
         logger.debug(f"Using device: {device} for second conv layers")
         with tf.device(device):
             # Out: [batch, 27, 27, 27, 40]
@@ -83,7 +88,7 @@ class Siamese:
                 name="conv4"
             )
 
-        device = '/gpu:0' if settings.USE_GPU >= 3 else '/cpu:0'
+        device = '/gpu:0' if self.gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
             # Out: [batch, 25*25*25*50]
