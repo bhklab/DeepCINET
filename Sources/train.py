@@ -86,7 +86,7 @@ def main():
         tf.summary.scalar("c-index", tensors['c-index'])
 
         for var in tf.trainable_variables():
-            tf.summary.histogram(var.name, var)
+            tf.summary.histogram(str(var.name).replace(":", "_"), var)
 
     tensors['summary'] = tf.summary.merge_all()
 
