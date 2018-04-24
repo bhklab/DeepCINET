@@ -40,7 +40,7 @@ release = 'alpha'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.mathjax',
+    'sphinx.ext.imgmath',
     'sphinx_autodoc_typehints',
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
@@ -74,6 +74,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+
+imgmath_image_format = 'svg'
 
 # -- Options for HTML output -------------------------------------------------
 
