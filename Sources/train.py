@@ -12,8 +12,9 @@ import utils
 logger = utils.init_logger('train')
 
 
-def main(args):
-    siamese_model = models.Siamese()
+def main():
+    args = settings.args
+    siamese_model = models.Siamese(args.gpu_level)
     optimizer = tf.train.AdamOptimizer()
 
     tensors = {
@@ -54,7 +55,7 @@ def main(args):
         logger.info("Starting training")
 
         dataset = data.pair_data.SplitPairs()
-        for test_pairs, train_pairs in dataset.folds():
+        for test_pairs, train_pairs in dataset.folds(args.cv_folds):
             for j in range(settings.NUM_EPOCHS):
                 logger.info(f"Epoch: {j + 1}")
 
@@ -116,18 +117,43 @@ def test_iterations(sess: tf.Session, model: models.Siamese, tensors: Dict[str, 
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Fit the data with a Tensorflow model")
+    parser = argparse.ArgumentParser(
+        description="Fit the data with a Tensorflow model",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
     parser.add_argument(
-        "--overwrite_weights",
+        "--overwrite-weights",
         help="Overwrite the weights that have been stored between each iteration",
         default=False,
         action="store_true"
     )
 
-    arguments = parser.parse_args()
+    parser.add_argument(
+        "--cv-folds",
+        help="Number of cross validation folds",
+        default=1,
+        type=int
+    )
+
+    parser.add_argument(
+        "--gpu-level",
+        help="Amount of GPU resources used when fitting the model. 0: no GPU usage, "
+             "1: only second conv layers, 2: all conv layers, "
+             "3: all layers and parameters are on the GPU",
+        default=0,
+        type=int
+    )
+
+    parser.add_argument(
+        "--num-epochs",
+        help="Number of epochs to use when training. Times passed through the entire dataset"
+    )
+
+    settings.add_args(parser)
     try:
         # For now the arguments are ignored
-        main(arguments)
+        main()
     except KeyboardInterrupt:
         logger.info("\n----------------------------------")
         logger.info("Stopping due to keyboard interrupt")
