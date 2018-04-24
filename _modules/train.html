@@ -1,0 +1,396 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>train &mdash; CNNSurv alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> CNNSurv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">Sources</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CNNSurv</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>train</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for train</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">import</span> <span class="nn">data</span>
+<span class="kn">import</span> <span class="nn">models</span>
+<span class="kn">import</span> <span class="nn">settings</span>
+<span class="kn">import</span> <span class="nn">utils</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">init_logger</span><span class="p">(</span><span class="s1">&#39;train&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="train_iterations"><a class="viewcode-back" href="../api/train.html#train.train_iterations">[docs]</a><span class="k">def</span> <span class="nf">train_iterations</span><span class="p">(</span><span class="n">saver</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">Saver</span><span class="p">,</span> <span class="n">sess</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">models</span><span class="o">.</span><span class="n">Siamese</span><span class="p">,</span> <span class="n">tensors</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+                     <span class="n">pairs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">PairComp</span><span class="p">],</span> <span class="n">summary_writer</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">FileWriter</span><span class="p">):</span>
+
+    <span class="n">total_pairs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span><span class="o">*</span><span class="n">settings</span><span class="o">.</span><span class="n">TOTAL_ROTATIONS</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;We have </span><span class="si">{total_pairs}</span><span class="s2"> pairs&quot;</span><span class="p">)</span>
+    <span class="c1"># Train iterations</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">BatchData</span><span class="o">.</span><span class="n">batches</span><span class="p">(</span><span class="n">pairs</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)):</span>
+        <span class="c1"># Execute graph operations</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">c_index_result</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">summary</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;minimize&#39;</span><span class="p">],</span> <span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;c-index&#39;</span><span class="p">],</span> <span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">],</span> <span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]],</span>
+            <span class="n">feed_dict</span><span class="o">=</span><span class="p">{</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">x</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">images</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">pairs_a</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">pairs_a</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">pairs_b</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">pairs_b</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">y</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">labels</span>
+            <span class="p">})</span>
+
+        <span class="n">total_pairs</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">pairs_a</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Batch: </span><span class="si">{i}</span><span class="s2">, size: {len(batch.pairs_a)}, remaining pairs: </span><span class="si">{total_pairs}</span><span class="s2">, &quot;</span>
+                    <span class="n">f</span><span class="s2">&quot;c-index: </span><span class="si">{c_index_result}</span><span class="s2">, loss: </span><span class="si">{loss}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">saver</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">sess</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">SESSION_SAVE_PATH</span><span class="p">)</span>
+        <span class="n">summary_writer</span><span class="o">.</span><span class="n">add_summary</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="test_iterations"><a class="viewcode-back" href="../api/train.html#train.test_iterations">[docs]</a><span class="k">def</span> <span class="nf">test_iterations</span><span class="p">(</span><span class="n">sess</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">models</span><span class="o">.</span><span class="n">Siamese</span><span class="p">,</span> <span class="n">tensors</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+                    <span class="n">pairs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">PairComp</span><span class="p">]):</span>
+    <span class="c1"># After we iterate over all the data inspect the test error</span>
+    <span class="n">total_pairs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span><span class="o">*</span><span class="n">settings</span><span class="o">.</span><span class="n">TOTAL_ROTATIONS</span>
+    <span class="n">correct_count</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># To store correct predictions</span>
+    <span class="n">pairs_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Test iterations</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">BatchData</span><span class="o">.</span><span class="n">batches</span><span class="p">(</span><span class="n">pairs</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)):</span>
+        <span class="c1"># Execute test operations</span>
+        <span class="n">temp_sum</span><span class="p">,</span> <span class="n">c_index_result</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;true-predictions&#39;</span><span class="p">],</span> <span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;c-index&#39;</span><span class="p">]],</span>
+            <span class="n">feed_dict</span><span class="o">=</span><span class="p">{</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">x</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">images</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">pairs_a</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">pairs_a</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">pairs_b</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">pairs_b</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">y</span><span class="p">:</span> <span class="n">batch</span><span class="o">.</span><span class="n">labels</span>
+            <span class="p">})</span>
+
+        <span class="n">correct_count</span> <span class="o">+=</span> <span class="n">temp_sum</span>
+        <span class="n">total_pairs</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">pairs_a</span><span class="p">)</span>
+        <span class="n">pairs_count</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">pairs_a</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Batch: </span><span class="si">{i}</span><span class="s2">, size: {len(batch.pairs_a)}, remaining pairs: </span><span class="si">{total_pairs}</span><span class="s2">, &quot;</span>
+                    <span class="n">f</span><span class="s2">&quot;c-index: </span><span class="si">{c_index_result}</span><span class="s2">, accum c-index:{correct_count/pairs_count}&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Final c-index: {correct_count/(len(pairs)*settings.TOTAL_ROTATIONS)}&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../api/train.html#train.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">siamese_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Siamese</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">gpu_level</span><span class="p">)</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">AdamOptimizer</span><span class="p">()</span>
+
+    <span class="n">tensors</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="n">siamese_model</span><span class="o">.</span><span class="n">loss</span><span class="p">(),</span>
+        <span class="s1">&#39;c-index&#39;</span><span class="p">:</span> <span class="n">siamese_model</span><span class="o">.</span><span class="n">c_index</span><span class="p">(),</span>
+        <span class="s1">&#39;true-predictions&#39;</span><span class="p">:</span> <span class="n">siamese_model</span><span class="o">.</span><span class="n">good_predictions_count</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;minimize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">])</span>
+
+    <span class="n">conf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ConfigProto</span><span class="p">()</span>
+    <span class="n">conf</span><span class="o">.</span><span class="n">gpu_options</span><span class="o">.</span><span class="n">allow_growth</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Create summaries</span>
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">name_scope</span><span class="p">(</span><span class="s2">&quot;summaries&quot;</span><span class="p">):</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">,</span> <span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">])</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">&quot;c-index&quot;</span><span class="p">,</span> <span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;c-index&#39;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">tf</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">():</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span>
+
+    <span class="n">tensors</span><span class="p">[</span><span class="s1">&#39;summary&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">merge_all</span><span class="p">()</span>
+
+    <span class="n">saver</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">Saver</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">conf</span><span class="p">)</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+        <span class="n">train_summary</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">FileWriter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">SUMMARIES_DIR</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">),</span> <span class="n">sess</span><span class="o">.</span><span class="n">graph</span><span class="p">)</span>
+
+        <span class="c1"># Load the weights from the previous execution if we can</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">SESSION_SAVE_PATH</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">overwrite_weights</span><span class="p">:</span>
+            <span class="n">saver</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">sess</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">SESSION_SAVE_PATH</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Previous weights found and loaded&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">global_variables_initializer</span><span class="p">())</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Batch size: </span><span class="si">{settings.args.batch_size}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Num Epochs: </span><span class="si">{settings.args.num_epochs}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting training&quot;</span><span class="p">)</span>
+
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pair_data</span><span class="o">.</span><span class="n">SplitPairs</span><span class="p">()</span>
+
+        <span class="c1"># Decide whether to use CV or only a single test/train sets</span>
+        <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">cv_folds</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">generator</span> <span class="o">=</span> <span class="p">[</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">test_size</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">generator</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">folds</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">cv_folds</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">test_pairs</span><span class="p">,</span> <span class="n">train_pairs</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Epoch: {j + 1}&quot;</span><span class="p">)</span>
+
+                <span class="n">train_iterations</span><span class="p">(</span><span class="n">saver</span><span class="p">,</span> <span class="n">sess</span><span class="p">,</span> <span class="n">siamese_model</span><span class="p">,</span> <span class="n">tensors</span><span class="p">,</span> <span class="n">train_pairs</span><span class="p">,</span> <span class="n">train_summary</span><span class="p">)</span>
+                <span class="n">test_iterations</span><span class="p">(</span><span class="n">sess</span><span class="p">,</span> <span class="n">siamese_model</span><span class="p">,</span> <span class="n">tensors</span><span class="p">,</span> <span class="n">test_pairs</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Fit the data with a Tensorflow model&quot;</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--overwrite-weights&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Overwrite the weights that have been stored between each iteration&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--cv-folds&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of cross validation folds. If &lt; 2 CV won&#39;t be used and the test set size &quot;</span>
+             <span class="s2">&quot;will be defined by --test-size&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--test-size&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Size of the test set as a float between 0 and 1&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=.</span><span class="mi">25</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--gpu-level&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Amount of GPU resources used when fitting the model. 0: no GPU usage, &quot;</span>
+             <span class="s2">&quot;1: only second conv layers, 2: all conv layers, &quot;</span>
+             <span class="s2">&quot;3: all layers and parameters are on the GPU&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--num-epochs&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of epochs to use when training. Times passed through the entire dataset&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--batch-size&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Batch size for each train iteration&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span>
+    <span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">add_args</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Batch size is too small! It should be at least 2. Exiting&quot;</span><span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># For now the arguments are ignored</span>
+        <span class="n">main</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">----------------------------------&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping due to keyboard interrupt&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;THANKS FOR THE RIDE 😀&quot;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, jmigual.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'alpha',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

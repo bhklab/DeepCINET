@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="preprocess module" href="preprocess.html" />
+    <link rel="next" title="experimental module" href="experimental.html" />
     <link rel="prev" title="Sources" href="modules.html" /> 
 
   
@@ -90,10 +90,12 @@
 <li class="toctree-l3"><a class="reference internal" href="#module-data">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="experimental.html">experimental module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">models package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="preprocess.html">preprocess module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="settings.html">settings module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="train.html">train module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="train.html">train module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">utils package</a></li>
 </ul>
 </li>
 </ul>
@@ -171,18 +173,36 @@
 <span id="data-data-structures-module"></span><h2>data.data_structures module<a class="headerlink" href="#module-data.data_structures" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="data.data_structures.PairBatch">
-<em class="property">class </em><code class="descclassname">data.data_structures.</code><code class="descname">PairBatch</code><span class="sig-paren">(</span><em>pairs</em>, <em>images</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/data_structures.html#PairBatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data_structures.PairBatch" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">data.data_structures.</code><code class="descname">PairBatch</code><span class="sig-paren">(</span><em>pairs_a</em>, <em>pairs_b</em>, <em>labels</em>, <em>images</em>, <em>ids_map</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/data_structures.html#PairBatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.data_structures.PairBatch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#tuple" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
 <dl class="attribute">
-<dt id="data.data_structures.PairBatch.images">
-<code class="descname">images</code><a class="headerlink" href="#data.data_structures.PairBatch.images" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alias for field number 1</p>
+<dt id="data.data_structures.PairBatch.ids_map">
+<code class="descname">ids_map</code><a class="headerlink" href="#data.data_structures.PairBatch.ids_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="data.data_structures.PairBatch.pairs">
-<code class="descname">pairs</code><a class="headerlink" href="#data.data_structures.PairBatch.pairs" title="Permalink to this definition">¶</a></dt>
+<dt id="data.data_structures.PairBatch.images">
+<code class="descname">images</code><a class="headerlink" href="#data.data_structures.PairBatch.images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.data_structures.PairBatch.labels">
+<code class="descname">labels</code><a class="headerlink" href="#data.data_structures.PairBatch.labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.data_structures.PairBatch.pairs_a">
+<code class="descname">pairs_a</code><a class="headerlink" href="#data.data_structures.PairBatch.pairs_a" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="data.data_structures.PairBatch.pairs_b">
+<code class="descname">pairs_b</code><a class="headerlink" href="#data.data_structures.PairBatch.pairs_b" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
 </dd></dl>
 
 </dd></dl>
@@ -208,14 +228,14 @@ T(p1) &lt; T(p2)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="data.data_structures.PairComp.p1">
-<code class="descname">p1</code><a class="headerlink" href="#data.data_structures.PairComp.p1" title="Permalink to this definition">¶</a></dt>
+<dt id="data.data_structures.PairComp.p_a">
+<code class="descname">p_a</code><a class="headerlink" href="#data.data_structures.PairComp.p_a" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 0</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="data.data_structures.PairComp.p2">
-<code class="descname">p2</code><a class="headerlink" href="#data.data_structures.PairComp.p2" title="Permalink to this definition">¶</a></dt>
+<dt id="data.data_structures.PairComp.p_b">
+<code class="descname">p_b</code><a class="headerlink" href="#data.data_structures.PairComp.p_b" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 1</p>
 </dd></dl>
 
@@ -335,11 +355,59 @@ It returns <code class="docutils literal notranslate"><span class="pre">x_min</s
 <dl class="staticmethod">
 <dt id="data.image_data.PreProcessedData._get_rotations">
 <em class="property">static </em><code class="descname">_get_rotations</code><span class="sig-paren">(</span><em>sliced_norm</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData._get_rotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData._get_rotations" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Creates different rotations for each 3D image, the number of rotations for each axis is defined
+with the environment variable <code class="docutils literal notranslate"><span class="pre">IMAGE_ROTATIONS</span></code> which is a list separated by <code class="docutils literal notranslate"><span class="pre">,</span></code> Note that the
+rotations mean multiples of 90 so if <code class="docutils literal notranslate"><span class="pre">IMAGE_ROTATIONS=1,1,4</span></code> this means that we will have the
+following rotations:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Num</th>
+<th class="head">X</th>
+<th class="head">Y</th>
+<th class="head">Z</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>2</td>
+<td>0</td>
+<td>0</td>
+<td>90</td>
+</tr>
+<tr class="row-even"><td>3</td>
+<td>0</td>
+<td>0</td>
+<td>180</td>
+</tr>
+<tr class="row-odd"><td>4</td>
+<td>0</td>
+<td>0</td>
+<td>270</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Dict" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>]</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sliced_norm</strong> (<em>&lt;built-in function array&gt;</em>) – 3D array containing the 3D image values</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Dict" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>]</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Dictionary where the key is the rotation id in the form <code class="docutils literal notranslate"><span class="pre">&lt;deg</span> <span class="pre">x&gt;_&lt;deg</span> <span class="pre">y&gt;_&lt;deg</span> <span class="pre">z&gt;</span></code> and the
+value is the image rotated in the corresponding axis the amount of degrees specified<p>For example if the image is rotated 90 degrees in the x axis and 0 degrees in the other ones
+the key will bee <code class="docutils literal notranslate"><span class="pre">090_000_000</span></code>.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -372,8 +440,28 @@ normalizes the image (variance = 1 and mean = 0)</p>
 
 <dl class="method">
 <dt id="data.image_data.PreProcessedData._process_individual">
-<code class="descname">_process_individual</code><span class="sig-paren">(</span><em>image_name</em>, <em>main_stack</em>, <em>mask_stack</em>, <em>count</em>, <em>total</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData._process_individual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData._process_individual" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="descname">_process_individual</code><span class="sig-paren">(</span><em>image_id</em>, <em>main_stack</em>, <em>mask_stack</em>, <em>count=0</em>, <em>total=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData._process_individual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData._process_individual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Processes a single image and stores it to disk</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>image_id</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – ID for image to be processed</li>
+<li><strong>main_stack</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>) – 3D Array containing the main image</li>
+<li><strong>mask_stack</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>) – 3D Array containing the mask with 1 in the pixels that contain tumour and 0
+for the pixels that do not contain tumour</li>
+<li><strong>count</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – For debugging purposes and show the progress, number of the image being processed</li>
+<li><strong>total</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – For debugging purposes and show the progress, total images being processed</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">No return, saves the image to disk</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="data.image_data.PreProcessedData._write_clinical_filtered">
@@ -386,12 +474,19 @@ The columns that are saved into the file are <code class="docutils literal notra
 <dl class="method">
 <dt id="data.image_data.PreProcessedData.store">
 <code class="descname">store</code><span class="sig-paren">(</span><em>overwrite=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#PreProcessedData.store"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.PreProcessedData.store" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs the pre process and stores all the data to disk. The saved file name will be <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;/&lt;id&gt;.npz</span></code></p>
+<dd><p>Performs the pre process and stores all the data to disk. The saved file name will be <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;/&lt;id&gt;.npz</span></code>.
+The save location is defined by the environment variable <code class="docutils literal notranslate"><span class="pre">DATA_PROCESSED</span></code>. It also saves a CSV file
+with the clinical information in the location defined by <code class="docutils literal notranslate"><span class="pre">DATA_CLINICAL_PROCESSED</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="docutils literal notranslate"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>overwrite</strong> – If true overwrites the images that are being written, otherwise if an image is found
+it skips the image and creates the next one instead</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="docutils literal notranslate"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
 </tbody>
 </table>
@@ -465,9 +560,9 @@ to disk. The file will contain two arrays that can be later loaded.</p>
 </table>
 </dd></dl>
 
-<dl class="staticmethod">
+<dl class="method">
 <dt id="data.image_data.RawData._is_valid_dir">
-<em class="property">static </em><code class="descname">_is_valid_dir</code><span class="sig-paren">(</span><em>test_dir</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData._is_valid_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData._is_valid_dir" title="Permalink to this definition">¶</a></dt>
+<code class="descname">_is_valid_dir</code><span class="sig-paren">(</span><em>test_dir</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/image_data.html#RawData._is_valid_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.image_data.RawData._is_valid_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code> if it’s a valid directory</p>
 <p>Only some directories are valid, the ones that start with FHBO
 (which is our original Head and Neck dataset)
@@ -549,10 +644,10 @@ and then only the only ones that have two sub dirs:</p>
 <dt id="data.pair_data.BatchData">
 <em class="property">class </em><code class="descclassname">data.pair_data.</code><code class="descname">BatchData</code><a class="reference internal" href="../_modules/data/pair_data.html#BatchData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>This is a batch</p>
-<dl class="method">
+<p>Useful methods for working with batch data</p>
+<dl class="staticmethod">
 <dt id="data.pair_data.BatchData._batch_by_ids">
-<code class="descname">_batch_by_ids</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._batch_by_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._batch_by_ids" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">_batch_by_ids</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._batch_by_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._batch_by_ids" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -563,9 +658,9 @@ and then only the only ones that have two sub dirs:</p>
 </table>
 </dd></dl>
 
-<dl class="method">
+<dl class="staticmethod">
 <dt id="data.pair_data.BatchData._batch_by_pairs">
-<code class="descname">_batch_by_pairs</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._batch_by_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._batch_by_pairs" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">_batch_by_pairs</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._batch_by_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._batch_by_pairs" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -576,9 +671,9 @@ and then only the only ones that have two sub dirs:</p>
 </table>
 </dd></dl>
 
-<dl class="method">
+<dl class="staticmethod">
 <dt id="data.pair_data.BatchData._create_pair_batch">
-<code class="descname">_create_pair_batch</code><span class="sig-paren">(</span><em>pairs</em>, <em>ids</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._create_pair_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._create_pair_batch" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">_create_pair_batch</code><span class="sig-paren">(</span><em>pairs</em>, <em>ids</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData._create_pair_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData._create_pair_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
 npz files and the pairs</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -586,7 +681,7 @@ npz files and the pairs</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>pairs</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterable" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]) – Pairs to be added to the PairBatch</li>
+<li><strong>pairs</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Collection" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Collection</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]) – Pairs to be added to the PairBatch</li>
 <li><strong>ids</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Set" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Set</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]) – npz files’ ids that will be added to the PairBatch</li>
 </ul>
 </td>
@@ -625,9 +720,9 @@ npz files and the pairs</p>
 </table>
 </dd></dl>
 
-<dl class="method">
+<dl class="staticmethod">
 <dt id="data.pair_data.BatchData.batches">
-<code class="descname">batches</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size=64</em>, <em>group_by='ids'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData.batches"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData.batches" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">batches</code><span class="sig-paren">(</span><em>pairs</em>, <em>batch_size=64</em>, <em>group_by='ids'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#BatchData.batches"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.BatchData.batches" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates batches based on all the pairs and the batch size</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -656,7 +751,32 @@ npz files and the pairs</p>
 <dt id="data.pair_data.SplitPairs">
 <em class="property">class </em><code class="descclassname">data.pair_data.</code><code class="descname">SplitPairs</code><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>Divides the data in training and testing</p>
+<p>Divides the data in training and testing. It can be divided to use with CV or only with one train/test set</p>
+<dl class="method">
+<dt id="data.pair_data.SplitPairs._create_train_test">
+<code class="descname">_create_train_test</code><span class="sig-paren">(</span><em>train_ids</em>, <em>test_ids</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs._create_train_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs._create_train_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Having the indices for the train and test sets, create the necessary List of PairComp
+for each set</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>train_ids</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]) – Ids for the train set should be between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">len(self.total_x)</span> <span class="pre">-</span> <span class="pre">1</span></code></li>
+<li><strong>test_ids</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]) – Ids for the test set should be between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">len(self.total_x)</span> <span class="pre">-</span> <span class="pre">1</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>], <a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]]</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List for the train set and list for the test set respectively</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="staticmethod">
 <dt id="data.pair_data.SplitPairs._get_pairs">
 <em class="property">static </em><code class="descname">_get_pairs</code><span class="sig-paren">(</span><em>df</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs._get_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs._get_pairs" title="Permalink to this definition">¶</a></dt>
@@ -679,11 +799,23 @@ data</p>
 <dl class="staticmethod">
 <dt id="data.pair_data.SplitPairs._possible_pairs">
 <em class="property">static </em><code class="descname">_possible_pairs</code><span class="sig-paren">(</span><em>df</em>, <em>data_augmentation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs._possible_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs._possible_pairs" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Counts the number of possible pairs that can be generated (maximum límit)</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>df</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>) – Pandas data frame containing all the data, it should have at least the columns <code class="docutils literal notranslate"><span class="pre">event</span></code> and <code class="docutils literal notranslate"><span class="pre">id</span></code></li>
+<li><strong>data_augmentation</strong> – If data augmentation should be taken into account when counting the values.
+The results will be multiplied by the <code class="docutils literal notranslate"><span class="pre">TOTAL_ROTATIONS</span></code> value</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Count with the number of possible censored pairs and the possible uncensored pairs</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -703,57 +835,50 @@ data</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="data.pair_data.SplitPairs.folds">
+<code class="descname">folds</code><span class="sig-paren">(</span><em>n_folds=4</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.folds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.folds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates different folds of data for use with CV</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n_folds</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of folds to be created</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>], <a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]]]</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Generator yielding a train/test pair</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="data.pair_data.SplitPairs.print_pairs">
 <code class="descname">print_pairs</code><span class="sig-paren">(</span><em>data_augmentation=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.print_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.print_pairs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="data.pair_data.SplitPairs.test_ids">
-<code class="descname">test_ids</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.test_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.test_ids" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Print the number of possible pairs for the train and test sets</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data_augmentation</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – If data augmentation should be taken into account when counting the number of pairs</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="data.pair_data.SplitPairs.test_pairs">
-<code class="descname">test_pairs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.test_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.test_pairs" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dt id="data.pair_data.SplitPairs.train_test_split">
+<code class="descname">train_test_split</code><span class="sig-paren">(</span><em>test_size=0.25</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.train_test_split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.train_test_split" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split data in train/test with the specified proportion</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>test_size</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – <code class="docutils literal notranslate"><span class="pre">float</span></code> between <code class="docutils literal notranslate"><span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">1</span></code> with the test set size</td>
 </tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="data.pair_data.SplitPairs.train_ids">
-<code class="descname">train_ids</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.train_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.train_ids" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>], <a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.List" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]]</td>
 </tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="data.pair_data.SplitPairs.train_pairs">
-<code class="descname">train_pairs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/pair_data.html#SplitPairs.train_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#data.pair_data.SplitPairs.train_pairs" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/typing.html#typing.Iterator" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#data.data_structures.PairComp" title="data.data_structures.PairComp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PairComp</span></code></a>]</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Tuple with the train set and the test set</td>
 </tr>
 </tbody>
 </table>
@@ -764,7 +889,9 @@ data</p>
 </div>
 <div class="section" id="module-data">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-data" title="Permalink to this headline">¶</a></h2>
-<p>This is a test</p>
+<p>The data package contains different classes related in how to read and pre-process data.
+There are also some classes useful for getting all the different pairs in the dataset and
+get it in form of different batches</p>
 </div>
 </div>
 
@@ -776,7 +903,7 @@ data</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="preprocess.html" class="btn btn-neutral float-right" title="preprocess module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="experimental.html" class="btn btn-neutral float-right" title="experimental module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="modules.html" class="btn btn-neutral" title="Sources" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

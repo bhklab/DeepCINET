@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>models.Siamese &mdash; CNNSurv alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> CNNSurv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">Sources</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CNNSurv</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>models.Siamese</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for models.Siamese</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">import</span> <span class="nn">settings</span>
+<span class="kn">import</span> <span class="nn">utils</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="s1">&#39;train.siamese&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Siamese"><a class="viewcode-back" href="../../api/models.html#models.Siamese.Siamese">[docs]</a><span class="k">class</span> <span class="nc">Siamese</span><span class="p">:</span>
+
+    <span class="n">THRESHOLD</span> <span class="o">=</span> <span class="o">.</span><span class="mi">5</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpu_level</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpu_level</span> <span class="o">=</span> <span class="n">gpu_level</span>
+
+        <span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;/gpu:0&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_level</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="k">else</span> <span class="s1">&#39;/cpu:0&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Using device: </span><span class="si">{device}</span><span class="s2"> for parameters&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Y_reshape&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pairs_a</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pairs_a&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pairs_b</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pairs_b&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;batch_size_cast&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sister_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sister</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;/gpu:0&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_level</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="k">else</span> <span class="s1">&#39;/cpu:0&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Using device: </span><span class="si">{device}</span><span class="s2"> for results&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gathered_a</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sister_out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pairs_a</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;gather_a&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gathered_b</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sister_out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pairs_b</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;gather_b&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">y_prob</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gathered_a</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">gathered_b</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sigmoid&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y_estimate</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">greater_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y_prob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">THRESHOLD</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Siamese.sister"><a class="viewcode-back" href="../../api/models.html#models.Siamese.Siamese.sister">[docs]</a>    <span class="k">def</span> <span class="nf">sister</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build one branch (sister) of the siamese network</span>
+
+<span class="sd">        :param x: Initial input of shape ``[batch, 64, 64, 64, 1]``</span>
+<span class="sd">        :return: Tensor of shape ``[batch, 1]``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># In: [batch, 64, 64, 64, 1]</span>
+
+        <span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;/gpu:0&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_level</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="s1">&#39;/cpu:0&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Using device: </span><span class="si">{device}</span><span class="s2"> for first conv layers&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">):</span>
+            <span class="c1"># Out: [batch, 31, 31, 31, 30]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">conv3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="n">filters</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">strides</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="n">activation</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv1&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Out: [batch, 29, 29, 29, 40]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">conv3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="n">filters</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">activation</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv2&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;/gpu:0&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_level</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;/cpu:0&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Using device: </span><span class="si">{device}</span><span class="s2"> for second conv layers&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">):</span>
+            <span class="c1"># Out: [batch, 27, 27, 27, 40]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">conv3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="n">filters</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">activation</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv3&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Out: [batch, 25, 25, 25, 50]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">conv3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="n">filters</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">activation</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv4&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;/gpu:0&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_level</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="k">else</span> <span class="s1">&#39;/cpu:0&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Using device: </span><span class="si">{device}</span><span class="s2"> for FC layers&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">):</span>
+            <span class="c1"># Out: [batch, 25*25*25*50]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;flat&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Out: [batch, 100]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">dense</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="mi">100</span><span class="p">,</span>
+                <span class="n">activation</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;fc1&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Out: [batch, 50]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">dense</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="mi">50</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;dense&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Out: [batch, 1]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">dense</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span>
+                <span class="mi">1</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;dense1&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">x</span></div>
+
+<div class="viewcode-block" id="Siamese.loss"><a class="viewcode-back" href="../../api/models.html#models.Siamese.Siamese.loss">[docs]</a>    <span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">log_loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_prob</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Siamese.good_predictions_count"><a class="viewcode-back" href="../../api/models.html#models.Siamese.Siamese.good_predictions_count">[docs]</a>    <span class="k">def</span> <span class="nf">good_predictions_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the count of elements that have been a good prediction</span>
+
+<span class="sd">        :return: Tensorflow tensor with the count for good predictions. Then to get</span>
+<span class="sd">                 the c-index we only have to divide by the batch size</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># y ∈ {0, 1}   y_estimate ∈ {True, False}</span>
+        <span class="n">y_bool</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">greater_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">THRESHOLD</span><span class="p">)</span>
+        <span class="n">equals</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">y_bool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_estimate</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">equals</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Siamese.c_index"><a class="viewcode-back" href="../../api/models.html#models.Siamese.Siamese.c_index">[docs]</a>    <span class="k">def</span> <span class="nf">c_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">good_predictions_count</span><span class="p">()</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span></div></div>
+
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, jmigual.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'alpha',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

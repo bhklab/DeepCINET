@@ -5,7 +5,9 @@ Sources
    :maxdepth: 4
 
    data
+   experimental
+   models
    preprocess
    settings
    train
-   train
+   utils

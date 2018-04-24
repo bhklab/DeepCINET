@@ -166,6 +166,10 @@
 <span class="kn">import</span> <span class="nn">multiprocessing</span>
 
 <span class="kn">import</span> <span class="nn">data</span>
+<span class="kn">import</span> <span class="nn">utils</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">init_logger</span><span class="p">(</span><span class="s1">&#39;pre_process&#39;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="main"><a class="viewcode-back" href="../api/preprocess.html#preprocess.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">arguments</span><span class="p">):</span>
@@ -174,20 +178,20 @@
 <span class="sd">    as a script</span>
 <span class="sd">    :param arguments: Arguments provided by argparse.ArgumentParser </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">input_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;DATA_RAW&#39;</span><span class="p">)</span>
-    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;DATA_PROCESSED&#39;</span><span class="p">)</span>
+    <span class="n">input_dir</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DATA_PATH_RAW</span>
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DATA_PATH_PROCESSED</span>
 
     <span class="c1"># Check if folder exists</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">input_dir</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: The </span><span class="si">{}</span><span class="s2"> folder does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_dir</span><span class="p">))</span>
         <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;We have </span><span class="si">{}</span><span class="s2"> cores&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;We have </span><span class="si">{}</span><span class="s2"> cores&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()))</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Root dir: &quot;</span> <span class="o">+</span> <span class="n">settings</span><span class="o">.</span><span class="n">APP_ROOT</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Overwrite: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">arguments</span><span class="o">.</span><span class="n">overwrite</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data raw dir: &quot;</span> <span class="o">+</span> <span class="n">input_dir</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data preprocessed dir: &quot;</span> <span class="o">+</span> <span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Root dir: &quot;</span> <span class="o">+</span> <span class="n">settings</span><span class="o">.</span><span class="n">APP_ROOT</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Overwrite: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">arguments</span><span class="o">.</span><span class="n">overwrite</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data raw dir: &quot;</span> <span class="o">+</span> <span class="n">input_dir</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data preprocessed dir: &quot;</span> <span class="o">+</span> <span class="n">output_dir</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
@@ -213,11 +217,9 @@
         <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
         <span class="c1"># This avoids an ugly print on the terminal</span>
-        <span class="nb">print</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;----------------------------------&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Stopping due to keyboard interrupt&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;THANKS FOR THE RIDE 😀&quot;</span><span class="p">)</span>
-
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;----------------------------------&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping due to keyboard interrupt&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;THANKS FOR THE RIDE 😀&quot;</span><span class="p">)</span>
 </pre></div>
 
            </div>
