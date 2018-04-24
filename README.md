@@ -4,6 +4,9 @@ Create a Survival Prediction model using a Convolutional Neural Network.
 To do so a Siamese network will be used. Two individuals will be used as an input and the network
 should predict which one will live longer.
 
+More documentation can be found in the documentation page:
+https://jmigual.github.io/CNNSurv/index.html
+
 ## Installation
 
 To install all the requirements python virtual environment is recomendend. Python 3 is used 
