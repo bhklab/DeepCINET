@@ -107,7 +107,14 @@ def main():
         logger.info("Starting training")
 
         dataset = data.pair_data.SplitPairs()
-        for test_pairs, train_pairs in dataset.folds(settings.args.cv_folds):
+
+        # Decide whether to use CV or only a single test/train sets
+        if settings.args.cv_folds < 2:
+            generator = [dataset.train_test_split(settings.args.test_size)]
+        else:
+            generator = dataset.folds(settings.args.cv_folds)
+
+        for test_pairs, train_pairs in generator:
             for j in range(settings.args.num_epochs):
                 logger.info(f"Epoch: {j + 1}")
 
@@ -130,9 +137,17 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--cv-folds",
-        help="Number of cross validation folds",
+        help="Number of cross validation folds. If < 2 CV won't be used and the test set size "
+             "will be defined by --test-size",
         default=1,
         type=int
+    )
+
+    parser.add_argument(
+        "--test-size",
+        help="Size of the test set as a float between 0 and 1",
+        default=.25,
+        type=float
     )
 
     parser.add_argument(
@@ -153,7 +168,8 @@ if __name__ == '__main__':
     parser.add_argument(
         "--batch-size",
         help="Batch size for each train iteration",
-        default=20
+        default=20,
+        type=int
     )
 
     args = settings.add_args(parser)
