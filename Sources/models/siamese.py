@@ -177,3 +177,13 @@ class BasicSiamese:
         return self.good_predictions_count()/self.batch_size
 
 
+class ScalarSiamese:
+    """
+    This class creates a Siamese model that uses both images and scalar features extracted using
+    PyRadiomics. The features are not extracted by the model but they have to be provided in one of the placeholders
+    """
+
+    def __init__(self):
+        # TODO: Set the proper dimension for the radiomic features
+        self.x_image = tf.placeholder(tf.float32, [None, 64, 64, 64, 1])
+        self.x_scalar = tf.placeholder(tf.float32, [None, 100])
