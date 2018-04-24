@@ -66,6 +66,8 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
 
 
 def main():
+    logger.info(f"Using batch size: {settings.args.batch_size}")
+
     siamese_model = models.BasicSiamese(settings.args.gpu_level)
     optimizer = tf.train.AdamOptimizer()
 
@@ -90,6 +92,8 @@ def main():
 
     tensors['summary'] = tf.summary.merge_all()
 
+    logger.debug("Tensors created")
+
     saver = tf.train.Saver()
 
     with tf.Session(config=conf) as sess:
@@ -102,8 +106,6 @@ def main():
         else:
             sess.run(tf.global_variables_initializer())
 
-        logger.debug(f"Batch size: {settings.args.batch_size}")
-        logger.debug(f"Num Epochs: {settings.args.num_epochs}")
         logger.info("Starting training")
 
         dataset = data.pair_data.SplitPairs()
@@ -116,13 +118,14 @@ def main():
 
         for test_pairs, train_pairs in generator:
             for j in range(settings.args.num_epochs):
-                logger.info(f"Epoch: {j + 1}")
+                logger.info(f"Epoch: {j + 1} of {settings.args.num_epochs}")
 
                 train_iterations(saver, sess, siamese_model, tensors, train_pairs, train_summary)
                 test_iterations(sess, siamese_model, tensors, test_pairs)
 
 
 if __name__ == '__main__':
+    logger.debug("Script starts")
     parser = argparse.ArgumentParser(
         description="Fit the data with a Tensorflow model",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
