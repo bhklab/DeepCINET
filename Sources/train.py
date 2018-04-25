@@ -23,7 +23,7 @@ def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Basi
         _, c_index_result, loss, summary = sess.run(
             [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
             feed_dict={
-                model.x: batch.images,
+                model.x_image: batch.images,
                 model.pairs_a: batch.pairs_a,
                 model.pairs_b: batch.pairs_b,
                 model.y: batch.labels
@@ -50,7 +50,7 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         temp_sum, c_index_result = sess.run(
             [tensors['true-predictions'], tensors['c-index']],
             feed_dict={
-                model.x: batch.images,
+                model.x_image: batch.images,
                 model.pairs_a: batch.pairs_a,
                 model.pairs_b: batch.pairs_b,
                 model.y: batch.labels

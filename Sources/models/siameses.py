@@ -2,7 +2,6 @@ import tensorflow as tf
 
 import utils
 
-
 logger = utils.get_logger('train.siamese')
 
 
@@ -30,7 +29,7 @@ class BasicSiamese:
     Threshold in when considering a float number between ``0`` and ``1`` a ``True`` value for classification
     """
 
-    def __init__(self, gpu_level):
+    def __init__(self, gpu_level: int = 0):
         """
         Construct a BasicSiamese model.
 
@@ -41,7 +40,8 @@ class BasicSiamese:
         device = '/gpu:0' if self.gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for parameters")
         with tf.device(device):
-            self.x = tf.placeholder(tf.float32, [None, 64, 64, 64, 1], name="X")
+            # The input size for the images is 64x64x64x1
+            self.x_image = tf.placeholder(tf.float32, [None, 64, 64, 64, 1], name="X")
             self.y = tf.placeholder(tf.float32, [None], name="Y")
             self.y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
             self.pairs_a = tf.placeholder(tf.int32, [None], name="pairs_a")
@@ -49,23 +49,34 @@ class BasicSiamese:
 
             self.batch_size = tf.cast(tf.shape(self.y)[0], tf.float32, name="batch_size_cast")
 
-        self.sister_out = self.sister(self.x)
+        self.sister_out = self._sister(self.x_image)
 
-        device = '/gpu:0' if self.gpu_level >= 3 else '/cpu:0'
-        logger.debug(f"Using device: {device} for results")
-        with tf.device(device):
-            self.gathered_a = tf.gather(self.sister_out, self.pairs_a, name="gather_a")
-            self.gathered_b = tf.gather(self.sister_out, self.pairs_b, name="gather_b")
+        self.y_prob = self._contrastive_loss(self.sister_out)
+        self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
-            self.y_prob = tf.sigmoid(self.gathered_a - self.gathered_b, name="sigmoid")
-            self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
-
-    def sister(self, x: tf.Tensor) -> tf.Tensor:
+    def _sister(self, x: tf.Tensor) -> tf.Tensor:
         """
         Build one branch (sister) of the siamese network
 
         :param x: Initial input of shape ``[batch, 64, 64, 64, 1]``
         :return: Tensor of shape ``[batch, 1]``
+        """
+        # In: [batch, 64, 64, 64, 1]
+        # Out: [batch, 25, 25, 25, 50]
+        x = self._conv_layers(x)
+
+        # In: [batch, 25, 25, 25, 50]
+        # Out: [batch, 1]
+        x = self._fc_layers(x)
+
+        return x
+
+    def _conv_layers(self, x: tf.Tensor):
+        """
+        Implement the convolutional layers of the network
+
+        :param x: Network's input images
+        :return: Filtered image with the convolutions applied
         """
         # In: [batch, 64, 64, 64, 1]
 
@@ -111,7 +122,15 @@ class BasicSiamese:
                 activation=tf.nn.relu,
                 name="conv4"
             )
+        return x
 
+    def _fc_layers(self, x: tf.Tensor):
+        """
+        Implement the fully connected layers of the network
+
+        :param x: Image, usually previously filtered with the convolutional layers.
+        :return: Tensor with shape ``[batch, 1]``
+        """
         device = '/gpu:0' if self.gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
@@ -144,8 +163,31 @@ class BasicSiamese:
                 activation=tf.nn.relu,
                 name="fc3"
             )
-
         return x
+
+    def _contrastive_loss(self, sister_out: tf.Tensor):
+        r"""
+        Implement the loss to compare the two sister networks. To get the pairs to be compared it uses the ``self.pairs_a``
+        and ``self.pairs_b``. In this case the contrastive loss is as follows:
+
+        .. math::
+            G_W(\boldsymbol{X_A}) &:= \text{Outputs for inputs A} \\
+            G_W(\boldsymbol{X_B}) &:= \text{Outputs for inputs B} \\
+            \boldsymbol{\hat{y}} &= \sigma(G_W(\boldsymbol{X_A}) - G_W(\boldsymbol{X_B})) =
+            \frac{1}{1 + \exp(G_W(\boldsymbol{X_B}) - G_W(\boldsymbol{X_A}))}
+
+        :param sister_out: Sister's network output, then using the defined parameters  it selects the proper pairs to
+                           be compared.
+        :return: Tensor with the contrastive loss, comparing the two sister's output.
+        """
+        device = '/gpu:0' if self.gpu_level >= 3 else '/cpu:0'
+        logger.debug(f"Using device: {device} for contrastive loss")
+        with tf.device(device):
+            gathered_a = tf.gather(sister_out, self.pairs_a, name="contrastive_gather_a")
+            gathered_b = tf.gather(sister_out, self.pairs_b, name="contrastive_gather_b")
+
+            sub = tf.subtract(gathered_a, gathered_b, name="contrastive_sub")
+            return tf.sigmoid(sub, name="contrastive_sigmoid")
 
     def loss(self) -> tf.Tensor:
         r"""
@@ -175,6 +217,11 @@ class BasicSiamese:
 
     def c_index(self):
         return self.good_predictions_count()/self.batch_size
+
+
+class SimpleSiamese(BasicSiamese):
+    def __init__(self, gpu_level: int = 0):
+        super().__init__(gpu_level)
 
 
 class ScalarSiamese:
