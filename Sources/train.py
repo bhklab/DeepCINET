@@ -116,7 +116,7 @@ def main():
         else:
             generator = dataset.folds(settings.args.cv_folds)
 
-        for test_pairs, train_pairs in generator:
+        for train_pairs, test_pairs in generator:
             for j in range(settings.args.num_epochs):
                 logger.info(f"Epoch: {j + 1} of {settings.args.num_epochs}")
 
