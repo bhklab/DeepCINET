@@ -12,15 +12,14 @@ class BasicSiamese:
     Class representing a basic siamese structure. It contains a few convolutional layers and then the
     contrastive loss.
 
-    Convolutional Model
-    -------------------
+    Convolutional Model:
 
     It contains 4 convolutional layers and 3 FC layers
 
-        - 3^3 kernel with 30 filters and stride = 2
-        - 3^3 kernel with 40 filters and stride = 1
-        - 3^3 kernel with 40 filters and stride = 1
-        - 3^3 kernel with 50 filters and stride = 1
+        - :math:`3^3` kernel with 30 filters and stride = 2
+        - :math:`3^3` kernel with 40 filters and stride = 1
+        - :math:`3^3` kernel with 40 filters and stride = 1
+        - :math:`3^3` kernel with 50 filters and stride = 1
         - 100 units, activation ReLU
         - 50 units, activation ReLu
         - 1 unit, activation ReLu
@@ -43,10 +42,18 @@ class BasicSiamese:
         logger.debug(f"Using device: {device} for parameters")
         with tf.device(device):
             # The input size for the images is 64x64x64x1
+
+            #: **Attribute**: Placeholder for the image input, it has shape ``[batch, 64, 64, 64, 1]``
             self.x_image = tf.placeholder(tf.float32, [None, 64, 64, 64, 1], name="X")
+
+            #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
             self.y = tf.placeholder(tf.float32, [None], name="Y")
             self.y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
+
+            #: **Attribute**: Placeholder for the indices of the first pairs (A)
             self.pairs_a = tf.placeholder(tf.int32, [None], name="pairs_a")
+
+            #: **Attribute**: Placeholder for the indices of the second pairs (B)
             self.pairs_b = tf.placeholder(tf.int32, [None], name="pairs_b")
 
         self._sister_out = self._sister(self.x_image)
@@ -54,7 +61,8 @@ class BasicSiamese:
         #: **Attribute**: Probability of :math:`\hat{y} = 1`
         self.y_prob = self._contrastive_loss(self._sister_out)
 
-        self.y_prob = self._contrastive_loss(self.sister_out)
+        #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicSiamese.y_prob` and
+        #: :any:`BasicSiamese.THRESHOLD`
         self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
     def _sister(self, x: tf.Tensor) -> tf.Tensor:

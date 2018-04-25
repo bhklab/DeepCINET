@@ -18,7 +18,7 @@ help:
 
 docs:
 	rm -rf docs_source/api
-	SPHINX_APIDOC_OPTIONS='members,private-members,undoc-members,show-inheritance,change-1,change-2' sphinx-apidoc -o docs_source/api/ Sources Sources/experimental.py
+	SPHINX_APIDOC_OPTIONS='members,private-members,undoc-members,show-inheritance,inherited-members,change-1,change-2' sphinx-apidoc -o docs_source/api/ Sources Sources/experimental.py
 	sed -i .bak "s/change-1:/exclude-members: $(EXCLUDE_PRIVATE)/;s/change-2:/special-members: __init__/" $(SOURCEDIR)/api/*.rst
 	$(MAKE) html latexpdf
 
