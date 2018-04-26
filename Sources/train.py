@@ -61,7 +61,13 @@ def main():
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {settings.args.batch_size}")
 
-    siamese_model = models.SimpleSiamese(settings.args.gpu_level)
+    if settings.args.model == "SimpleSiamese":
+        siamese_model = models.SimpleSiamese(settings.args.gpu_level)
+    elif settings.args.model == "ScalarSiamese":
+        siamese_model = models.ScalarSiamese(settings.args.gpu_level)
+    else:
+        logger.error(f"Unknown option for model {settings.args.model}")
+
     optimizer = tf.train.AdamOptimizer()
 
     tensors = {
@@ -156,9 +162,12 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--num-epochs",
+        "-n, --num-epochs",
         help="Number of epochs to use when training. Times passed through the entire dataset",
-        default=1
+        metavar="NUM_EPOCHS",
+        dest="num_epochs",
+        default=1,
+        type=int
     )
 
     parser.add_argument(
@@ -168,7 +177,16 @@ if __name__ == '__main__':
         type=int
     )
 
+    parser.add_argument(
+        "--model",
+        help="Choose the model that you want to use for training",
+        default="SimpleSiamese",
+        choices=['SimpleSiamese', 'ScalarSiamese'],
+        type=str
+    )
+
     args = settings.add_args(parser)
+    logger.debug(args)
 
     if args.batch_size < 2:
         logger.error("Batch size is too small! It should be at least 2. Exiting")

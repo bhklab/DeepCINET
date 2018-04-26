@@ -319,10 +319,9 @@ class ScalarSiamese(BasicSiamese):
     """
 
     def __init__(self, gpu_level: int):
-        super().__init__(gpu_level=gpu_level)
-
-        # TODO: Set the proper dimension for the radiomic features
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
+
+        super().__init__(gpu_level=gpu_level)
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
         """
