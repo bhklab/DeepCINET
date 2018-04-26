@@ -45,7 +45,7 @@ class BasicSiamese:
 
             #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
             self.y = tf.placeholder(tf.float32, [None], name="Y")
-            self.y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
+            self._y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
 
             #: **Attribute**: Placeholder for the indices of the first pairs (A)
             self.pairs_a = tf.placeholder(tf.int32, [None], name="pairs_a")
@@ -133,7 +133,7 @@ class BasicSiamese:
 
         :return: Scalar tensor with the negative log loss function for the model computed.
         """
-        return tf.losses.log_loss(self.y, self.y_prob)
+        return tf.losses.log_loss(self._y, self.y_prob)
 
     def good_predictions_count(self) -> tf.Tensor:
         """
@@ -143,7 +143,7 @@ class BasicSiamese:
                  the c-index we only have to divide by the batch size
         """
         # y ∈ {0, 1}   y_estimate ∈ {True, False}
-        y_bool = tf.greater_equal(self.y, self.THRESHOLD)
+        y_bool = tf.greater_equal(self._y, self.THRESHOLD)
         equals = tf.equal(y_bool, self.y_estimate)
 
         return tf.cast(tf.count_nonzero(equals), tf.float32)
@@ -158,7 +158,7 @@ class BasicSiamese:
 
         :return: c-index tensor
         """
-        batch_size = tf.cast(tf.shape(self.y)[0], tf.float32, name="batch_size_cast")
+        batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
         return self.good_predictions_count()/batch_size
 
 

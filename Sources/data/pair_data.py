@@ -9,7 +9,12 @@ import scipy
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
 from data.data_structures import PairComp, PairBatch
-from settings import DATA_PATH_CLINICAL_PROCESSED, TOTAL_ROTATIONS, DATA_PATH_PROCESSED, RANDOM_SEED
+from settings import \
+    DATA_PATH_CLINICAL_PROCESSED, \
+    DATA_PATH_PROCESSED, \
+    DATA_PATH_RADIOMIC_PROCESSED, \
+    TOTAL_ROTATIONS, \
+    RANDOM_SEED
 from utils import get_logger
 
 logger = get_logger('pair_data')
@@ -217,10 +222,13 @@ class BatchData:
         ids_map = {idx: idx_num*TOTAL_ROTATIONS for idx_num, idx in enumerate(ids_list)}
         pairs_a = [idx for p in pairs for idx in range(ids_map[p.p_a], ids_map[p.p_a] + TOTAL_ROTATIONS)]
         pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + TOTAL_ROTATIONS)]
-        labels = [[float(l)] for p in pairs for l in [p.comp]*TOTAL_ROTATIONS]
+        labels = [float(l) for p in pairs for l in [p.comp]*TOTAL_ROTATIONS]
         assert len(pairs_a) == len(pairs_b) == len(labels)
 
+        df = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
+
         images = []
+        features = []
         for idx in ids_list:
             file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
 
@@ -229,16 +237,26 @@ class BatchData:
                 logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
                 raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
-            loaded = np.load(file_path)
-            for item in loaded:
-                images.append(loaded[item])
-            loaded.close()
+            loaded_npz = np.load(file_path)
+
+            column = df[idx].values
+            for item in loaded_npz:
+                images.append(loaded_npz[item])
+                features.append(column)
+            loaded_npz.close()
 
         images = np.array(images)
         images = images.reshape((-1, 64, 64, 64, 1))
         # images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
 
-        return PairBatch(pairs_a=pairs_a, pairs_b=pairs_b, labels=labels, images=images, ids_map=ids_map)
+        features = np.array(features)
+
+        return PairBatch(pairs_a=pairs_a,
+                         pairs_b=pairs_b,
+                         labels=labels,
+                         images=images,
+                         ids_map=ids_map,
+                         features=features)
 
     @staticmethod
     def _split(it: Iterable, n: int) -> Iterable[Iterable]:
