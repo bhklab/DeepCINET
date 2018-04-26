@@ -71,6 +71,8 @@ else:
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
+# The total number of features that are provided by the CSV of radiomic features
+NUMBER_FEATURES = 725
 
 # Hack to be able to have all the CLI arguments in the global space
 def add_args(parser: argparse.ArgumentParser) -> argparse.Namespace:

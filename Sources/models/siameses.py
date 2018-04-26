@@ -5,6 +5,7 @@ import tensorflow as tf
 
 import utils
 import data
+import settings
 
 logger = utils.get_logger('train.siamese')
 
@@ -321,7 +322,7 @@ class ScalarSiamese(BasicSiamese):
         super().__init__(gpu_level=gpu_level)
 
         # TODO: Set the proper dimension for the radiomic features
-        self.x_scalar = tf.placeholder(tf.float32, [None, 100])
+        self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
         """
@@ -378,7 +379,52 @@ class ScalarSiamese(BasicSiamese):
         return x
 
     def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
-        pass
+        """
+        Implementation of abstract method :func:`~BasicSiamese._fc_layers`
+
+        :param x: Image, usually previously filtered with the convolutional layers.
+        :return: Tensor with shape ``[batch, 1]``
+        """
+
+        # In this case we will be using the same idea seen in SimpleSiamese but we will be adding the scalar
+        # features instead
+        device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
+        logger.debug(f"Using device: {device} for FC layers")
+        with tf.device(device):
+            # Out: [batch, 25*25*25*50]
+            x = tf.layers.flatten(
+                x,
+                name="flat"
+            )
+
+            # This is where the magic happens
+            # Out: [batch, 781 975]
+            x = tf.concat([x, self.x_scalar], axis=1)
+
+            # Out: [batch, 100]
+            x = tf.layers.dense(
+                x,
+                100,
+                activation=tf.nn.relu,
+                name="fc1"
+            )
+
+            # Out: [batch, 50]
+            x = tf.layers.dense(
+                x,
+                50,
+                activation=tf.nn.relu,
+                name="fc2"
+            )
+
+            # Out: [batch, 1]
+            x = tf.layers.dense(
+                x,
+                1,
+                activation=tf.nn.relu,
+                name="fc3"
+            )
+        return x
 
     def feed_dict(self, batch: data.PairBatch) -> Dict:
         """
