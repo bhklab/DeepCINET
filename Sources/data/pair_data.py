@@ -226,8 +226,8 @@ class BatchData:
 
             # Check if the file exists, so the data has been preprocessed
             if not os.path.exists(file_path):
-                logger.critical(f"The file {file_path} could not be found. Have you pre-processed the data?")
-                raise ValueError(f"The file {file_path} could not be found. Have you pre-processed the data?")
+                logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
+                raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
             loaded = np.load(file_path)
             for item in loaded:

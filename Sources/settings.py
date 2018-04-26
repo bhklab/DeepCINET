@@ -14,9 +14,11 @@ required_vars = [
     'DATA',
     'DATA_RAW',
     'DATA_CLINICAL',
+    'DATA_RADIOMIC',
     'DATA_CACHE',
     'DATA_PROCESSED',
     'DATA_CLINICAL_PROCESSED',
+    'DATA_RADIOMIC_PROCESSED',
     'IMAGE_ROTATIONS'
 ]
 
@@ -29,9 +31,13 @@ for var in required_vars:
 DATA_PATH = os.path.abspath(os.getenv('DATA'))
 DATA_PATH_RAW = os.path.abspath(os.getenv('DATA_RAW'))
 DATA_PATH_CLINICAL = os.path.abspath(os.getenv('DATA_CLINICAL'))
+DATA_PATH_RADIOMIC = os.path.abspath(os.getenv('DATA_RADIOMIC'))
+
 DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
+
 DATA_PATH_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
 DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
+DATA_PATH_RADIOMIC_PROCESSED = os.path.abspath(os.getenv('DATA_RADIOMIC_PROCESSED'))
 
 # Log dir, fallback to current directory
 LOG_DIR = os.path.abspath(os.getenv('LOG_DIR', './'))
