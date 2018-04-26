@@ -12,17 +12,16 @@ class BasicSiamese:
     Class representing a basic siamese structure. It contains a few convolutional layers and then the
     contrastive loss.
 
-    Convolutional Model:
+    The model has some tensors that need to be fed when using ``sess.run(...)``:
 
-    It contains 4 convolutional layers and 3 FC layers
-
-        - :math:`3^3` kernel with 30 filters and stride = 2
-        - :math:`3^3` kernel with 40 filters and stride = 1
-        - :math:`3^3` kernel with 40 filters and stride = 1
-        - :math:`3^3` kernel with 50 filters and stride = 1
-        - 100 units, activation ReLU
-        - 50 units, activation ReLu
-        - 1 unit, activation ReLu
+    :var BasicSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
+    :var BasicSiamese.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
+    :vartype BasicSiamese.x_image: tf.Tensor
+    :vartype BasicSiamese.y: tf.Tensor
+    :vartype BasicSiamese.pairs_a: tf.Tensor
+    :vartype BasicSiamese.pairs_b: tf.Tensor
     """
 
     #: Threshold in when considering a float number between ``0`` and ``1`` a :any:`True` value for classification
@@ -106,6 +105,7 @@ class BasicSiamese:
         .. math::
             G_W(\boldsymbol{X_A}) &:= \text{Outputs for inputs A} \\
             G_W(\boldsymbol{X_B}) &:= \text{Outputs for inputs B} \\
+            \sigma(x) &:= \frac{1}{1 + \exp(-x)} \\
             \boldsymbol{\hat{y}} &= \sigma(G_W(\boldsymbol{X_A}) - G_W(\boldsymbol{X_B})) =
             \frac{1}{1 + \exp(G_W(\boldsymbol{X_B}) - G_W(\boldsymbol{X_A}))}
 
@@ -148,21 +148,57 @@ class BasicSiamese:
 
         return tf.cast(tf.count_nonzero(equals), tf.float32)
 
-    def c_index(self):
+    def c_index(self) -> tf.Tensor:
+        r"""
+        Create the tensor for the c-index. It's obtained by counting the number of comparisons that are right
+        and dividing them by the total amount of comparisons, it's as follows:
+
+        .. math::
+            \frac{\text{correct comparisons}}{\text{total comparisons}}
+
+        :return: c-index tensor
+        """
         batch_size = tf.cast(tf.shape(self.y)[0], tf.float32, name="batch_size_cast")
         return self.good_predictions_count()/batch_size
 
 
 class SimpleSiamese(BasicSiamese):
+    """
+    Class representing the initial and simple siamese structure used for the first steps of the project. It
+    inherits :any:`BasicSiamese` so it has the same tensors to be fed.
+
+    **Convolutional Model**:
+
+    It contains 4 convolutional layers and 3 FC layers
+
+        - :math:`3^3` kernel with 30 filters and stride = 2
+        - :math:`3^3` kernel with 40 filters and stride = 1
+        - :math:`3^3` kernel with 40 filters and stride = 1
+        - :math:`3^3` kernel with 50 filters and stride = 1
+        - 100 units, activation ReLU
+        - 50 units, activation ReLu
+        - 1 unit, activation ReLu
+    """
+
     def __init__(self, gpu_level: int = 0):
+        """
+        Construct a new SimpleSiamese class
+
+        :param gpu_level: Amount of GPU to be used with the model
+
+                            0. No GPU usage
+                            1. Only second conv layers
+                            2. All conv layers
+                            3. All layers and parameters are on the GPU
+        """
         super().__init__(gpu_level)
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
         """
         Implementation of abstract method :func:`~BasicSiamese._conv_layers`
 
-        :param x:
-        :return:
+        :param x: Network's input images with shape ``[batch, 64, 64, 64, 1]``
+        :return: Filtered image with the convolutions applied
         """
         # In: [batch, 64, 64, 64, 1]
 
@@ -211,6 +247,12 @@ class SimpleSiamese(BasicSiamese):
         return x
 
     def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        Implementation of abstract method ``BasicSiamese._fc_layers``
+
+        :param x: Image, usually previously filtered with the convolutional layers.
+        :return: Tensor with shape ``[batch, 1]``
+        """
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
