@@ -66,6 +66,7 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
 
 
 def main():
+    logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {settings.args.batch_size}")
 
     siamese_model = models.SimpleSiamese(settings.args.gpu_level)

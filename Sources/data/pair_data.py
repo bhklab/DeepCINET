@@ -222,7 +222,14 @@ class BatchData:
 
         images = []
         for idx in ids_list:
-            loaded = np.load(os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz"))
+            file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
+
+            # Check if the file exists, so the data has been preprocessed
+            if not os.path.exists(file_path):
+                logger.critical(f"The file {file_path} could not be found. Have you pre-processed the data?")
+                raise ValueError(f"The file {file_path} could not be found. Have you pre-processed the data?")
+
+            loaded = np.load(file_path)
             for item in loaded:
                 images.append(loaded[item])
             loaded.close()
