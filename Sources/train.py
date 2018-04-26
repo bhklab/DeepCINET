@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import tensorflow as tf
 
@@ -34,7 +34,7 @@ def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Basi
 
 
 def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
-                    pairs: List[data.PairComp]):
+                    pairs: List[data.PairComp]) -> Tuple[int, int]:
     # After we iterate over all the data inspect the test error
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
     correct_count = 0  # To store correct predictions
@@ -55,6 +55,8 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
                     f"c-index: {c_index_result}, accum c-index:{correct_count/pairs_count}")
     logger.info(f"Final c-index: {correct_count/(len(pairs)*settings.TOTAL_ROTATIONS)}")
+
+    return correct_count, len(pairs)*settings.TOTAL_ROTATIONS
 
 
 def main():
@@ -116,11 +118,19 @@ def main():
             generator = dataset.folds(settings.args.cv_folds)
 
         for train_pairs, test_pairs in generator:
+            total_count = 0
+            correct_count = 0
             for j in range(settings.args.num_epochs):
                 logger.info(f"Epoch: {j + 1} of {settings.args.num_epochs}")
 
                 train_iterations(saver, sess, siamese_model, tensors, train_pairs, train_summary)
-                test_iterations(sess, siamese_model, tensors, test_pairs)
+                correct, total = test_iterations(sess, siamese_model, tensors, test_pairs)
+                total_count += total
+                correct_count += correct
+
+            logger.info(f"Total CV error {correct_count/total_count}")
+
+
 
 
 if __name__ == '__main__':
