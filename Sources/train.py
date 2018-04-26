@@ -131,8 +131,6 @@ def main():
             logger.info(f"Total CV error {correct_count/total_count}")
 
 
-
-
 if __name__ == '__main__':
     logger.debug("Script starts")
     parser = argparse.ArgumentParser(
