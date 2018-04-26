@@ -288,13 +288,71 @@ class SimpleSiamese(BasicSiamese):
         return x
 
 
-class ScalarSiamese:
+class ScalarSiamese(BasicSiamese):
     """
     This class creates a Siamese model that uses both images and scalar features extracted using
     PyRadiomics. The features are not extracted by the model but they have to be provided in one of the placeholders
     """
 
-    def __init__(self):
+    def __init__(self, gpu_level: int):
+        super().__init__(gpu_level=gpu_level)
+
         # TODO: Set the proper dimension for the radiomic features
-        self.x_image = tf.placeholder(tf.float32, [None, 64, 64, 64, 1])
         self.x_scalar = tf.placeholder(tf.float32, [None, 100])
+
+    def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
+        """
+                Implementation of abstract method :func:`~BasicSiamese._conv_layers`
+
+                :param x: Network's input images with shape ``[batch, 64, 64, 64, 1]``
+                :return: Filtered image with the convolutions applied
+                """
+        # For now use only the same convolutional layers as the SimpleSiamese
+        # In: [batch, 64, 64, 64, 1]
+
+        device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
+        logger.debug(f"Using device: {device} for first conv layers")
+        with tf.device(device):
+            # Out: [batch, 31, 31, 31, 30]
+            x = tf.layers.conv3d(
+                x,
+                filters=30,
+                kernel_size=3,
+                strides=2,
+                activation=tf.nn.relu,
+                name="conv1"
+            )
+
+            # Out: [batch, 29, 29, 29, 40]
+            x = tf.layers.conv3d(
+                x,
+                filters=40,
+                kernel_size=3,
+                activation=tf.nn.relu,
+                name="conv2"
+            )
+
+        device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
+        logger.debug(f"Using device: {device} for second conv layers")
+        with tf.device(device):
+            # Out: [batch, 27, 27, 27, 40]
+            x = tf.layers.conv3d(
+                x,
+                filters=40,
+                kernel_size=3,
+                activation=tf.nn.relu,
+                name="conv3"
+            )
+
+            # Out: [batch, 25, 25, 25, 50]
+            x = tf.layers.conv3d(
+                x,
+                filters=50,
+                kernel_size=3,
+                activation=tf.nn.relu,
+                name="conv4"
+            )
+        return x
+
+    def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
+        pass
