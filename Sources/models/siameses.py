@@ -25,10 +25,8 @@ class BasicSiamese:
         - 1 unit, activation ReLu
     """
 
+    #: Threshold in when considering a float number between ``0`` and ``1`` a :any:`True` value for classification
     THRESHOLD = .5
-    """
-    Threshold in when considering a float number between ``0`` and ``1`` a ``True`` value for classification
-    """
 
     def __init__(self, gpu_level: int = 0):
         """
@@ -103,7 +101,7 @@ class BasicSiamese:
     def _contrastive_loss(self, sister_out: tf.Tensor):
         r"""
         Implement the loss to compare the two sister networks. To get the pairs to be compared it uses the
-        :any:`BasicSiamese.pairs_a` and ``self.pairs_b``. In this case the contrastive loss is as follows:
+        :any:`BasicSiamese.pairs_a` and :any:`BasicSiamese.pairs_b`. In this case the contrastive loss is as follows:
 
         .. math::
             G_W(\boldsymbol{X_A}) &:= \text{Outputs for inputs A} \\
