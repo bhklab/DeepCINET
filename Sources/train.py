@@ -22,12 +22,8 @@ def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Basi
         # Execute graph operations
         _, c_index_result, loss, summary = sess.run(
             [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
-            feed_dict={
-                model.x_image: batch.images,
-                model.pairs_a: batch.pairs_a,
-                model.pairs_b: batch.pairs_b,
-                model.y: batch.labels
-            })
+            feed_dict=model.feed_dict(batch)
+        )
 
         total_pairs -= len(batch.pairs_a)
         logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
@@ -49,12 +45,8 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         # Execute test operations
         temp_sum, c_index_result = sess.run(
             [tensors['true-predictions'], tensors['c-index']],
-            feed_dict={
-                model.x_image: batch.images,
-                model.pairs_a: batch.pairs_a,
-                model.pairs_b: batch.pairs_b,
-                model.y: batch.labels
-            })
+            feed_dict=model.feed_dict(batch)
+        )
 
         correct_count += temp_sum
         total_pairs -= len(batch.pairs_a)
