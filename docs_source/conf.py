@@ -42,7 +42,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.imgmath',
     'sphinx_autodoc_typehints',
-    'sphinx.ext.viewcode',
+    # 'sphinx.ext.viewcode',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx'
 ]
@@ -76,6 +76,8 @@ pygments_style = 'sphinx'
 
 
 imgmath_image_format = 'svg'
+
+autoclass_content = 'both'
 
 # -- Options for HTML output -------------------------------------------------
 
