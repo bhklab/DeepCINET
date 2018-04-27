@@ -1,6 +1,7 @@
 import os
 import random
 import argparse
+from typing import Dict, Any
 
 import numpy as np
 
@@ -74,8 +75,9 @@ else:
 # The total number of features that are provided by the CSV of radiomic features
 NUMBER_FEATURES = 725
 
+
 # Hack to be able to have all the CLI arguments in the global space
-def add_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
+def add_args(parser: argparse.ArgumentParser) -> Dict[str, Any]:
     global args
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
     return args

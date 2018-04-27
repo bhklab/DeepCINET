@@ -18,7 +18,7 @@ def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
     logger.info(f"We have {total_pairs} pairs")
     # Train iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args.batch_size)):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
         # Execute graph operations
         _, c_index_result, loss, summary = sess.run(
             [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
@@ -40,7 +40,7 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
     pairs_count = 0
 
     # Test iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args.batch_size)):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
         # Execute test operations
         temp_sum, c_index_result = sess.run(
             [tensors['true-predictions'], tensors['c-index']],
@@ -59,14 +59,14 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
 
 def main():
     logger.info("Script to train a siamese neural network model")
-    logger.info(f"Using batch size: {settings.args.batch_size}")
+    logger.info(f"Using batch size: {settings.args['batch_size']}")
 
-    if settings.args.model == "SimpleSiamese":
-        siamese_model = models.SimpleSiamese(settings.args.gpu_level)
-    elif settings.args.model == "ScalarSiamese":
-        siamese_model = models.ScalarSiamese(settings.args.gpu_level)
+    if settings.args['model'] == "SimpleSiamese":
+        siamese_model = models.SimpleSiamese(settings.args['gpu_level'])
+    elif settings.args['model'] == "ScalarSiamese":
+        siamese_model = models.ScalarSiamese(settings.args['gpu_level'])
     else:
-        logger.error(f"Unknown option for model {settings.args.model}")
+        logger.error(f"Unknown option for model {settings.args['model']}")
         siamese_model = None  # Make linter happy
         exit(1)
 
@@ -101,31 +101,24 @@ def main():
     with tf.Session(config=conf) as sess:
         train_summary = tf.summary.FileWriter(os.path.join(settings.SUMMARIES_DIR, 'train'), sess.graph)
 
-        # Load the weights from the previous execution if we can
         # TODO: Load the weights when it's required to show the predictions only
-        # if os.path.exists(settings.SESSION_SAVE_PATH) and not settings.args.overwrite_weights:
-        #     saver.restore(sess, settings.SESSION_SAVE_PATH)
-        #     logger.info("Previous weights found and loaded")
-        # else:
-        #     sess.run(tf.global_variables_initializer())
-
         logger.info("Starting training")
 
         dataset = data.pair_data.SplitPairs()
 
         # Decide whether to use CV or only a single test/train sets
-        if settings.args.cv_folds < 2:
-            generator = [dataset.train_test_split(settings.args.test_size)]
+        if settings.args['cv_folds'] < 2:
+            generator = [dataset.train_test_split(settings.args['test_size'])]
         else:
-            generator = dataset.folds(settings.args.cv_folds)
+            generator = dataset.folds(settings.args['cv_folds'])
 
         for train_pairs, test_pairs in generator:
             # Initialize all the variables
             sess.run(tf.global_variables_initializer())
 
             # Epoch iterations
-            for j in range(settings.args.num_epochs):
-                logger.info(f"Epoch: {j + 1} of {settings.args.num_epochs}")
+            for j in range(settings.args['num_epochs']):
+                logger.info(f"Epoch: {j + 1} of {settings.args['num_epochs']}")
                 train_iterations(sess, siamese_model, tensors, train_pairs, train_summary)
 
                 # Get test error on the training set
@@ -145,13 +138,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Fit the data with a Tensorflow model",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    parser.add_argument(
-        "--overwrite-weights",
-        help="Overwrite the weights that have been stored between each iteration",
-        default=False,
-        action="store_true"
     )
 
     parser.add_argument(
@@ -205,7 +191,7 @@ if __name__ == '__main__':
     args = settings.add_args(parser)
     logger.debug(args)
 
-    if args.batch_size < 2:
+    if args['batch_size'] < 2:
         logger.error("Batch size is too small! It should be at least 2. Exiting")
         exit(1)
 
