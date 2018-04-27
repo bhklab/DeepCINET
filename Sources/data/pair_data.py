@@ -219,7 +219,11 @@ class BatchData:
         # global variable to set the indices, the generated indices are in the range:
         # idx*TOTAL_ROTATIONS ... (idx + 1)*TOTAL_ROTATIONS
         ids_list = list(ids)
+
+        # Direct and inverse mapping
         ids_map = {idx: idx_num*TOTAL_ROTATIONS for idx_num, idx in enumerate(ids_list)}
+        ids_inverse = {idx_num: idx for idx, i in ids_map.items() for idx_num in range(i, i + TOTAL_ROTATIONS)}
+
         pairs_a = [idx for p in pairs for idx in range(ids_map[p.p_a], ids_map[p.p_a] + TOTAL_ROTATIONS)]
         pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + TOTAL_ROTATIONS)]
         labels = [float(l) for p in pairs for l in [p.comp]*TOTAL_ROTATIONS]
@@ -256,6 +260,7 @@ class BatchData:
                          labels=labels,
                          images=images,
                          ids_map=ids_map,
+                         ids_inverse=ids_inverse,
                          features=features)
 
     @staticmethod

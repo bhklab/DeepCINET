@@ -3,6 +3,8 @@ import os
 from typing import Dict, List, Tuple
 
 import tensorflow as tf
+import numpy as np
+import pandas as pd
 
 import data
 import models
@@ -16,7 +18,7 @@ def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict
                      pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter):
 
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
-    logger.info(f"We have {total_pairs} pairs")
+
     # Train iterations
     for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
         # Execute graph operations
@@ -33,11 +35,18 @@ def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict
 
 
 def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
-                    pairs: List[data.PairComp]) -> Tuple[int, int]:
+                    pairs: List[data.PairComp]) -> Tuple[int, int, pd.DataFrame]:
     # After we iterate over all the data inspect the test error
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
     correct_count = 0  # To store correct predictions
     pairs_count = 0
+
+    result_data = {
+        'pairs_a': [],
+        'pairs_b': [],
+        'labels': np.array([], dtype=bool),
+        'predictions': np.array([], dtype=bool)
+    }
 
     # Test iterations
     for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
@@ -51,10 +60,16 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         total_pairs -= len(batch.pairs_a)
         pairs_count += len(batch.pairs_a)
 
+        # Save results
+        result_data['pairs_a'] += [batch.ids_inverse[idx] for idx in batch.pairs_a]
+        result_data['pairs_b'] += [batch.ids_inverse[idx] for idx in batch.pairs_b]
+        result_data['labels'] = np.append(result_data['labels'], np.array(batch.labels).astype(bool))
+        result_data['predictions'] = np.append(result_data['predictions'], np.array(predictions).astype(bool))
+
         logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
                     f"c-index: {c_index_result:.3}, accum c-index:{correct_count/pairs_count:.3}")
 
-    return correct_count, len(pairs)*settings.TOTAL_ROTATIONS
+    return correct_count, len(pairs)*settings.TOTAL_ROTATIONS, pd.DataFrame(result_data)
 
 
 def main():
@@ -96,13 +111,11 @@ def main():
 
     logger.debug("Tensors created")
 
-    saver = tf.train.Saver()
-
+    tf.set_random_seed(settings.RANDOM_SEED)
     with tf.Session(config=conf) as sess:
         train_summary = tf.summary.FileWriter(os.path.join(settings.SUMMARIES_DIR, 'train'), sess.graph)
 
         # TODO: Load the weights when it's required to show the predictions only
-        logger.info("Starting training")
 
         dataset = data.pair_data.SplitPairs()
 
@@ -116,21 +129,25 @@ def main():
             # Initialize all the variables
             sess.run(tf.global_variables_initializer())
 
+            logger.info("")
+            logger.info(f"New fold {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+
             # Epoch iterations
             for j in range(settings.args['num_epochs']):
                 logger.info(f"Epoch: {j + 1} of {settings.args['num_epochs']}")
                 train_iterations(sess, siamese_model, tensors, train_pairs, train_summary)
 
-                # Get test error on the training set
-                correct, total = test_iterations(sess, siamese_model, tensors, train_pairs)
-                logger.info(f"Train set error: {correct/total}")
+            # Get test error on the training set
+            logger.info("Computing train error")
+            train_correct, train_total, train_results = test_iterations(sess, siamese_model, tensors, train_pairs)
+            logger.info(f"Train set error: {train_correct/train_total}")
 
             # Run the test iterations after all the epochs
-            correct_count, total_count = test_iterations(sess, siamese_model, tensors, test_pairs)
+            logger.info("Computing test error")
+            test_count, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs)
+            logger.info(f"Test set error {test_count/test_total}")
 
-            # Save the current trained model
-            saver.save(sess, settings.SESSION_SAVE_PATH)
-            logger.info(f"Total CV error {correct_count/total_count}")
+            utils.save_model(sess, train_results, test_results)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import numpy as np
 import tensorflow as tf
@@ -45,7 +46,34 @@ def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
     return clip
 
 
-def save_model(sess: tf.Session, train_pairs: pd.DataFrame, test_pairs: pd.DataFrame, directory: str):
+def save_model(sess: tf.Session, train_results: pd.DataFrame, test_results: pd.DataFrame):
+
+    main_dir = settings.SESSION_SAVE_PATH
+    weights_dir = os.path.join(main_dir, 'weights')
+
+    # Always overwrite the previous weights
+    shutil.rmtree(main_dir)
+    os.makedirs(main_dir)
+    os.makedirs(weights_dir)
+
     saver = tf.train.Saver()
-    saver.save(sess, settings.SESSION_SAVE_PATH)
-    pass
+    saver.save(sess, os.path.join(weights_dir, 'weights.ckpt'))
+
+    # Load clinical info
+    clinical_info = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
+    merge_train = _select_columns(clinical_info, train_results)
+    merge_test = _select_columns(clinical_info, test_results)
+
+    merge_train.to_csv(os.path.join(main_dir, 'train_results.csv'))
+    merge_test.to_csv(os.path.join(main_dir, 'test_results.csv'))
+
+
+def _select_columns(clinical_info: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
+    merge = pd.merge(clinical_info, results, left_on='id', right_on='pairs_a')
+    merge = merge[['age', 'time', 'pairs_a', 'pairs_b', 'labels', 'predictions']]
+    merge = merge.rename(index=str, columns={'age': 'age_a', 'time': 'time_a'})
+
+    merge = pd.merge(clinical_info, merge, left_on='id', right_on='pairs_b')
+    merge = merge[['age_a', 'age', 'time_a', 'time', 'pairs_a', 'pairs_b', 'labels', 'predictions']]
+    merge = merge.rename(index=str, columns={'age': 'age_b', 'time': 'time_b'})
+    return merge
