@@ -10,7 +10,7 @@ import scipy.ndimage
 from joblib import delayed, Parallel
 from skimage import transform as skt
 
-import utils
+from utils.logger import get_logger
 from data.data_structures import PseudoDir
 from settings import \
     DATA_PATH_CACHE, \
@@ -22,7 +22,7 @@ from settings import \
     DATA_PATH_RADIOMIC, \
     IMAGE_ROTATIONS
 
-logger = utils.get_logger('data.image_data')
+logger = get_logger('data.image_data')
 
 
 class RawData:

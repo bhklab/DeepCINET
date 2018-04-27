@@ -15,7 +15,7 @@ from settings import \
     DATA_PATH_RADIOMIC_PROCESSED, \
     TOTAL_ROTATIONS, \
     RANDOM_SEED
-from utils import get_logger
+from utils.logger import get_logger
 
 logger = get_logger('pair_data')
 

@@ -50,12 +50,16 @@ class PairBatch(NamedTuple):
     :ivar PairBatch.features: Radiomic features
     :ivar PairBatch.ids_map: Dictionary that map each key as :any:`string` with its corresponding index as an
                              :any:`int`
+    :ivar PairBatch.ids_inverse: Inverse mapping for the dictionary that goes from index as an :any:`int` to
+                                 its corresponding key as :any:`string`
     :vartype PairBatch.pairs_a: list[int]
     :vartype PairBatch.pairs_b: list[int]
+    :vartype PairBatch.pairs_tag: list[str]
     :vartype PairBatch.labels: list[float]
     :vartype PairBatch.images: numpy.ndarray
     :vartype PairBatch.features: numpy.ndarray
     :vartype PairBatch.ids_map: dict[str, int]
+    :vartype PairBatch.ids_inverse: dict[int, str]
     """
     pairs_a: List[int]
     pairs_b: List[int]
@@ -64,3 +68,4 @@ class PairBatch(NamedTuple):
     images: np.ndarray
     features: np.ndarray
     ids_map: Dict[str, int]
+    ids_inverse: Dict[int, str]

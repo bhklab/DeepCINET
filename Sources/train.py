@@ -42,8 +42,8 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
     # Test iterations
     for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
         # Execute test operations
-        temp_sum, c_index_result = sess.run(
-            [tensors['true-predictions'], tensors['c-index']],
+        temp_sum, c_index_result, predictions = sess.run(
+            [tensors['true-predictions'], tensors['c-index'], tensors['predictions']],
             feed_dict=model.feed_dict(batch)
         )
 
@@ -125,11 +125,11 @@ def main():
                 correct, total = test_iterations(sess, siamese_model, tensors, train_pairs)
                 logger.info(f"Train set error: {correct/total}")
 
-            # Save the current trained model
-            saver.save(sess, settings.SESSION_SAVE_PATH)
-
             # Run the test iterations after all the epochs
             correct_count, total_count = test_iterations(sess, siamese_model, tensors, test_pairs)
+
+            # Save the current trained model
+            saver.save(sess, settings.SESSION_SAVE_PATH)
             logger.info(f"Total CV error {correct_count/total_count}")
 
 

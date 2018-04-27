@@ -1,9 +1,17 @@
 import os
 
 import numpy as np
+import tensorflow as tf
+import pandas as pd
 from moviepy.editor import ImageSequenceClip
 
+import settings
+from data.data_structures import PairBatch
+
 from .logger import get_logger, init_logger
+
+# Only export the functions that we need
+__all__ = ['get_logger', 'init_logger', 'movie', 'save_model']
 
 
 def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
@@ -35,3 +43,9 @@ def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
     clip = ImageSequenceClip(list(array), fps=fps).resize(scale)
     clip.write_videofile(filename, fps=fps)
     return clip
+
+
+def save_model(sess: tf.Session, train_pairs: pd.DataFrame, test_pairs: pd.DataFrame, directory: str):
+    saver = tf.train.Saver()
+    saver.save(sess, settings.SESSION_SAVE_PATH)
+    pass
