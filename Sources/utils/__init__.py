@@ -101,10 +101,10 @@ def save_results(sess: tf.Session, train_results: pd.DataFrame, test_results: pd
 
 def _select_time_age(clinical_info: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
     merge = pd.merge(clinical_info, results, left_on='id', right_on='pairs_a')
-    merge = merge[['age', 'time', 'pairs_a', 'pairs_b', 'labels', 'predictions']]
+    merge = merge[['age', 'time', 'pairs_a', 'pairs_b', 'labels', 'predictions', 'probabilities']]
     merge = merge.rename(index=str, columns={'age': 'age_a', 'time': 'time_a'})
 
     merge = pd.merge(clinical_info, merge, left_on='id', right_on='pairs_b')
-    merge = merge[['age_a', 'age', 'time_a', 'time', 'pairs_a', 'pairs_b', 'labels', 'predictions']]
+    merge = merge[['age_a', 'age', 'time_a', 'time', 'pairs_a', 'pairs_b', 'labels', 'predictions', 'probabilities']]
     merge = merge.rename(index=str, columns={'age': 'age_b', 'time': 'time_b'})
     return merge

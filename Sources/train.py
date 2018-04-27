@@ -45,14 +45,15 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         'pairs_a': [],
         'pairs_b': [],
         'labels': np.array([], dtype=bool),
-        'predictions': np.array([], dtype=bool)
+        'predictions': np.array([], dtype=bool),
+        'probabilities': np.array([])
     }
 
     # Test iterations
     for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
         # Execute test operations
-        temp_sum, c_index_result, predictions = sess.run(
-            [tensors['true-predictions'], tensors['c-index'], tensors['predictions']],
+        temp_sum, c_index_result, predictions, probabilities = sess.run(
+            [tensors['true-predictions'], tensors['c-index'], tensors['predictions'], tensors['probabilities']],
             feed_dict=model.feed_dict(batch)
         )
 
@@ -65,6 +66,7 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         result_data['pairs_b'] += [batch.ids_inverse[idx] for idx in batch.pairs_b]
         result_data['labels'] = np.append(result_data['labels'], np.array(batch.labels).astype(bool))
         result_data['predictions'] = np.append(result_data['predictions'], np.array(predictions).astype(bool))
+        result_data['probabilities'] = np.append(result_data['probabilities'], np.array(probabilities))
 
         logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
                     f"c-index: {c_index_result:.3}, accum c-index:{correct_count/pairs_count:.3}")
@@ -91,7 +93,8 @@ def main():
         'loss': siamese_model.loss(),
         'c-index': siamese_model.c_index(),
         'true-predictions': siamese_model.good_predictions_count(),
-        'predictions': siamese_model.y_estimate
+        'predictions': siamese_model.y_estimate,
+        'probabilities': siamese_model.y_prob
     }
 
     tensors['minimize'] = optimizer.minimize(tensors['loss'])
