@@ -12,7 +12,7 @@ import utils
 logger = utils.init_logger('train')
 
 
-def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
+def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
                      pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter):
 
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
@@ -26,10 +26,9 @@ def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.Basi
         )
 
         total_pairs -= len(batch.pairs_a)
-        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
-                    f"c-index: {c_index_result}, loss: {loss}")
+        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
+                    f"c-index: {c_index_result:.3}, loss: {loss:.3}")
 
-        saver.save(sess, settings.SESSION_SAVE_PATH)
         summary_writer.add_summary(summary, i)
 
 
@@ -52,9 +51,8 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         total_pairs -= len(batch.pairs_a)
         pairs_count += len(batch.pairs_a)
 
-        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
-                    f"c-index: {c_index_result}, accum c-index:{correct_count/pairs_count}")
-    logger.info(f"Final c-index: {correct_count/(len(pairs)*settings.TOTAL_ROTATIONS)}")
+        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
+                    f"c-index: {c_index_result:.3}, accum c-index:{correct_count/pairs_count:.3}")
 
     return correct_count, len(pairs)*settings.TOTAL_ROTATIONS
 
@@ -69,6 +67,8 @@ def main():
         siamese_model = models.ScalarSiamese(settings.args.gpu_level)
     else:
         logger.error(f"Unknown option for model {settings.args.model}")
+        siamese_model = None  # Make linter happy
+        exit(1)
 
     optimizer = tf.train.AdamOptimizer()
 
@@ -76,6 +76,7 @@ def main():
         'loss': siamese_model.loss(),
         'c-index': siamese_model.c_index(),
         'true-predictions': siamese_model.good_predictions_count(),
+        'predictions': siamese_model.y_estimate
     }
 
     tensors['minimize'] = optimizer.minimize(tensors['loss'])
@@ -101,11 +102,12 @@ def main():
         train_summary = tf.summary.FileWriter(os.path.join(settings.SUMMARIES_DIR, 'train'), sess.graph)
 
         # Load the weights from the previous execution if we can
-        if os.path.exists(settings.SESSION_SAVE_PATH) and not settings.args.overwrite_weights:
-            saver.restore(sess, settings.SESSION_SAVE_PATH)
-            logger.info("Previous weights found and loaded")
-        else:
-            sess.run(tf.global_variables_initializer())
+        # TODO: Load the weights when it's required to show the predictions only
+        # if os.path.exists(settings.SESSION_SAVE_PATH) and not settings.args.overwrite_weights:
+        #     saver.restore(sess, settings.SESSION_SAVE_PATH)
+        #     logger.info("Previous weights found and loaded")
+        # else:
+        #     sess.run(tf.global_variables_initializer())
 
         logger.info("Starting training")
 
@@ -118,16 +120,23 @@ def main():
             generator = dataset.folds(settings.args.cv_folds)
 
         for train_pairs, test_pairs in generator:
-            total_count = 0
-            correct_count = 0
+            # Initialize all the variables
+            sess.run(tf.global_variables_initializer())
+
+            # Epoch iterations
             for j in range(settings.args.num_epochs):
                 logger.info(f"Epoch: {j + 1} of {settings.args.num_epochs}")
+                train_iterations(sess, siamese_model, tensors, train_pairs, train_summary)
 
-                train_iterations(saver, sess, siamese_model, tensors, train_pairs, train_summary)
-                correct, total = test_iterations(sess, siamese_model, tensors, test_pairs)
-                total_count += total
-                correct_count += correct
+                # Get test error on the training set
+                correct, total = test_iterations(sess, siamese_model, tensors, train_pairs)
+                logger.info(f"Train set error: {correct/total}")
 
+            # Save the current trained model
+            saver.save(sess, settings.SESSION_SAVE_PATH)
+
+            # Run the test iterations after all the epochs
+            correct_count, total_count = test_iterations(sess, siamese_model, tensors, test_pairs)
             logger.info(f"Total CV error {correct_count/total_count}")
 
 
