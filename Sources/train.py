@@ -96,22 +96,22 @@ def main():
 
     tensors['minimize'] = optimizer.minimize(tensors['loss'])
 
-    conf = tf.ConfigProto()
-    conf.gpu_options.allow_growth = True
-
     # Create summaries
     with tf.name_scope("summaries"):
         tf.summary.scalar("loss", tensors['loss'])
         tf.summary.scalar("c-index", tensors['c-index'])
 
         for var in tf.trainable_variables():
+            # We have to replace `:` with `_` to avoid a warning that at the end does this
             tf.summary.histogram(str(var.name).replace(":", "_"), var)
 
     tensors['summary'] = tf.summary.merge_all()
-
     logger.debug("Tensors created")
 
     tf.set_random_seed(settings.RANDOM_SEED)
+
+    conf = tf.ConfigProto()
+    conf.gpu_options.allow_growth = True
     with tf.Session(config=conf) as sess:
         train_summary = tf.summary.FileWriter(os.path.join(settings.SUMMARIES_DIR, 'train'), sess.graph)
 
@@ -147,7 +147,7 @@ def main():
             test_count, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs)
             logger.info(f"Test set error {test_count/test_total}")
 
-            utils.save_model(sess, train_results, test_results)
+            utils.save_results(sess, train_results, test_results, settings.args['results-path'])
 
 
 if __name__ == '__main__':
@@ -202,6 +202,13 @@ if __name__ == '__main__':
         help="Choose the model that you want to use for training",
         default="SimpleSiamese",
         choices=['SimpleSiamese', 'ScalarSiamese'],
+        type=str
+    )
+
+    parser.add_argument(
+        "--results-path",
+        help="Path where the results and the model should be saved",
+        default=settings.SESSION_SAVE_PATH,
         type=str
     )
 

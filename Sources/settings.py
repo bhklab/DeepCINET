@@ -62,8 +62,8 @@ args = argparse.Namespace()
 DATA_BATCH_SIZE = int(os.getenv('DATA_BATCH_SIZE', 2))
 assert DATA_BATCH_SIZE >= 2
 
-SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './Model/model.ckpt')
-SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', '.')
+SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './Model')
+SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', './Summaries')
 
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', 0))
 if RANDOM_SEED < 0:
