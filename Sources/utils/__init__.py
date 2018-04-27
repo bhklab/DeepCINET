@@ -82,7 +82,8 @@ def save_results(sess: tf.Session, train_results: pd.DataFrame, test_results: pd
     weights_dir = os.path.join(path, 'weights')
 
     # Always overwrite the previous weights
-    shutil.rmtree(path)
+    if os.path.exists(path):
+        shutil.rmtree(path)
     os.makedirs(path)
     os.makedirs(weights_dir)
 

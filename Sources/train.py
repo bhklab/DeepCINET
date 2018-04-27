@@ -69,7 +69,7 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
                     f"c-index: {c_index_result:.3}, accum c-index:{correct_count/pairs_count:.3}")
 
-    return correct_count, len(pairs)*settings.TOTAL_ROTATIONS, pd.DataFrame(result_data)
+    return correct_count, pairs_count, pd.DataFrame(result_data)
 
 
 def main():
@@ -125,7 +125,18 @@ def main():
         else:
             generator = dataset.folds(settings.args['cv_folds'])
 
-        for train_pairs, test_pairs in generator:
+        counts = {
+            'train': {
+                'total': 0,
+                'correct': 0,
+            },
+            'test': {
+                'total': 0,
+                'correct': 0
+            }
+        }
+
+        for i, (train_pairs, test_pairs) in enumerate(generator):
             # Initialize all the variables
             sess.run(tf.global_variables_initializer())
 
@@ -144,10 +155,21 @@ def main():
 
             # Run the test iterations after all the epochs
             logger.info("Computing test error")
-            test_count, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs)
-            logger.info(f"Test set error {test_count/test_total}")
+            test_correct, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs)
+            logger.info(f"Test set error {test_correct/test_total}")
 
-            utils.save_results(sess, train_results, test_results, settings.args['results-path'])
+            counts['train']['total'] += train_total
+            counts['train']['correct'] += train_correct
+            counts['test']['total'] += test_total
+            counts['test']['correct'] += test_correct
+
+            # Save each fold in a different directory
+            results_save_path = os.path.join(settings.args['results_path'], f"fold_{i:0>2}")
+            logger.info(f"Saving results at: {results_save_path}")
+            utils.save_results(sess, train_results, test_results, results_save_path)
+
+        logger.info(f"Final train c-index: {counts['train']['correct']/counts['train']['total']}")
+        logger.info(f"Final test c-index: {counts['test']['correct']/counts['test']['total']}")
 
 
 if __name__ == '__main__':
