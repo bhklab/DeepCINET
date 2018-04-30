@@ -330,7 +330,6 @@ class ScalarSiamese(BasicSiamese):
         :param x: Network's input images with shape ``[batch, 64, 64, 64, 1]``
         :return: Filtered image with the convolutions applied
         """
-        # For now use only the same convolutional layers as the SimpleSiamese
         # In: [batch, 64, 64, 64, 1]
 
         device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
@@ -346,11 +345,12 @@ class ScalarSiamese(BasicSiamese):
                 name="conv1"
             )
 
-            # Out: [batch, 29, 29, 29, 40]
+            # Out: [batch, 15, 15, 15, 30]
             x = tf.layers.conv3d(
                 x,
-                filters=40,
+                filters=30,
                 kernel_size=3,
+                strides=2,
                 activation=tf.nn.relu,
                 name="conv2"
             )
@@ -358,7 +358,7 @@ class ScalarSiamese(BasicSiamese):
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
         logger.debug(f"Using device: {device} for second conv layers")
         with tf.device(device):
-            # Out: [batch, 27, 27, 27, 40]
+            # Out: [batch, 13, 13, 13, 40]
             x = tf.layers.conv3d(
                 x,
                 filters=40,
@@ -367,14 +367,24 @@ class ScalarSiamese(BasicSiamese):
                 name="conv3"
             )
 
-            # Out: [batch, 25, 25, 25, 50]
+            # Out: [batch, 11, 11, 11, 40]
+            x = tf.layers.conv3d(
+                x,
+                filters=40,
+                kernel_size=3,
+                activation=tf.nn.relu,
+                name="conv4"
+            )
+
+            # Out: [batch, 9, 9, 9, 50]
             x = tf.layers.conv3d(
                 x,
                 filters=50,
                 kernel_size=3,
                 activation=tf.nn.relu,
-                name="conv4"
+                name="conv5"
             )
+
         return x
 
     def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
@@ -403,7 +413,7 @@ class ScalarSiamese(BasicSiamese):
             # Out: [batch, 100]
             x = tf.layers.dense(
                 x,
-                100,
+                10000,
                 activation=tf.nn.relu,
                 name="fc1"
             )
@@ -411,7 +421,7 @@ class ScalarSiamese(BasicSiamese):
             # Out: [batch, 50]
             x = tf.layers.dense(
                 x,
-                50,
+                100,
                 activation=tf.nn.relu,
                 name="fc2"
             )
