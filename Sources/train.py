@@ -105,13 +105,13 @@ def main(args: Dict[str, Any]):
         tf.summary.scalar("c-index", tensors['c-index'])
 
         for var in tf.trainable_variables():
-            # We have to replace `:` with `_` to avoid a warning that at the end does this
+            # We have to replace `:` with `_` to avoid a warning that ends doing this replacement
             tf.summary.histogram(str(var.name).replace(":", "_"), var)
 
     tensors['summary'] = tf.summary.merge_all()
     logger.debug("Tensors created")
 
-    tf.set_random_seed(settings.RANDOM_SEED)
+    # tf.set_random_seed(settings.RANDOM_SEED)
 
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
@@ -131,7 +131,8 @@ def main(args: Dict[str, Any]):
             generator = dataset.folds(args['cv_folds'])
 
             task_id = os.getenv('SLURM_ARRAY_TASK_ID', None)
-            if task_id is not None:
+            total_tasks = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+            if task_id is not None and total_tasks == args['cv_folds']:
                 task_id = int(task_id)
                 logger.info(f"Task number: {task_id}")
                 generator = [list(generator)[task_id]]
