@@ -117,7 +117,8 @@ def main(args: Dict[str, Any]):
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
-        summaries_dir = os.path.join(args['results_path'], 'summaries')
+        task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
+        summaries_dir = os.path.join(args['results_path'], f'summaries_{task_id}')
         train_summary = tf.summary.FileWriter(os.path.join(summaries_dir, 'train'), sess.graph)
 
         # TODO: Load the weights when it's required to show the predictions only
@@ -130,9 +131,8 @@ def main(args: Dict[str, Any]):
         else:
             generator = dataset.folds(args['cv_folds'])
 
-            task_id = os.getenv('SLURM_ARRAY_TASK_ID', None)
             total_tasks = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
-            if task_id is not None and total_tasks == args['cv_folds']:
+            if total_tasks == args['cv_folds']:
                 task_id = int(task_id)
                 logger.info(f"Task number: {task_id}")
                 generator = [list(generator)[task_id]]
