@@ -31,7 +31,7 @@ def get_logger(name: str) -> logging.Logger:
     return logger
 
 
-def init_logger(app_name: str) -> logging.Logger:
+def init_logger(app_name: str, directory: str = settings.LOG_DIR) -> logging.Logger:
     """
     Initialize script logging functionality. This function should be called only once in the script's execution.
     All the logs are printed to the console and saved into disk with the name ``<app_name>.log``. The save location
@@ -39,11 +39,12 @@ def init_logger(app_name: str) -> logging.Logger:
 
     :param app_name: Name of the script that it's being executed. The saved logfile will have as name
                      ``<app_name>.log``.
+    :param directory: Path for the directory where the log files should be saved
     :return: Initialized logger
     """
     logger = get_logger('')
 
-    fh = logging.FileHandler(os.path.join(settings.LOG_DIR, app_name + ".log"), encoding="utf-8")
+    fh = logging.FileHandler(os.path.join(directory, app_name + ".log"), encoding="utf-8")
     fh.setLevel(settings.LOG_LEVEL_FILE)
     fh.setFormatter(file_formatter)
 

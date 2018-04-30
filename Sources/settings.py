@@ -74,10 +74,3 @@ else:
 
 # The total number of features that are provided by the CSV of radiomic features
 NUMBER_FEATURES = 725
-
-
-# Hack to be able to have all the CLI arguments in the global space
-def add_args(parser: argparse.ArgumentParser) -> Dict[str, Any]:
-    global args
-    args = vars(parser.parse_known_args()[0])
-    return args
