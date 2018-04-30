@@ -259,7 +259,7 @@ if __name__ == '__main__':
     # See if we are running in a SLURM task array
     array_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
 
-    arguments = settings.add_args(parser)
+    arguments = vars(parser.parse_known_args()[0])
 
     if not os.path.exists(arguments['results_path']):
         os.makedirs(arguments['results_path'])
