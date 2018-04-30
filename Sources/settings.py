@@ -1,6 +1,7 @@
 import os
 import random
 import argparse
+from typing import Dict, Any
 
 import numpy as np
 
@@ -14,9 +15,11 @@ required_vars = [
     'DATA',
     'DATA_RAW',
     'DATA_CLINICAL',
+    'DATA_RADIOMIC',
     'DATA_CACHE',
     'DATA_PROCESSED',
     'DATA_CLINICAL_PROCESSED',
+    'DATA_RADIOMIC_PROCESSED',
     'IMAGE_ROTATIONS'
 ]
 
@@ -29,9 +32,13 @@ for var in required_vars:
 DATA_PATH = os.path.abspath(os.getenv('DATA'))
 DATA_PATH_RAW = os.path.abspath(os.getenv('DATA_RAW'))
 DATA_PATH_CLINICAL = os.path.abspath(os.getenv('DATA_CLINICAL'))
+DATA_PATH_RADIOMIC = os.path.abspath(os.getenv('DATA_RADIOMIC'))
+
 DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
+
 DATA_PATH_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
 DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
+DATA_PATH_RADIOMIC_PROCESSED = os.path.abspath(os.getenv('DATA_RADIOMIC_PROCESSED'))
 
 # Log dir, fallback to current directory
 LOG_DIR = os.path.abspath(os.getenv('LOG_DIR', './'))
@@ -55,8 +62,8 @@ args = argparse.Namespace()
 DATA_BATCH_SIZE = int(os.getenv('DATA_BATCH_SIZE', 2))
 assert DATA_BATCH_SIZE >= 2
 
-SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './Model/model.ckpt')
-SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', '.')
+SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './Model')
+SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', './Summaries')
 
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', 0))
 if RANDOM_SEED < 0:
@@ -65,9 +72,12 @@ else:
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
+# The total number of features that are provided by the CSV of radiomic features
+NUMBER_FEATURES = 725
+
 
 # Hack to be able to have all the CLI arguments in the global space
-def add_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
+def add_args(parser: argparse.ArgumentParser) -> Dict[str, Any]:
     global args
-    args = parser.parse_args()
+    args = vars(parser.parse_known_args()[0])
     return args

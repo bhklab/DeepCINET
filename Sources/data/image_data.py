@@ -10,7 +10,7 @@ import scipy.ndimage
 from joblib import delayed, Parallel
 from skimage import transform as skt
 
-import utils
+from utils.logger import get_logger
 from data.data_structures import PseudoDir
 from settings import \
     DATA_PATH_CACHE, \
@@ -18,9 +18,11 @@ from settings import \
     DATA_PATH_CLINICAL_PROCESSED, \
     DATA_PATH_PROCESSED, \
     DATA_PATH_RAW, \
+    DATA_PATH_RADIOMIC_PROCESSED, \
+    DATA_PATH_RADIOMIC, \
     IMAGE_ROTATIONS
 
-logger = utils.get_logger('data.image_data')
+logger = get_logger('data.image_data')
 
 
 class RawData:
@@ -37,8 +39,8 @@ class RawData:
         if not os.path.exists(DATA_PATH_CLINICAL):
             raise FileNotFoundError("The clinical info file has not been found at {}".format(DATA_PATH_CLINICAL))
 
-        df = pd.read_csv(DATA_PATH_CLINICAL)
-        self.clinical_ids = set(df.iloc[:, 0].tolist())
+        df_clinical = pd.read_csv(DATA_PATH_CLINICAL)
+        self.clinical_ids = set(df_clinical.iloc[:, 0].tolist())
 
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
         self._valid_dirs = [PseudoDir(x.name, x.path, x.is_dir()) for x in valid_dirs]
@@ -230,7 +232,6 @@ class PreProcessedData:
 
     def __init__(self):
         self._data_path = DATA_PATH_PROCESSED
-        self._clinical_info_path = DATA_PATH_CLINICAL
         self._raw_data = RawData()
 
     def store(self, overwrite=False) -> None:
@@ -347,35 +348,25 @@ class PreProcessedData:
 
         It also prints the number of maximum pairs that can be achieved with the current data.
         """
-        if not os.path.exists(self._clinical_info_path):
-            raise FileNotFoundError("The clinical info file has not been found at {}".format(self._clinical_info_path))
+        # Process the clinical CSV
+        if not os.path.exists(DATA_PATH_CLINICAL):
+            logger.error(f"The clinical info file has not been found at {DATA_PATH_CLINICAL}")
+            raise FileNotFoundError(f"The clinical info file has not been found at {DATA_PATH_CLINICAL}")
 
-        df = pd.read_csv(self._clinical_info_path)
+        df = pd.read_csv(DATA_PATH_CLINICAL)
         df = df.take([self.COL_ID, self.COL_AGE, self.COL_SEX, self.COL_EVENT, self.COL_TIME], axis=1)
         df.columns = ['id', 'age', 'sex', 'event', 'time']
         df = df[df['id'].isin(self._raw_data.valid_ids())]  # Remove elements that are not valid data
         df.to_csv(DATA_PATH_CLINICAL_PROCESSED)
 
-        # Compute number of possible pairs
-        censored_count = df[df['event'] == 0].count()[0]
-        uncensored_count = df.count()[0] - censored_count
+        # Process the radiomc features CSV
+        if not os.path.exists(DATA_PATH_RADIOMIC):
+            logger.error(f"The radiomic features file has not been found at {DATA_PATH_RADIOMIC}")
+            raise FileNotFoundError(f"The radiomic features file has not been found at {DATA_PATH_RADIOMIC}")
 
-        censored_pairs = censored_count*uncensored_count
-        uncensored_pairs = scipy.misc.comb(uncensored_count, 2, exact=True)
-
-        censored_pairs_augmented = censored_pairs*4
-        uncensored_pairs_augmented = uncensored_pairs*4
-
-        logger.info(f"Total censored: {censored_count}")
-        logger.info(f"Total uncensored: {uncensored_count}")
-
-        logger.info(f"Total censored pairs: {censored_pairs:,}")
-        logger.info(f"Total uncensored pairs: {uncensored_pairs:,}")
-        logger.info(f"Total pairs {censored_pairs + uncensored_pairs:,}")
-
-        logger.info(f"Total censored pairs augmented: {censored_pairs_augmented:,}")
-        logger.info(f"Total uncensored pairs augmented: {uncensored_pairs_augmented:,}")
-        logger.info(f"Total pairs augmented {censored_pairs_augmented + uncensored_pairs_augmented:,}")
+        df = pd.read_csv(DATA_PATH_RADIOMIC)
+        df = df[self._raw_data.valid_ids()]
+        df.to_csv(DATA_PATH_RADIOMIC_PROCESSED)
 
     @staticmethod
     def _get_rotations(sliced_norm: np.array) -> Dict[str, np.ndarray]:

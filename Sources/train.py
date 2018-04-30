@@ -1,8 +1,10 @@
 import argparse
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import tensorflow as tf
+import numpy as np
+import pandas as pd
 
 import data
 import models
@@ -12,75 +14,90 @@ import utils
 logger = utils.init_logger('train')
 
 
-def train_iterations(saver: tf.train.Saver, sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
+def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
                      pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter):
 
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
-    logger.info(f"We have {total_pairs} pairs")
+
     # Train iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args.batch_size)):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
         # Execute graph operations
         _, c_index_result, loss, summary = sess.run(
             [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
-            feed_dict={
-                model.x_image: batch.images,
-                model.pairs_a: batch.pairs_a,
-                model.pairs_b: batch.pairs_b,
-                model.y: batch.labels
-            })
+            feed_dict=model.feed_dict(batch)
+        )
 
         total_pairs -= len(batch.pairs_a)
-        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
-                    f"c-index: {c_index_result}, loss: {loss}")
+        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
+                    f"c-index: {c_index_result:.3}, loss: {loss:.3}")
 
-        saver.save(sess, settings.SESSION_SAVE_PATH)
         summary_writer.add_summary(summary, i)
 
 
 def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
-                    pairs: List[data.PairComp]):
+                    pairs: List[data.PairComp]) -> Tuple[int, int, pd.DataFrame]:
     # After we iterate over all the data inspect the test error
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
     correct_count = 0  # To store correct predictions
     pairs_count = 0
 
+    result_data = {
+        'pairs_a': [],
+        'pairs_b': [],
+        'labels': np.array([], dtype=bool),
+        'predictions': np.array([], dtype=bool),
+        'probabilities': np.array([])
+    }
+
     # Test iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args.batch_size)):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
         # Execute test operations
-        temp_sum, c_index_result = sess.run(
-            [tensors['true-predictions'], tensors['c-index']],
-            feed_dict={
-                model.x_image: batch.images,
-                model.pairs_a: batch.pairs_a,
-                model.pairs_b: batch.pairs_b,
-                model.y: batch.labels
-            })
+        temp_sum, c_index_result, predictions, probabilities = sess.run(
+            [tensors['true-predictions'], tensors['c-index'], tensors['predictions'], tensors['probabilities']],
+            feed_dict=model.feed_dict(batch)
+        )
 
         correct_count += temp_sum
         total_pairs -= len(batch.pairs_a)
         pairs_count += len(batch.pairs_a)
 
-        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining pairs: {total_pairs}, "
-                    f"c-index: {c_index_result}, accum c-index:{correct_count/pairs_count}")
-    logger.info(f"Final c-index: {correct_count/(len(pairs)*settings.TOTAL_ROTATIONS)}")
+        # Save results
+        result_data['pairs_a'] += [batch.ids_inverse[idx] for idx in batch.pairs_a]
+        result_data['pairs_b'] += [batch.ids_inverse[idx] for idx in batch.pairs_b]
+        result_data['labels'] = np.append(result_data['labels'], np.array(batch.labels).astype(bool))
+        result_data['predictions'] = np.append(result_data['predictions'], np.array(predictions).astype(bool))
+        result_data['probabilities'] = np.append(result_data['probabilities'], np.array(probabilities))
+
+        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
+                    f"c-index: {c_index_result:.3}, accum c-index:{correct_count/pairs_count:.3}")
+
+    return correct_count, pairs_count, pd.DataFrame(result_data)
 
 
 def main():
-    logger.info(f"Using batch size: {settings.args.batch_size}")
+    logger.info("Script to train a siamese neural network model")
+    logger.info(f"Using batch size: {settings.args['batch_size']}")
 
-    siamese_model = models.SimpleSiamese(settings.args.gpu_level)
+    if settings.args['model'] == "SimpleSiamese":
+        siamese_model = models.SimpleSiamese(settings.args['gpu_level'])
+    elif settings.args['model'] == "ScalarSiamese":
+        siamese_model = models.ScalarSiamese(settings.args['gpu_level'])
+    else:
+        logger.error(f"Unknown option for model {settings.args['model']}")
+        siamese_model = None  # Make linter happy
+        exit(1)
+
     optimizer = tf.train.AdamOptimizer()
 
     tensors = {
         'loss': siamese_model.loss(),
         'c-index': siamese_model.c_index(),
         'true-predictions': siamese_model.good_predictions_count(),
+        'predictions': siamese_model.y_estimate,
+        'probabilities': siamese_model.y_prob
     }
 
     tensors['minimize'] = optimizer.minimize(tensors['loss'])
-
-    conf = tf.ConfigProto()
-    conf.gpu_options.allow_growth = True
 
     # Create summaries
     with tf.name_scope("summaries"):
@@ -88,40 +105,74 @@ def main():
         tf.summary.scalar("c-index", tensors['c-index'])
 
         for var in tf.trainable_variables():
+            # We have to replace `:` with `_` to avoid a warning that at the end does this
             tf.summary.histogram(str(var.name).replace(":", "_"), var)
 
     tensors['summary'] = tf.summary.merge_all()
-
     logger.debug("Tensors created")
 
-    saver = tf.train.Saver()
+    tf.set_random_seed(settings.RANDOM_SEED)
 
+    conf = tf.ConfigProto()
+    conf.gpu_options.allow_growth = True
     with tf.Session(config=conf) as sess:
         train_summary = tf.summary.FileWriter(os.path.join(settings.SUMMARIES_DIR, 'train'), sess.graph)
 
-        # Load the weights from the previous execution if we can
-        if os.path.exists(settings.SESSION_SAVE_PATH) and not settings.args.overwrite_weights:
-            saver.restore(sess, settings.SESSION_SAVE_PATH)
-            logger.info("Previous weights found and loaded")
-        else:
-            sess.run(tf.global_variables_initializer())
-
-        logger.info("Starting training")
+        # TODO: Load the weights when it's required to show the predictions only
 
         dataset = data.pair_data.SplitPairs()
 
         # Decide whether to use CV or only a single test/train sets
-        if settings.args.cv_folds < 2:
-            generator = [dataset.train_test_split(settings.args.test_size)]
+        if settings.args['cv_folds'] < 2:
+            generator = [dataset.train_test_split(settings.args['test_size'])]
         else:
-            generator = dataset.folds(settings.args.cv_folds)
+            generator = dataset.folds(settings.args['cv_folds'])
 
-        for train_pairs, test_pairs in generator:
-            for j in range(settings.args.num_epochs):
-                logger.info(f"Epoch: {j + 1} of {settings.args.num_epochs}")
+        counts = {
+            'train': {
+                'total': 0,
+                'correct': 0,
+            },
+            'test': {
+                'total': 0,
+                'correct': 0
+            }
+        }
 
-                train_iterations(saver, sess, siamese_model, tensors, train_pairs, train_summary)
-                test_iterations(sess, siamese_model, tensors, test_pairs)
+        for i, (train_pairs, test_pairs) in enumerate(generator):
+            # Initialize all the variables
+            sess.run(tf.global_variables_initializer())
+
+            logger.info("")
+            logger.info(f"New fold {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+
+            # Epoch iterations
+            for j in range(settings.args['num_epochs']):
+                logger.info(f"Epoch: {j + 1} of {settings.args['num_epochs']}")
+                train_iterations(sess, siamese_model, tensors, train_pairs, train_summary)
+
+            # Get test error on the training set
+            logger.info("Computing train error")
+            train_correct, train_total, train_results = test_iterations(sess, siamese_model, tensors, train_pairs)
+            logger.info(f"Train set error: {train_correct/train_total}")
+
+            # Run the test iterations after all the epochs
+            logger.info("Computing test error")
+            test_correct, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs)
+            logger.info(f"Test set error {test_correct/test_total}")
+
+            counts['train']['total'] += train_total
+            counts['train']['correct'] += train_correct
+            counts['test']['total'] += test_total
+            counts['test']['correct'] += test_correct
+
+            # Save each fold in a different directory
+            results_save_path = os.path.join(settings.args['results_path'], f"fold_{i:0>2}")
+            logger.info(f"Saving results at: {results_save_path}")
+            utils.save_results(sess, train_results, test_results, results_save_path)
+
+        logger.info(f"Final train c-index: {counts['train']['correct']/counts['train']['total']}")
+        logger.info(f"Final test c-index: {counts['test']['correct']/counts['test']['total']}")
 
 
 if __name__ == '__main__':
@@ -129,13 +180,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Fit the data with a Tensorflow model",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    parser.add_argument(
-        "--overwrite-weights",
-        help="Overwrite the weights that have been stored between each iteration",
-        default=False,
-        action="store_true"
     )
 
     parser.add_argument(
@@ -163,9 +207,12 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--num-epochs",
+        "-n, --num-epochs",
         help="Number of epochs to use when training. Times passed through the entire dataset",
-        default=1
+        metavar="NUM_EPOCHS",
+        dest="num_epochs",
+        default=1,
+        type=int
     )
 
     parser.add_argument(
@@ -175,9 +222,25 @@ if __name__ == '__main__':
         type=int
     )
 
-    args = settings.add_args(parser)
+    parser.add_argument(
+        "--model",
+        help="Choose the model that you want to use for training",
+        default="SimpleSiamese",
+        choices=['SimpleSiamese', 'ScalarSiamese'],
+        type=str
+    )
 
-    if args.batch_size < 2:
+    parser.add_argument(
+        "--results-path",
+        help="Path where the results and the model should be saved",
+        default=settings.SESSION_SAVE_PATH,
+        type=str
+    )
+
+    args = settings.add_args(parser)
+    logger.debug(args)
+
+    if args['batch_size'] < 2:
         logger.error("Batch size is too small! It should be at least 2. Exiting")
         exit(1)
 

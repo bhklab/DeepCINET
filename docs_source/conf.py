@@ -110,6 +110,7 @@ html_static_path = ['_static']
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3.6', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None)
 }
 
 
