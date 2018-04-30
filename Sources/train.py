@@ -152,14 +152,14 @@ def main():
                 train_iterations(sess, siamese_model, tensors, train_pairs, train_summary)
 
             # Get test error on the training set
-            logger.info("Computing train error")
+            logger.info("Computing train c-index")
             train_correct, train_total, train_results = test_iterations(sess, siamese_model, tensors, train_pairs)
-            logger.info(f"Train set error: {train_correct/train_total}")
+            logger.info(f"Train set c-index: {train_correct/train_total}")
 
             # Run the test iterations after all the epochs
-            logger.info("Computing test error")
+            logger.info("Computing test c-index")
             test_correct, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs)
-            logger.info(f"Test set error {test_correct/test_total}")
+            logger.info(f"Test set c-index {test_correct/test_total}")
 
             counts['train']['total'] += train_total
             counts['train']['correct'] += train_correct
