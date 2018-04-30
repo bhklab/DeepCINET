@@ -126,7 +126,13 @@ def main():
         if settings.args['cv_folds'] < 2:
             generator = [dataset.train_test_split(settings.args['test_size'])]
         else:
-            generator = dataset.folds(settings.args['cv_folds'])
+            generator = dataset.folds(args['cv_folds'])
+
+            task_id = os.getenv('SLURM_ARRAY_TASK_ID', None)
+            if task_id is not None:
+                task_id = int(task_id)
+                logger.info(f"Task number: {task_id}")
+                generator = [list(generator)[task_id]]
 
         counts = {
             'train': {
@@ -170,6 +176,11 @@ def main():
             results_save_path = os.path.join(settings.args['results_path'], f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
             utils.save_results(sess, train_results, test_results, results_save_path)
+
+            logger.info(f"Train set c-index: {train_correct/train_total}, correct: {train_correct}, total: "
+                        f"{train_total}")
+            logger.info(f"Test set c-index {test_correct/test_total}, correct: {test_correct}, total: "
+                        f"{test_total}")
 
         logger.info(f"Final train c-index: {counts['train']['correct']/counts['train']['total']}")
         logger.info(f"Final test c-index: {counts['test']['correct']/counts['test']['total']}")
