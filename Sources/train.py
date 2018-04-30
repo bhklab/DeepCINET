@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 import tensorflow as tf
 import numpy as np
@@ -11,16 +11,16 @@ import models
 import settings
 import utils
 
-logger = utils.init_logger('train')
+logger = utils.get_logger('train')
 
 
 def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
-                     pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter):
+                     pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter, batch_size: int):
 
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
 
     # Train iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=batch_size)):
         # Execute graph operations
         _, c_index_result, loss, summary = sess.run(
             [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
@@ -35,7 +35,7 @@ def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict
 
 
 def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
-                    pairs: List[data.PairComp]) -> Tuple[int, int, pd.DataFrame]:
+                    pairs: List[data.PairComp], batch_size: int) -> Tuple[int, int, pd.DataFrame]:
     # After we iterate over all the data inspect the test error
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
     correct_count = 0  # To store correct predictions
@@ -50,7 +50,7 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
     }
 
     # Test iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=settings.args['batch_size'])):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=batch_size)):
         # Execute test operations
         temp_sum, c_index_result, predictions, probabilities = sess.run(
             [tensors['true-predictions'], tensors['c-index'], tensors['predictions'], tensors['probabilities']],
@@ -74,16 +74,16 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
     return correct_count, pairs_count, pd.DataFrame(result_data)
 
 
-def main():
+def main(args: Dict[str, Any]):
     logger.info("Script to train a siamese neural network model")
-    logger.info(f"Using batch size: {settings.args['batch_size']}")
+    logger.info(f"Using batch size: {args['batch_size']}")
 
-    if settings.args['model'] == "SimpleSiamese":
-        siamese_model = models.SimpleSiamese(settings.args['gpu_level'])
-    elif settings.args['model'] == "ScalarSiamese":
-        siamese_model = models.ScalarSiamese(settings.args['gpu_level'])
+    if args['model'] == "SimpleSiamese":
+        siamese_model = models.SimpleSiamese(args['gpu_level'])
+    elif args['model'] == "ScalarSiamese":
+        siamese_model = models.ScalarSiamese(args['gpu_level'])
     else:
-        logger.error(f"Unknown option for model {settings.args['model']}")
+        logger.error(f"Unknown option for model {args['model']}")
         siamese_model = None  # Make linter happy
         exit(1)
 
@@ -114,17 +114,19 @@ def main():
     tf.set_random_seed(settings.RANDOM_SEED)
 
     conf = tf.ConfigProto()
-    conf.gpu_options.allow_growth = True
+    conf.gpu_options.allow_growth = args['gpu_allow_growth']
+
     with tf.Session(config=conf) as sess:
-        train_summary = tf.summary.FileWriter(os.path.join(settings.SUMMARIES_DIR, 'train'), sess.graph)
+        summaries_dir = os.path.join(args['results_path'], 'summaries')
+        train_summary = tf.summary.FileWriter(os.path.join(summaries_dir, 'train'), sess.graph)
 
         # TODO: Load the weights when it's required to show the predictions only
 
         dataset = data.pair_data.SplitPairs()
 
         # Decide whether to use CV or only a single test/train sets
-        if settings.args['cv_folds'] < 2:
-            generator = [dataset.train_test_split(settings.args['test_size'])]
+        if args['cv_folds'] < 2:
+            generator = [dataset.train_test_split(args['test_size'])]
         else:
             generator = dataset.folds(args['cv_folds'])
 
@@ -153,19 +155,19 @@ def main():
             logger.info(f"New fold {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
 
             # Epoch iterations
-            for j in range(settings.args['num_epochs']):
-                logger.info(f"Epoch: {j + 1} of {settings.args['num_epochs']}")
-                train_iterations(sess, siamese_model, tensors, train_pairs, train_summary)
+            for j in range(args['num_epochs']):
+                logger.info(f"Epoch: {j + 1} of {args['num_epochs']}")
+                train_iterations(sess, siamese_model, tensors, train_pairs, train_summary, args['batch_size'])
 
             # Get test error on the training set
             logger.info("Computing train c-index")
-            train_correct, train_total, train_results = test_iterations(sess, siamese_model, tensors, train_pairs)
-            logger.info(f"Train set c-index: {train_correct/train_total}")
+            train_correct, train_total, train_results = test_iterations(sess, siamese_model, tensors, train_pairs,
+                                                                        args['batch_size'])
 
             # Run the test iterations after all the epochs
             logger.info("Computing test c-index")
-            test_correct, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs)
-            logger.info(f"Test set c-index {test_correct/test_total}")
+            test_correct, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs,
+                                                                     args['batch_size'])
 
             counts['train']['total'] += train_total
             counts['train']['correct'] += train_correct
@@ -173,7 +175,7 @@ def main():
             counts['test']['correct'] += test_correct
 
             # Save each fold in a different directory
-            results_save_path = os.path.join(settings.args['results_path'], f"fold_{i:0>2}")
+            results_save_path = os.path.join(args['results_path'], f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
             utils.save_results(sess, train_results, test_results, results_save_path)
 
@@ -187,7 +189,6 @@ def main():
 
 
 if __name__ == '__main__':
-    logger.debug("Script starts")
     parser = argparse.ArgumentParser(
         description="Fit the data with a Tensorflow model",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -215,6 +216,13 @@ if __name__ == '__main__':
              "3: all layers and parameters are on the GPU",
         default=0,
         type=int
+    )
+
+    parser.add_argument(
+        "--gpu-allow-growth",
+        help="Allow Tensorflow to use dynamic allocations with GPU memory",
+        default=False,
+        action="store_true",
     )
 
     parser.add_argument(
@@ -248,16 +256,26 @@ if __name__ == '__main__':
         type=str
     )
 
-    args = settings.add_args(parser)
-    logger.debug(args)
+    # See if we are running in a SLURM task array
+    array_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
 
-    if args['batch_size'] < 2:
+    arguments = settings.add_args(parser)
+
+    if not os.path.exists(arguments['results_path']):
+        os.makedirs(arguments['results_path'])
+
+    logger = utils.init_logger(f'train_{array_id}', arguments['results_path'])
+
+    logger.debug("Script starts")
+    logger.debug(arguments)
+
+    if arguments['batch_size'] < 2:
         logger.error("Batch size is too small! It should be at least 2. Exiting")
         exit(1)
 
     try:
         # For now the arguments are ignored
-        main()
+        main(arguments)
     except KeyboardInterrupt:
         logger.info("\n----------------------------------")
         logger.info("Stopping due to keyboard interrupt")
