@@ -134,9 +134,11 @@ class BasicSiamese:
             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) + (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
             \quad m := \text{batch size}
 
+        Also, the regularization term defined by the other layers is added
+
         :return: Scalar tensor with the negative log loss function for the model computed.
         """
-        return tf.losses.log_loss(self._y, self.y_prob)
+        return tf.losses.log_loss(self._y, self.y_prob) + tf.losses.get_regularization_loss()
 
     def good_predictions_count(self) -> tf.Tensor:
         """
@@ -318,8 +320,17 @@ class ScalarSiamese(BasicSiamese):
     PyRadiomics. The features are not extracted by the model but they have to be provided in one of the placeholders
     """
 
-    def __init__(self, gpu_level: int):
+    def __init__(self, gpu_level: int = 0, regularization_factor: int = 0.001):
+        """
+        Initialize a ScalarSiamese model. This model uses scalar features extracted with PyRadiomics and
+        provided through a CSV file in the dataset, the model assumes that there are :any:`settings.NUMBER_FEATURES`
+        for each input.
+
+        :param gpu_level: Amount of GPU that should be used with the model
+        :param regularization_factor: Regularization factor for the weights
+        """
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
+        self._reg_factor = regularization_factor
 
         super().__init__(gpu_level=gpu_level)
 
@@ -336,22 +347,20 @@ class ScalarSiamese(BasicSiamese):
         logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
             # Out: [batch, 31, 31, 31, 30]
-            x = tf.layers.conv3d(
+            x = self._conv3d(
                 x,
                 filters=30,
                 kernel_size=3,
                 strides=2,
-                activation=tf.nn.relu,
                 name="conv1"
             )
 
             # Out: [batch, 15, 15, 15, 30]
-            x = tf.layers.conv3d(
+            x = self._conv3d(
                 x,
                 filters=30,
                 kernel_size=3,
                 strides=2,
-                activation=tf.nn.relu,
                 name="conv2"
             )
 
@@ -359,30 +368,27 @@ class ScalarSiamese(BasicSiamese):
         logger.debug(f"Using device: {device} for second conv layers")
         with tf.device(device):
             # Out: [batch, 13, 13, 13, 40]
-            x = tf.layers.conv3d(
+            x = self._conv3d(
                 x,
                 filters=40,
                 kernel_size=3,
-                activation=tf.nn.relu,
                 name="conv3"
             )
 
             # Out: [batch, 11, 11, 11, 40]
-            x = tf.layers.conv3d(
+            x = self._conv3d(
                 x,
                 filters=40,
                 kernel_size=3,
-                activation=tf.nn.relu,
                 name="conv4"
             )
 
             # Out: [batch, 9, 9, 9, 50]
-            x = tf.layers.conv3d(
-                x,
+            x = self._conv3d(
+                x=x,
                 filters=50,
                 kernel_size=3,
-                activation=tf.nn.relu,
-                name="conv5"
+                name="conv5",
             )
 
         return x
@@ -400,40 +406,60 @@ class ScalarSiamese(BasicSiamese):
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
-            # Out: [batch, 25*25*25*50]
+            # Out: [batch, 9*9*9*50]
             x = tf.layers.flatten(
                 x,
                 name="flat"
             )
 
             # This is where the magic happens
-            # Out: [batch, 781 975]
+            # Out: [batch, 37 175]
             x = tf.concat([x, self.x_scalar], axis=1)
 
-            # Out: [batch, 100]
-            x = tf.layers.dense(
-                x,
-                10000,
-                activation=tf.nn.relu,
+            # Out: [batch, 8000]
+            x = self._dense(
+                x=x,
+                units=8000,
                 name="fc1"
             )
 
-            # Out: [batch, 50]
-            x = tf.layers.dense(
-                x,
-                100,
-                activation=tf.nn.relu,
+            # Out: [batch, 100]
+            x = self._dense(
+                x=x,
+                units=100,
                 name="fc2"
             )
 
             # Out: [batch, 1]
-            x = tf.layers.dense(
-                x,
-                1,
+            x = self._dense(
+                x=x,
+                units=1,
                 activation=tf.nn.relu,
                 name="fc3"
             )
         return x
+
+    def _conv3d(self, x: tf.Tensor, filters: int, kernel_size: int, name: str, strides: int = 1) -> tf.Tensor:
+        return tf.layers.conv3d(
+            x,
+            filters=filters,
+            kernel_size=kernel_size,
+            strides=strides,
+            activation=tf.nn.relu,
+            kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._reg_factor),
+            name=name
+        )
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._reg_factor),
+            name=name
+        )
 
     def feed_dict(self, batch: data.PairBatch) -> Dict:
         """

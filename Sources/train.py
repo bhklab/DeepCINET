@@ -154,7 +154,7 @@ def main(args: Dict[str, Any]):
             # Initialize all the variables
             sess.run(tf.global_variables_initializer())
 
-            logger.info("\r")
+            logger.info("\r ")
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
 
             # Epoch iterations
