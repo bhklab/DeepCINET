@@ -46,7 +46,7 @@ class BasicModel:
         Abstract method, the model should be build inside this method. Classes that Inherit :any:`BasicModel`
         should implement this method to create the model
 
-        :return: Tensor with shape ``[batch]`` with the probability of single class classification.
+        :return: Tensor with shape ``[batch, 1]`` with the probability of single class classification.
         """
 
     def feed_dict(self, batch: data.PairBatch) -> Dict:
@@ -138,7 +138,7 @@ class BasicSiamese(BasicModel):
         """
         Implementation of :method:`BasicModel._model`
 
-        :return: Tensor where a Siamese network has been applied to the input
+        :return: Tensor where a Siamese network has been applied to the input with shape ``[batch, 1]``
         """
         sister_out = self._sister()
         return self._contrastive_loss(sister_out)
@@ -165,7 +165,7 @@ class BasicSiamese(BasicModel):
 
         :param sister_out: Sister's network output, then using the defined parameters  it selects the proper pairs to
                            be compared.
-        :return: Tensor with the contrastive loss, comparing the two sister's output.
+        :return: Tensor with the contrastive loss, comparing the two sister's output with shape ``[batch, 1]``
         """
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for contrastive loss")
@@ -174,7 +174,7 @@ class BasicSiamese(BasicModel):
             gathered_b = tf.gather(sister_out, self.pairs_b, name="contrastive_gather_b")
 
             sub = tf.subtract(gathered_a, gathered_b, name="contrastive_sub")
-            return tf.sigmoid(sub, name="contrastive_sigmoid")
+            return tf.sigmoid(10*sub, name="contrastive_sigmoid")
 
     def feed_dict(self, batch: data.PairBatch) -> Dict:
         return {
@@ -566,7 +566,7 @@ class ImageScalarSiamese(BasicImageSiamese):
         }
 
 
-class ScalarOnlySiamese(BasicModel):
+class ScalarOnlySiamese(BasicSiamese):
 
     def __init__(self, gpu_level: int = 0, regularization_factor: int = 0.001):
         self._gpu_level = gpu_level
@@ -576,5 +576,50 @@ class ScalarOnlySiamese(BasicModel):
 
         super().__init__()
 
-    def _model(self):
-        pass
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self._dense(
+            self.x_scalar,
+            500,
+            "fc1"
+        )
+
+        # Out: [batch, 200]
+        x = self._dense(
+            x,
+            200,
+            "fc2"
+        )
+
+        # Out: [batch, 50]
+        x = self._dense(
+            x,
+            50,
+            "fc3"
+        )
+
+        # Out: [batch, 1]
+        x = self._dense(
+            x,
+            1,
+            "fc4"
+        )
+
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._reg_factor),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch):
+        return {
+            **super().feed_dict(batch),
+            self.x_scalar: batch.features
+        }
+
