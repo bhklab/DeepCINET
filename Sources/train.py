@@ -117,10 +117,6 @@ def main(args: Dict[str, Any]):
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
-        task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
-        summaries_dir = os.path.join(args['results_path'], f'summaries_{task_id}')
-        train_summary = tf.summary.FileWriter(os.path.join(summaries_dir, 'train'), sess.graph)
-
         # TODO: Load the weights when it's required to show the predictions only
 
         dataset = data.pair_data.SplitPairs()
@@ -132,6 +128,7 @@ def main(args: Dict[str, Any]):
             generator = dataset.folds(args['cv_folds'])
 
             total_tasks = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+            task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
             if total_tasks == args['cv_folds']:
                 task_id = int(task_id)
                 logger.info(f"Task number: {task_id}")
@@ -156,6 +153,9 @@ def main(args: Dict[str, Any]):
 
             logger.info("\r ")
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+
+            summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
+            train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
 
             # Epoch iterations
             for j in range(args['num_epochs']):
