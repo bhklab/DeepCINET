@@ -79,9 +79,9 @@ def main(args: Dict[str, Any]):
     logger.info(f"Using batch size: {args['batch_size']}")
 
     if args['model'] == "SimpleSiamese":
-        siamese_model = models.SimpleSiamese(args['gpu_level'])
+        siamese_model = models.SimpleImageSiamese(args['gpu_level'])
     elif args['model'] == "ScalarSiamese":
-        siamese_model = models.ScalarSiamese(args['gpu_level'])
+        siamese_model = models.ImageScalarSiamese(args['gpu_level'])
     else:
         logger.error(f"Unknown option for model {args['model']}")
         siamese_model = None  # Make linter happy
