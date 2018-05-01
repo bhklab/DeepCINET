@@ -11,10 +11,23 @@ logger = utils.get_logger('train.siamese')
 
 
 class BasicModel:
+    """
+    Simple class to build a classification model.
+
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
+    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :vartype BasicModel.y: tf.Tensor
+    :vartype BasicModel.y_prob: tf.Tensor
+    :vartype BasicModel.y_estimate: tf.Tensor
+    """
     #: Threshold in when considering a float number between ``0`` and ``1`` a :any:`True` value for classification
     THRESHOLD = .5
 
     def __init__(self):
+        """
+        Construct a BasicModel. This model is a basic structure to create a classification model.
+        """
 
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
         self.y = tf.placeholder(tf.float32, [None], name="Y")
@@ -28,12 +41,25 @@ class BasicModel:
         self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
     @abc.abstractmethod
-    def _model(self):
-        pass
+    def _model(self) -> tf.Tensor:
+        """
+        Abstract method, the model should be build inside this method. Classes that Inherit :any:`BasicModel`
+        should implement this method to create the model
 
-    @abc.abstractmethod
+        :return: Tensor with shape ``[batch]`` with the probability of single class classification.
+        """
+
     def feed_dict(self, batch: data.PairBatch) -> Dict:
-        pass
+        """
+        Get the ``feed_dict`` required by Tensorflow when calling ``sess.run(...)``. Classes that inherit
+        :class:`BasicModel` should reimplement this function
+
+        :param batch: Information about the batch, usually provided by :method:`BatchData.batches`
+        :return: Dictionary that can be feed to the ``feed_dict`` parameter of ``sess.run(...)``.
+        """
+        return {
+            self.y: batch.labels
+        }
 
     def good_predictions_count(self) -> tf.Tensor:
         """
@@ -82,13 +108,10 @@ class BasicSiamese(BasicModel):
     Class representing a basic siamese structure. It contains a few convolutional layers and then the
     contrastive loss.
 
-    The model has some tensors that need to be fed when using ``sess.run(...)``:
-
-    :var BasicSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
+    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
     :var BasicSiamese.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
     :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
-    :vartype BasicSiamese.x_image: tf.Tensor
     :vartype BasicSiamese.y: tf.Tensor
     :vartype BasicSiamese.pairs_a: tf.Tensor
     :vartype BasicSiamese.pairs_b: tf.Tensor
@@ -100,6 +123,7 @@ class BasicSiamese(BasicModel):
 
         :param gpu_level: Amount of GPU to be used with the model
         """
+        #: **Attribute**: Amount of GPU to be used with the model
         self._gpu_level = gpu_level
 
         #: **Attribute**: Placeholder for the indices of the first pairs (A)
@@ -110,7 +134,12 @@ class BasicSiamese(BasicModel):
 
         super().__init__()
 
-    def _model(self):
+    def _model(self) -> tf.Tensor:
+        """
+        Implementation of :method:`BasicModel._model`
+
+        :return: Tensor where a Siamese network has been applied to the input
+        """
         sister_out = self._sister()
         return self._contrastive_loss(sister_out)
 
@@ -147,23 +176,30 @@ class BasicSiamese(BasicModel):
             sub = tf.subtract(gathered_a, gathered_b, name="contrastive_sub")
             return tf.sigmoid(sub, name="contrastive_sigmoid")
 
+    def feed_dict(self, batch: data.PairBatch) -> Dict:
+        return {
+            **super().feed_dict(batch),
+            self.pairs_a: batch.pairs_a,
+            self.pairs_b: batch.pairs_b,
+        }
+
 
 class BasicImageSiamese(BasicSiamese):
     """
-        Class representing a basic siamese structure. It contains a few convolutional layers and then the
-        contrastive loss.
+    Class representing a basic siamese structure. It contains a few convolutional layers and then the
+    contrastive loss.
 
-        The model has some tensors that need to be fed when using ``sess.run(...)``:
+    The model has some tensors that need to be fed when using ``sess.run(...)``:
 
-        :var BasicSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
-        :var BasicSiamese.y: Batch of labels for all the pairs with shape ``[batch]``
-        :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
-        :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
-        :vartype BasicSiamese.x_image: tf.Tensor
-        :vartype BasicSiamese.y: tf.Tensor
-        :vartype BasicSiamese.pairs_a: tf.Tensor
-        :vartype BasicSiamese.pairs_b: tf.Tensor
-        """
+    :var BasicSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
+    :var BasicSiamese.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
+    :vartype BasicSiamese.x_image: tf.Tensor
+    :vartype BasicSiamese.y: tf.Tensor
+    :vartype BasicSiamese.pairs_a: tf.Tensor
+    :vartype BasicSiamese.pairs_b: tf.Tensor
+    """
 
     def __init__(self, gpu_level: int = 0):
         """
@@ -225,10 +261,8 @@ class BasicImageSiamese(BasicSiamese):
         :return: Return the ``feed_dict`` as a dictionary
         """
         return {
-            self.x_image: batch.images,
-            self.pairs_a: batch.pairs_a,
-            self.pairs_b: batch.pairs_b,
-            self.y: batch.labels
+            **super().feed_dict(batch),
+            self.x_image: batch.images
         }
 
 
@@ -362,6 +396,19 @@ class ImageScalarSiamese(BasicImageSiamese):
     """
     This class creates a Siamese model that uses both images and scalar features extracted using
     PyRadiomics. The features are not extracted by the model but they have to be provided in one of the placeholders
+
+    ** Network structure **
+
+        - :math:`3^3` kernel with 30 filters and stride = 2 with ReLu
+        - :math:`3^3` kernel with 30 filters and stride = 2 with ReLu
+        - :math:`3^3` kernel with 40 filters and stride = 1 with ReLu
+        - :math:`3^3` kernel with 40 filters and stride = 1 with ReLu
+        - :math:`3^3` kernel with 50 filters and stride = 1 with ReLu
+        - :math:`3^3` kernel with 50 filters and stride = 1 with ReLu
+        - Flattening layer
+        - 8000 units, activation tanh
+        - 100 units, activation tanh
+        - 1 unit, activation ReLu
     """
 
     def __init__(self, gpu_level: int = 0, regularization_factor: int = 0.001):
@@ -513,9 +560,10 @@ class ImageScalarSiamese(BasicImageSiamese):
                       :func:`~BatchData.batches`
         :return: Return the ``feed_dict`` as a dictionary
         """
-        super_dict = super().feed_dict(batch)
-        super_dict[self.x_scalar] = batch.features
-        return super_dict
+        return {
+            **super().feed_dict(batch),
+            self.x_scalar: batch.features
+        }
 
 
 class ScalarOnlySiamese(BasicModel):
