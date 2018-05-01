@@ -160,7 +160,7 @@ class BatchData:
     """
 
     @staticmethod
-    def batches(pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids') \
+    def batches(pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids', load_images: bool = True) \
             -> Generator[PairBatch, None, None]:
         """
         Generates batches based on all the pairs and the batch size
@@ -168,15 +168,17 @@ class BatchData:
         :param pairs:
         :param batch_size:
         :param group_by:
+        :param load_images:
         :return:
         """
         if group_by == 'ids':
-            return BatchData._batch_by_ids(pairs, batch_size)
+            return BatchData._batch_by_ids(pairs, batch_size, load_images)
         else:
-            return BatchData._batch_by_pairs(pairs, batch_size)
+            return BatchData._batch_by_pairs(pairs, batch_size, load_images)
 
     @staticmethod
-    def _batch_by_ids(pairs: Iterable[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
+    def _batch_by_ids(pairs: Iterable[PairComp], batch_size: int, load_images: bool = True) \
+            -> Generator[PairBatch, None, None]:
         total_pairs = set(pairs)
 
         # Extract bath_size ids
@@ -195,16 +197,17 @@ class BatchData:
             total_pairs -= batch_pairs
             assert len(batch_pairs)*2 >= len(ids)
 
-            yield BatchData._create_pair_batch(batch_pairs, ids)
+            yield BatchData._create_pair_batch(batch_pairs, ids, load_images)
 
     @staticmethod
-    def _batch_by_pairs(pairs: Iterable[PairComp], batch_size: int) -> Generator[PairBatch, None, None]:
+    def _batch_by_pairs(pairs: Iterable[PairComp], batch_size: int, load_images=True) \
+            -> Generator[PairBatch, None, None]:
         for i, values in enumerate(BatchData._split(pairs, batch_size)):
             values = list(values)
-            yield BatchData._create_pair_batch(values, {idx for p in values for idx in (p.p1, p.p2)})
+            yield BatchData._create_pair_batch(values, {idx for p in values for idx in (p.p1, p.p2)}, load_images)
 
     @staticmethod
-    def _create_pair_batch(pairs: Collection[PairComp], ids: Set[str]) -> PairBatch:
+    def _create_pair_batch(pairs: Collection[PairComp], ids: Set[str], load_images: bool = True) -> PairBatch:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
@@ -241,13 +244,18 @@ class BatchData:
                 logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
                 raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
-            loaded_npz = np.load(file_path)
-
             column = df[idx].values
-            for item in loaded_npz:
-                images.append(loaded_npz[item])
-                features.append(column)
-            loaded_npz.close()
+            features += [column]*TOTAL_ROTATIONS
+
+            if load_images:
+                loaded_npz = np.load(file_path)
+                for item in loaded_npz:
+                    images.append(loaded_npz[item])
+                loaded_npz.close()
+            else:
+                images += [np.array([])]*TOTAL_ROTATIONS
+
+        assert len(images) == len(features)
 
         images = np.array(images)
         images = images.reshape((-1, 64, 64, 64, 1))
