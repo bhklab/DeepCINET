@@ -132,6 +132,9 @@ class BasicSiamese(BasicModel):
         #: **Attribute**: Placeholder for the indices of the second pairs (B)
         self.pairs_b = tf.placeholder(tf.int32, [None], name="pairs_b")
 
+        self.gathered_a = None
+        self.gathered_b = None
+
         super().__init__()
 
     def _model(self) -> tf.Tensor:
@@ -170,10 +173,13 @@ class BasicSiamese(BasicModel):
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for contrastive loss")
         with tf.device(device):
-            gathered_a = tf.gather(sister_out, self.pairs_a, name="contrastive_gather_a")
-            gathered_b = tf.gather(sister_out, self.pairs_b, name="contrastive_gather_b")
+            self.gathered_a = tf.gather(sister_out, self.pairs_a, name="contrastive_gather_a")
+            self.gathered_b = tf.gather(sister_out, self.pairs_b, name="contrastive_gather_b")
 
-            sub = tf.subtract(gathered_a, gathered_b, name="contrastive_sub")
+            self.gathered_a = tf.reduce_sum(tf.square(self.gathered_a), 1, keepdims=True)
+            self.gathered_b = tf.reduce_sum(tf.square(self.gathered_b), 1, keepdims=True)
+
+            sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
             return tf.sigmoid(10*sub, name="contrastive_sigmoid")
 
     def feed_dict(self, batch: data.PairBatch) -> Dict:
@@ -568,7 +574,7 @@ class ImageScalarSiamese(BasicImageSiamese):
 
 class ScalarOnlySiamese(BasicSiamese):
 
-    def __init__(self, gpu_level: int = 0, regularization_factor: int = 0.001):
+    def __init__(self, gpu_level: int = 0, regularization_factor: float = 0.000001):
         self._gpu_level = gpu_level
 
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
@@ -578,8 +584,9 @@ class ScalarOnlySiamese(BasicSiamese):
 
     def _sister(self):
         # Out: [batch, 500]
+        x = self.x_scalar
         x = self._dense(
-            self.x_scalar,
+            x,
             500,
             "fc1"
         )
@@ -601,8 +608,9 @@ class ScalarOnlySiamese(BasicSiamese):
         # Out: [batch, 1]
         x = self._dense(
             x,
-            1,
-            "fc4"
+            10,
+            "fc4",
+            activation=tf.nn.relu
         )
 
         return x
@@ -613,7 +621,7 @@ class ScalarOnlySiamese(BasicSiamese):
             units=units,
             activation=activation,
             kernel_initializer=tf.contrib.layers.xavier_initializer(),
-            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._reg_factor),
+            kernel_regularizer=tf.contrib.layers.l1_regularizer(self._reg_factor),
             name=name
         )
 
@@ -622,4 +630,8 @@ class ScalarOnlySiamese(BasicSiamese):
             **super().feed_dict(batch),
             self.x_scalar: batch.features
         }
+
+    def loss(self):
+        batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
+        return tf.reduce_sum((2*(1 - self._y) - 1)*(2*self.y_prob - 1))/batch_size + tf.losses.get_regularization_loss()
 

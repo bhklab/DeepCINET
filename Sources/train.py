@@ -52,16 +52,31 @@ def test_iterations(sess: tf.Session, model: models.BasicModel, tensors: Dict[st
         'pairs_b': [],
         'labels': np.array([], dtype=bool),
         'predictions': np.array([], dtype=bool),
-        'probabilities': np.array([])
+        'probabilities': np.array([]),
+        'gather_a': np.array([]),
+        'gather_b': np.array([]),
     }
 
     # Test iterations
     for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=batch_size, load_images=load_images)):
         # Execute test operations
-        temp_sum, c_index_result, predictions, probabilities = sess.run(
-            [tensors['true-predictions'], tensors['c-index'], tensors['predictions'], tensors['probabilities']],
-            feed_dict=model.feed_dict(batch)
-        )
+        temp_sum, \
+            c_index_result, \
+            predictions, \
+            probabilities, \
+            gather_a, \
+            gather_b \
+            = sess.run(
+                [
+                    tensors['true-predictions'],
+                    tensors['c-index'],
+                    tensors['predictions'],
+                    tensors['probabilities'],
+                    tensors['gather_a'],
+                    tensors['gather_b'],
+                ],
+                feed_dict=model.feed_dict(batch)
+            )
 
         correct_count += temp_sum
         total_pairs -= len(batch.pairs_a)
@@ -73,6 +88,8 @@ def test_iterations(sess: tf.Session, model: models.BasicModel, tensors: Dict[st
         result_data['labels'] = np.append(result_data['labels'], np.array(batch.labels).astype(bool))
         result_data['predictions'] = np.append(result_data['predictions'], np.array(predictions).astype(bool))
         result_data['probabilities'] = np.append(result_data['probabilities'], np.array(probabilities))
+        result_data['gather_a'] = np.append(result_data['gather_a'], np.array(gather_a))
+        result_data['gather_b'] = np.append(result_data['gather_b'], np.array(gather_b))
 
         if i % 10 == 0 or total_pairs == 0:
             logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
@@ -105,7 +122,9 @@ def main(args: Dict[str, Any]):
         'c-index': siamese_model.c_index(),
         'true-predictions': siamese_model.good_predictions_count(),
         'predictions': siamese_model.y_estimate,
-        'probabilities': siamese_model.y_prob
+        'probabilities': siamese_model.y_prob,
+        'gather_a': siamese_model.gathered_a,
+        'gather_b': siamese_model.gathered_b
     }
 
     tensors['minimize'] = optimizer.minimize(tensors['loss'])
