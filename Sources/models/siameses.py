@@ -134,9 +134,11 @@ class BasicSiamese:
             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) + (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
             \quad m := \text{batch size}
 
+        Also, the regularization term defined by the other layers is added
+
         :return: Scalar tensor with the negative log loss function for the model computed.
         """
-        return tf.losses.log_loss(self._y, self.y_prob)
+        return tf.losses.log_loss(self._y, self.y_prob) + tf.losses.get_regularization_loss()
 
     def good_predictions_count(self) -> tf.Tensor:
         """
@@ -342,6 +344,7 @@ class ScalarSiamese(BasicSiamese):
                 kernel_size=3,
                 strides=2,
                 activation=tf.nn.relu,
+                kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
                 name="conv1"
             )
 
@@ -352,6 +355,7 @@ class ScalarSiamese(BasicSiamese):
                 kernel_size=3,
                 strides=2,
                 activation=tf.nn.relu,
+                kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
                 name="conv2"
             )
 
@@ -364,6 +368,7 @@ class ScalarSiamese(BasicSiamese):
                 filters=40,
                 kernel_size=3,
                 activation=tf.nn.relu,
+                kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
                 name="conv3"
             )
 
@@ -373,6 +378,7 @@ class ScalarSiamese(BasicSiamese):
                 filters=40,
                 kernel_size=3,
                 activation=tf.nn.relu,
+                kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
                 name="conv4"
             )
 
@@ -382,6 +388,7 @@ class ScalarSiamese(BasicSiamese):
                 filters=50,
                 kernel_size=3,
                 activation=tf.nn.relu,
+                kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
                 name="conv5"
             )
 
@@ -400,29 +407,31 @@ class ScalarSiamese(BasicSiamese):
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
-            # Out: [batch, 25*25*25*50]
+            # Out: [batch, 9*9*9*50]
             x = tf.layers.flatten(
                 x,
                 name="flat"
             )
 
             # This is where the magic happens
-            # Out: [batch, 781 975]
+            # Out: [batch, 37 175]
             x = tf.concat([x, self.x_scalar], axis=1)
+
+            # Out: [batch, 8000]
+            x = tf.layers.dense(
+                x,
+                8000,
+                activation=tf.nn.tanh,
+                kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                name="fc1"
+            )
 
             # Out: [batch, 100]
             x = tf.layers.dense(
                 x,
-                10000,
-                activation=tf.nn.relu,
-                name="fc1"
-            )
-
-            # Out: [batch, 50]
-            x = tf.layers.dense(
-                x,
                 100,
-                activation=tf.nn.relu,
+                activation=tf.nn.tanh,
+                kernel_initializer=tf.contrib.layers.xavier_initializer(),
                 name="fc2"
             )
 
@@ -431,6 +440,7 @@ class ScalarSiamese(BasicSiamese):
                 x,
                 1,
                 activation=tf.nn.relu,
+                kernel_initializer=tf.contrib.layers.xavier_initializer(),
                 name="fc3"
             )
         return x
