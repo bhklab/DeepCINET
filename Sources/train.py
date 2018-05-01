@@ -69,7 +69,7 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         result_data['probabilities'] = np.append(result_data['probabilities'], np.array(probabilities))
 
         logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
-                    f"c-index: {c_index_result:.3}, accum c-index:{correct_count/pairs_count:.3}")
+                    f"c-index: {c_index_result:.3}, final c-index:{correct_count/pairs_count:.3}")
 
     return correct_count, pairs_count, pd.DataFrame(result_data)
 
@@ -127,7 +127,7 @@ def main(args: Dict[str, Any]):
 
         # Decide whether to use CV or only a single test/train sets
         if args['cv_folds'] < 2:
-            generator = [dataset.train_test_split(args['test_size'])]
+            enum_generator = enumerate([dataset.train_test_split(args['test_size'])])
         else:
             generator = dataset.folds(args['cv_folds'])
 
@@ -135,7 +135,9 @@ def main(args: Dict[str, Any]):
             if total_tasks == args['cv_folds']:
                 task_id = int(task_id)
                 logger.info(f"Task number: {task_id}")
-                generator = [list(generator)[task_id]]
+                enum_generator = [(task_id, list(generator)[task_id])]
+            else:
+                enum_generator = enumerate(generator)
 
         counts = {
             'train': {
@@ -148,12 +150,12 @@ def main(args: Dict[str, Any]):
             }
         }
 
-        for i, (train_pairs, test_pairs) in enumerate(generator):
+        for i, (train_pairs, test_pairs) in enum_generator:
             # Initialize all the variables
             sess.run(tf.global_variables_initializer())
 
-            logger.info("")
-            logger.info(f"New fold {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+            logger.info("\r")
+            logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
 
             # Epoch iterations
             for j in range(args['num_epochs']):
@@ -278,6 +280,6 @@ if __name__ == '__main__':
         # For now the arguments are ignored
         main(arguments)
     except KeyboardInterrupt:
-        logger.info("\n----------------------------------")
-        logger.info("Stopping due to keyboard interrupt")
-        logger.info("THANKS FOR THE RIDE 😀")
+        logger.info("\r----------------------------------")
+        logger.info("\rStopping due to keyboard interrupt")
+        logger.info("\rTHANKS FOR THE RIDE 😀")

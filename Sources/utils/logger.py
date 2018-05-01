@@ -5,9 +5,6 @@ import sys
 
 import settings
 
-if not os.path.exists(settings.LOG_DIR):
-    os.makedirs(settings.LOG_DIR)
-
 loggers = {}
 file_formatter = logging.Formatter("[%(asctime)s - %(name)s] %(levelname)s: %(message)s")
 console_formatter = logging.Formatter("(%(name)s): %(message)s")
@@ -31,7 +28,7 @@ def get_logger(name: str) -> logging.Logger:
     return logger
 
 
-def init_logger(app_name: str, directory: str = settings.LOG_DIR) -> logging.Logger:
+def init_logger(app_name: str, directory: str = settings.SUMMARIES_DIR) -> logging.Logger:
     """
     Initialize script logging functionality. This function should be called only once in the script's execution.
     All the logs are printed to the console and saved into disk with the name ``<app_name>.log``. The save location
@@ -43,6 +40,9 @@ def init_logger(app_name: str, directory: str = settings.LOG_DIR) -> logging.Log
     :return: Initialized logger
     """
     logger = get_logger('')
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
     fh = logging.FileHandler(os.path.join(directory, app_name + ".log"), encoding="utf-8")
     fh.setLevel(settings.LOG_LEVEL_FILE)
