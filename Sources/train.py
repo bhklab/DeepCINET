@@ -14,13 +14,15 @@ import utils
 logger = utils.get_logger('train')
 
 
-def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
-                     pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter, batch_size: int):
+def train_iterations(sess: tf.Session, model: models.BasicModel, tensors: Dict[str, tf.Tensor],
+                     pairs: List[data.PairComp], summary_writer: tf.summary.FileWriter, batch_size: int,
+                     load_images: bool, prev_iters: int):
 
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
 
     # Train iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=batch_size)):
+    final_iterations = 0
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=batch_size, load_images=load_images)):
         # Execute graph operations
         _, c_index_result, loss, summary = sess.run(
             [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
@@ -28,14 +30,18 @@ def train_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict
         )
 
         total_pairs -= len(batch.pairs_a)
-        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
-                    f"c-index: {c_index_result:.3}, loss: {loss:.3}")
+        if i % 10 == 0 or total_pairs <= 0:
+            logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
+                        f"c-index: {c_index_result:.3}, loss: {loss:.3}")
 
-        summary_writer.add_summary(summary, i)
+        summary_writer.add_summary(summary, prev_iters + i)
+        if total_pairs <= 0:
+            final_iterations = i
+    return final_iterations + 1
 
 
-def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[str, tf.Tensor],
-                    pairs: List[data.PairComp], batch_size: int) -> Tuple[int, int, pd.DataFrame]:
+def test_iterations(sess: tf.Session, model: models.BasicModel, tensors: Dict[str, tf.Tensor],
+                    pairs: List[data.PairComp], batch_size: int, load_images: bool) -> Tuple[int, int, pd.DataFrame]:
     # After we iterate over all the data inspect the test error
     total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
     correct_count = 0  # To store correct predictions
@@ -50,7 +56,7 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
     }
 
     # Test iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=batch_size)):
+    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=batch_size, load_images=load_images)):
         # Execute test operations
         temp_sum, c_index_result, predictions, probabilities = sess.run(
             [tensors['true-predictions'], tensors['c-index'], tensors['predictions'], tensors['probabilities']],
@@ -68,8 +74,9 @@ def test_iterations(sess: tf.Session, model: models.BasicSiamese, tensors: Dict[
         result_data['predictions'] = np.append(result_data['predictions'], np.array(predictions).astype(bool))
         result_data['probabilities'] = np.append(result_data['probabilities'], np.array(probabilities))
 
-        logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
-                    f"c-index: {c_index_result:.3}, final c-index:{correct_count/pairs_count:.3}")
+        if i % 10 == 0 or total_pairs == 0:
+            logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
+                        f"c-index: {c_index_result:.3}, final c-index:{correct_count/pairs_count:.3}")
 
     return correct_count, pairs_count, pd.DataFrame(result_data)
 
@@ -78,10 +85,14 @@ def main(args: Dict[str, Any]):
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
 
-    if args['model'] == "SimpleSiamese":
+    load_images = True
+    if args['model'] == "SimpleImageSiamese":
         siamese_model = models.SimpleImageSiamese(args['gpu_level'])
-    elif args['model'] == "ScalarSiamese":
+    elif args['model'] == "ImageScalarSiamese":
         siamese_model = models.ImageScalarSiamese(args['gpu_level'])
+    elif args['model'] == "ScalarOnlySiamese":
+        siamese_model = models.ScalarOnlySiamese(args['gpu_level'])
+        load_images = False
     else:
         logger.error(f"Unknown option for model {args['model']}")
         siamese_model = None  # Make linter happy
@@ -158,19 +169,35 @@ def main(args: Dict[str, Any]):
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
 
             # Epoch iterations
+            prev_iters = 0
             for j in range(args['num_epochs']):
                 logger.info(f"Epoch: {j + 1} of {args['num_epochs']}")
-                train_iterations(sess, siamese_model, tensors, train_pairs, train_summary, args['batch_size'])
+                prev_iters += train_iterations(sess,
+                                               siamese_model,
+                                               tensors,
+                                               train_pairs,
+                                               train_summary,
+                                               args['batch_size'],
+                                               load_images,
+                                               prev_iters)
 
             # Get test error on the training set
             logger.info("Computing train c-index")
-            train_correct, train_total, train_results = test_iterations(sess, siamese_model, tensors, train_pairs,
-                                                                        args['batch_size'])
+            train_correct, train_total, train_results = test_iterations(sess,
+                                                                        siamese_model,
+                                                                        tensors,
+                                                                        train_pairs,
+                                                                        args['batch_size'],
+                                                                        load_images)
 
             # Run the test iterations after all the epochs
             logger.info("Computing test c-index")
-            test_correct, test_total, test_results = test_iterations(sess, siamese_model, tensors, test_pairs,
-                                                                     args['batch_size'])
+            test_correct, test_total, test_results = test_iterations(sess,
+                                                                     siamese_model,
+                                                                     tensors,
+                                                                     test_pairs,
+                                                                     args['batch_size'],
+                                                                     load_images)
 
             counts['train']['total'] += train_total
             counts['train']['correct'] += train_correct
@@ -229,7 +256,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "-n, --num-epochs",
+        "-n", "--num-epochs",
         help="Number of epochs to use when training. Times passed through the entire dataset",
         metavar="NUM_EPOCHS",
         dest="num_epochs",
@@ -248,7 +275,7 @@ if __name__ == '__main__':
         "--model",
         help="Choose the model that you want to use for training",
         default="SimpleSiamese",
-        choices=['SimpleSiamese', 'ScalarSiamese'],
+        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese'],
         type=str
     )
 
