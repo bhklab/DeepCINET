@@ -439,7 +439,7 @@ class ScalarSiamese(BasicSiamese):
             )
         return x
 
-    def _conv3d(self, x: tf.Tensor, filters: int, kernel_size: int, name: str, strides: int = 0) -> tf.Tensor:
+    def _conv3d(self, x: tf.Tensor, filters: int, kernel_size: int, name: str, strides: int = 1) -> tf.Tensor:
         return tf.layers.conv3d(
             x,
             filters=filters,
@@ -453,7 +453,7 @@ class ScalarSiamese(BasicSiamese):
 
     def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
         return tf.layers.dense(
-            x=x,
+            x,
             units=units,
             activation=activation,
             kernel_initializer=tf.contrib.layers.xavier_initializer(),
