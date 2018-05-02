@@ -158,6 +158,8 @@ def get_tensors(siamese_model: models.BasicSiamese) -> Dict[str, tf.Tensor]:
     optimizer = tf.train.AdamOptimizer()
     tensors = {
         'loss': siamese_model.loss(),
+        'classification_loss': siamese_model.classification_loss(),
+        'regularization_loss': siamese_model.loss() - siamese_model.classification_loss(),
         'c-index': siamese_model.c_index(),
         'true-predictions': siamese_model.good_predictions_count(),
         'predictions': siamese_model.y_estimate,
@@ -172,6 +174,8 @@ def get_tensors(siamese_model: models.BasicSiamese) -> Dict[str, tf.Tensor]:
     with tf.name_scope("summaries"):
         tf.summary.scalar("loss", tensors['loss'])
         tf.summary.scalar("c-index", tensors['c-index'])
+        tf.summary.scalar("classification_loss", tensors['classification_loss'])
+        tf.summary.scalar("regularization_loss", tensors['regularization_loss'])
 
         for var in tf.trainable_variables():
             # We have to replace `:` with `_` to avoid a warning that ends doing this replacement

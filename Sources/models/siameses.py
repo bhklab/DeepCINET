@@ -80,6 +80,9 @@ class BasicModel:
 
         return tf.cast(tf.count_nonzero(equals), tf.float32)
 
+    def classification_loss(self) -> tf.Tensor:
+        return tf.losses.log_loss(self._y, self.y_prob)
+
     def loss(self) -> tf.Tensor:
         r"""
         Loss function for the model. It uses the negative log loss function:
@@ -93,7 +96,7 @@ class BasicModel:
 
         :return: Scalar tensor with the negative log loss function for the model computed.
         """
-        return tf.losses.log_loss(self._y, self.y_prob) + tf.losses.get_regularization_loss()
+        return self.classification_loss() + tf.losses.get_regularization_loss()
 
     def c_index(self) -> tf.Tensor:
         r"""
