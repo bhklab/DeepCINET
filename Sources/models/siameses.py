@@ -33,6 +33,9 @@ class BasicModel:
         self.y = tf.placeholder(tf.float32, [None], name="Y")
         self._y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
 
+        #: **Attribute**: Placeholder to tell the model if we are training (:any:`True`) or not (:any:`False`)
+        self.training = tf.placeholder(tf.bool, shape=(), name="Training")
+
         #: **Attribute**: Probability of :math:`\hat{y} = 1`
         self.y_prob = self._model()
 
@@ -49,16 +52,19 @@ class BasicModel:
         :return: Tensor with shape ``[batch, 1]`` with the probability of single class classification.
         """
 
-    def feed_dict(self, batch: data.PairBatch) -> Dict:
+    def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         """
         Get the ``feed_dict`` required by Tensorflow when calling ``sess.run(...)``. Classes that inherit
         :class:`BasicModel` should reimplement this function
 
         :param batch: Information about the batch, usually provided by :func:`BatchData.batches`
+        :param training: Whether we are training or not. Useful for training layers like dropout where we do not
+                         want to apply dropout if we are not training
         :return: Dictionary that can be feed to the ``feed_dict`` parameter of ``sess.run(...)``.
         """
         return {
-            self.y: batch.labels
+            self.y: batch.labels,
+            self.training: training
         }
 
     def good_predictions_count(self) -> tf.Tensor:
@@ -198,9 +204,9 @@ class BasicSiamese(BasicModel):
             sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
             return tf.sigmoid(10*sub, name="contrastive_sigmoid")
 
-    def feed_dict(self, batch: data.PairBatch) -> Dict:
+    def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         return {
-            **super().feed_dict(batch),
+            **super().feed_dict(batch, training),
             self.pairs_a: batch.pairs_a,
             self.pairs_b: batch.pairs_b,
         }
@@ -622,6 +628,12 @@ class ScalarOnlySiamese(BasicSiamese):
             "fc2"
         )
 
+        x = tf.layers.dropout(
+            x,
+            rate=.4,
+            training=self.training
+        )
+
         # Out: [batch, 50]
         x = self._dense(
             x,
@@ -649,15 +661,16 @@ class ScalarOnlySiamese(BasicSiamese):
             name=name
         )
 
-    def feed_dict(self, batch: data.PairBatch):
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
         return {
-            **super().feed_dict(batch),
-            self.x_scalar: batch.features
+            **super().feed_dict(batch, training),
+            self.x_scalar: batch.features,
         }
 
-    def loss(self):
-        batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
-        return tf.reduce_sum((2*(1 - self._y) - 1)*(2*self.y_prob - 1))/batch_size + tf.losses.get_regularization_loss()
+    # def loss(self):
+    #     batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
+    #     class_loss = tf.reduce_sum((2*(1 - self._y) - 1)*(2*self.y_prob - 1))/batch_size
+    #     return class_loss + tf.losses.get_regularization_loss()
 
     def uses_images(self) -> bool:
         """

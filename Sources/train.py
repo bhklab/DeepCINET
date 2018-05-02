@@ -39,11 +39,11 @@ def train_iterations(sess: tf.Session,
     :param epochs: Number of epochs, passes through the complete dataset, should be done when training
     """
 
-    total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
-
     # Train iterations
     final_iterations = 0
+
     for j in range(epochs):
+        total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
         logger.info(f"Epoch: {j + 1} of {epochs}")
         for i, batch in enumerate(data.BatchData.batches(pairs,
                                                          batch_size=batch_size,
@@ -112,7 +112,7 @@ def test_iterations(sess: tf.Session,
                 tensors['gather_a'],
                 tensors['gather_b'],
             ],
-            feed_dict=model.feed_dict(batch)
+            feed_dict=model.feed_dict(batch, training=False)
         )
 
         correct_count += temp_sum
