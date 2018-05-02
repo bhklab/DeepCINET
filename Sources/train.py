@@ -61,7 +61,7 @@ def train_iterations(sess: tf.Session,
 
             summary_writer.add_summary(summary, final_iterations + i)
             if total_pairs <= 0:
-                final_iterations += i
+                final_iterations += i + 1
 
 
 def test_iterations(sess: tf.Session,
