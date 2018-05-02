@@ -634,7 +634,7 @@ class ScalarOnlySiamese(BasicSiamese):
 
         x = tf.layers.dropout(
             x,
-            rate=.4,
+            rate=.1,
             training=self.training
         )
 

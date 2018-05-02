@@ -221,15 +221,16 @@ class BatchData:
         # We have to return more indices related to the same pair so that's why we are using the TOTAL_ROTATIONS
         # global variable to set the indices, the generated indices are in the range:
         # idx*TOTAL_ROTATIONS ... (idx + 1)*TOTAL_ROTATIONS
+        total_rotations = TOTAL_ROTATIONS if load_images else 1
         ids_list = list(ids)
 
         # Direct and inverse mapping
-        ids_map = {idx: idx_num*TOTAL_ROTATIONS for idx_num, idx in enumerate(ids_list)}
-        ids_inverse = {idx_num: idx for idx, i in ids_map.items() for idx_num in range(i, i + TOTAL_ROTATIONS)}
+        ids_map = {idx: idx_num*total_rotations for idx_num, idx in enumerate(ids_list)}
+        ids_inverse = {idx_num: idx for idx, i in ids_map.items() for idx_num in range(i, i + total_rotations)}
 
-        pairs_a = [idx for p in pairs for idx in range(ids_map[p.p_a], ids_map[p.p_a] + TOTAL_ROTATIONS)]
-        pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + TOTAL_ROTATIONS)]
-        labels = [float(l) for p in pairs for l in [p.comp]*TOTAL_ROTATIONS]
+        pairs_a = [idx for p in pairs for idx in range(ids_map[p.p_a], ids_map[p.p_a] + total_rotations)]
+        pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + total_rotations)]
+        labels = [float(l) for p in pairs for l in [p.comp]*total_rotations]
         assert len(pairs_a) == len(pairs_b) == len(labels)
 
         df = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
@@ -245,7 +246,7 @@ class BatchData:
                 raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
             column = df[idx].values
-            features += [column]*TOTAL_ROTATIONS
+            features += [column]*total_rotations
 
             if load_images:
                 loaded_npz = np.load(file_path)
@@ -253,7 +254,7 @@ class BatchData:
                     images.append(loaded_npz[item])
                 loaded_npz.close()
             else:
-                images += [np.array([])]*TOTAL_ROTATIONS
+                images += [np.array([])]*total_rotations
 
         assert len(images) == len(features)
 

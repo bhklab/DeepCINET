@@ -43,7 +43,7 @@ def train_iterations(sess: tf.Session,
     final_iterations = 0
 
     for j in range(epochs):
-        total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
+        total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
         logger.info(f"Epoch: {j + 1} of {epochs}")
         for i, batch in enumerate(data.BatchData.batches(pairs,
                                                          batch_size=batch_size,
