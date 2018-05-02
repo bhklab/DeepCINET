@@ -102,6 +102,15 @@ class BasicModel:
         batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
         return self.good_predictions_count()/batch_size
 
+    @abc.abstractmethod
+    def uses_images(self) -> bool:
+        """
+        Tells us if the model uses images. If it does not use images then loading images from disk can be avoided.
+        This can have a huge performance boos since loading images from disk is a slow operation.
+
+        :return: :any:`True` if the model needs images to work, otherwise returns :any:`False`
+        """
+
 
 class BasicSiamese(BasicModel):
     """
@@ -277,6 +286,14 @@ class BasicImageSiamese(BasicSiamese):
             **super().feed_dict(batch),
             self.x_image: batch.images
         }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`.
+
+        :return: :any:`True`, the model uses images as input to work
+        """
+        return True
 
 
 class SimpleImageSiamese(BasicImageSiamese):
@@ -641,4 +658,12 @@ class ScalarOnlySiamese(BasicSiamese):
     def loss(self):
         batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
         return tf.reduce_sum((2*(1 - self._y) - 1)*(2*self.y_prob - 1))/batch_size + tf.losses.get_regularization_loss()
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
 
