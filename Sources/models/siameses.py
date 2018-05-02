@@ -635,11 +635,11 @@ class ScalarOnlySiamese(BasicSiamese):
             "fc2"
         )
 
-        x = tf.layers.dropout(
-            x,
-            rate=.1,
-            training=self.training
-        )
+        # x = tf.layers.dropout(
+        #     x,
+        #     rate=.1,
+        #     training=self.training
+        # )
 
         # Out: [batch, 50]
         x = self._dense(
