@@ -21,7 +21,7 @@ class BasicModel:
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
     """
-    #: Threshold in when considering a float number between ``0`` and ``1`` a :any:`True` value for classification
+    #: Threshold to cast a float number between ``0`` and ``1`` to a :any:`True` value for classification
     THRESHOLD = .5
 
     def __init__(self):
@@ -36,7 +36,7 @@ class BasicModel:
         #: **Attribute**: Probability of :math:`\hat{y} = 1`
         self.y_prob = self._model()
 
-        #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicSiamese.y_prob` and
+        #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicModel.y_prob` and
         #: :any:`BasicSiamese.THRESHOLD`
         self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
@@ -54,7 +54,7 @@ class BasicModel:
         Get the ``feed_dict`` required by Tensorflow when calling ``sess.run(...)``. Classes that inherit
         :class:`BasicModel` should reimplement this function
 
-        :param batch: Information about the batch, usually provided by :method:`BatchData.batches`
+        :param batch: Information about the batch, usually provided by :func:`BatchData.batches`
         :return: Dictionary that can be feed to the ``feed_dict`` parameter of ``sess.run(...)``.
         """
         return {
@@ -109,12 +109,16 @@ class BasicSiamese(BasicModel):
     contrastive loss.
 
     :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
-    :var BasicSiamese.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
     :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
     :vartype BasicSiamese.y: tf.Tensor
     :vartype BasicSiamese.pairs_a: tf.Tensor
     :vartype BasicSiamese.pairs_b: tf.Tensor
+    :vartype BasicSiamese.gathered_a: tf.Tensor
+    :vartype BasicSiamese.gathered_b: tf.Tensor
     """
 
     def __init__(self, gpu_level: int = 0):
@@ -132,14 +136,17 @@ class BasicSiamese(BasicModel):
         #: **Attribute**: Placeholder for the indices of the second pairs (B)
         self.pairs_b = tf.placeholder(tf.int32, [None], name="pairs_b")
 
+        #: **Attribute**: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
         self.gathered_a = None
+
+        #: **Attribute**: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
         self.gathered_b = None
 
         super().__init__()
 
     def _model(self) -> tf.Tensor:
         """
-        Implementation of :method:`BasicModel._model`
+        Implementation of :func:`BasicModel._model`
 
         :return: Tensor where a Siamese network has been applied to the input with shape ``[batch, 1]``
         """
@@ -197,8 +204,8 @@ class BasicImageSiamese(BasicSiamese):
 
     The model has some tensors that need to be fed when using ``sess.run(...)``:
 
-    :var BasicSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
-    :var BasicSiamese.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
     :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
     :vartype BasicSiamese.x_image: tf.Tensor
@@ -257,8 +264,8 @@ class BasicImageSiamese(BasicSiamese):
         Method to create the ``feed_dict`` required by Tensorflow when passing the data. Classes that inherit
         :class:`BasicSiamese` must re-implement this method if they use different tensors than:
 
-            - :any:`BasicSiamese.x_image`
-            - :any:`BasicSiamese.y`
+            - :any:`BasicImageSiamese.x_image`
+            - :any:`BasicModel.y`
             - :any:`BasicSiamese.pairs_a`
             - :any:`BasicSiamese.pairs_b`
 
