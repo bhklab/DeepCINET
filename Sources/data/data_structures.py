@@ -15,7 +15,7 @@ class PseudoDir(NamedTuple):
 class PairComp(NamedTuple):
     """
     Tuple class to compare pairs containing two ids and a comparison value saying if
-    :math:`T(p1) < T(p2)`
+    :math:`T(p_a) < T(p_b)`
 
     :ivar PairComp.comp: True if :math:`T(p_a) < T(p_b)`
     :ivar PairComp.p_a: Key for pair's element A

@@ -56,7 +56,7 @@ class SplitPairs:
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
         return self._create_train_test(train_ids, test_ids)
 
-    def _create_train_test(self, train_ids: List[int], test_ids: List[int]) -> \
+    def _create_train_test(self, train_ids: List[int], test_ids: List[int], compare_train: bool = False) -> \
             Tuple[List[PairComp], List[PairComp]]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
@@ -64,13 +64,18 @@ class SplitPairs:
 
         :param train_ids: Ids for the train set should be between ``0`` and ``len(self.total_x) - 1``
         :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
+        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
+                              test set and the other one to the train set
         :return: List for the train set and list for the test set respectively
         """
         train_data = self.clinical_data.iloc[train_ids]
         test_data = self.clinical_data.iloc[test_ids]
 
         train_pairs = self._get_pairs(train_data)
-        test_pairs = self._get_pairs(test_data)
+        if not compare_train:
+            test_pairs = self._get_pairs(test_data)
+        else:
+            test_pairs = self._get_compare_train(train_data, test_data)
 
         return list(train_pairs), list(test_pairs)
 
@@ -81,16 +86,9 @@ class SplitPairs:
         data
 
         :param df: DataFrame containing all the clinical data
-        :return: Iterator over PairComp
+        :return: Iterator over PairComp with all the generated pairs
         """
-        df = df.sort_values('time', ascending=True)
-        df1 = df[df['event'] == 1]
-
-        pairs = []
-        for _, row in df.iterrows():
-            values = df1.loc[(df1['time'] < row['time']), 'id'].values
-            elems = zip(values, [row['id']]*len(values), [True]*len(values))
-            pairs += [PairComp(*x) for x in elems]
+        pairs = SplitPairs._get_inner_pairs(df.iterrows(), df[df['event'] == 1])
 
         # Since we have provided all the pairs sorted in the algorithm the output will be always
         # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
@@ -100,8 +98,42 @@ class SplitPairs:
         return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
+    def _get_compare_train(train_df: pd.DataFrame, test_df: pd.DataFrame) -> Iterator[PairComp]:
+        """
+        Create the pairs by having one member belonging to the train dataset and the other to the test dataset
+
+        :param train_df: DataFrame containing the clinical data for the train data set
+        :param test_df: DataFrame containing the clinical data for the test data set
+        :return: Iterator over PairComp with all the generated pairs
+        """
+        # Create the pairs where test_elem > train_elem
+        pairs = SplitPairs._get_inner_pairs(test_df.iterrows(), train_df[train_df['event'] == 1])
+
+        # Create the pairs where train_elem > test_elem
+        pairs += SplitPairs._get_inner_pairs(train_df.iterrows(), test_df[test_df['event'] == 1])
+
+    @staticmethod
+    def _get_inner_pairs(df_it: Iterator, df1: pd.DataFrame) -> List[PairComp]:
+        """
+        Generate the pairs by iterating through a :class:`DataFrame` and for each element create pairs for all elements
+        that have a survival time bigger than :param:`df1`.
+
+        :param df_it: :class:`DataFrame` iterator that will be iterated
+        :param df1: :class:`DataFrame` that will be compared against and if its values are smaller than the compared
+                    value a pair will be created
+        :return: List with all the generated pairs
+        """
+        pairs = []
+        for _, row in df_it:
+            values = df1.loc[(df1['time'] < row['time']), 'id'].values
+            elems = zip(values, [row['id']]*len(values), [True]*len(values))
+            pairs += [PairComp(*x) for x in elems]
+
+        return pairs
+
+    @staticmethod
     def _swap_random(tup: PairComp) -> PairComp:
-        if bool(random.getrandbits(1)):
+        if bool(random.randint(0, 1)):
             return PairComp(p_a=tup.p_b, p_b=tup.p_a, comp=not tup.comp)
         return tup
 

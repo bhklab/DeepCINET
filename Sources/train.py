@@ -186,7 +186,8 @@ def get_tensors(siamese_model: models.BasicSiamese) -> Dict[str, tf.Tensor]:
     return tensors
 
 
-def get_sets_generator(cv_folds: int, test_size: int) -> Iterator[Tuple[int, Tuple[List[data.PairComp], List[data.PairComp]]]]:
+def get_sets_generator(cv_folds: int, test_size: int, test_mode: str) \
+        -> Iterator[Tuple[int, Tuple[List[data.PairComp], List[data.PairComp]]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
@@ -221,7 +222,7 @@ def main(args: Dict[str, Any]):
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'])
+        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'], args['test_mode'])
 
         counts = {
             'train': {
