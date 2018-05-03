@@ -73,3 +73,4 @@ else:
 
 #: The total number of features that are provided by the CSV of radiomic features
 NUMBER_FEATURES = 725
+VOLUME_FEATURE_INDEX = 26

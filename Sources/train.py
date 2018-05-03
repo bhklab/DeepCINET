@@ -156,8 +156,8 @@ def select_model(model_key: str, gpu_level: int) -> models.BasicSiamese:
         exit(1)
 
 
-def get_tensors(siamese_model: models.BasicSiamese) -> Dict[str, tf.Tensor]:
-    optimizer = tf.train.AdamOptimizer()
+def get_tensors(siamese_model: models.BasicSiamese, learning_rate: float) -> Dict[str, tf.Tensor]:
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     tensors = {
         'loss': siamese_model.loss(),
         'classification_loss': siamese_model.classification_loss(),
@@ -219,7 +219,7 @@ def main(args: Dict[str, Any]):
     logger.info(f"Using batch size: {args['batch_size']}")
 
     siamese_model = select_model(args['model'], args['gpu_level'])
-    tensors = get_tensors(siamese_model)
+    tensors = get_tensors(siamese_model, args['learning_rate'])
 
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
@@ -361,6 +361,13 @@ if __name__ == '__main__':
         default="compare_test",
         choices=["compare_test", "compare_train"],
         type=str
+    )
+
+    parser.add_argument(
+        "--learning-rate",
+        help="Optimizer (adam) learning rate",
+        default=0.001,
+        type=float
     )
 
     # See if we are running in a SLURM task array
