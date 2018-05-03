@@ -5,7 +5,6 @@ from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List
 
 import numpy as np
 import pandas as pd
-import scipy
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
 from data.data_structures import PairComp, PairBatch
@@ -32,56 +31,36 @@ class SplitPairs:
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
 
-        self._train_data = pd.DataFrame()
-        self._test_data = pd.DataFrame()
-
-    def print_pairs(self, data_augmentation: bool = True):
-        """
-        Print the number of possible pairs for the train and test sets
-
-        :param data_augmentation: If data augmentation should be taken into account when counting the number of pairs
-        """
-        test_pairs_cens, test_pairs_uncens = self._possible_pairs(self._test_data, data_augmentation)
-        train_pairs_cens, train_pairs_uncens = self._possible_pairs(self._train_data, data_augmentation)
-
-        values = [
-            ["Test", test_pairs_cens, test_pairs_uncens],
-            ["Train", train_pairs_cens, train_pairs_uncens]
-        ]
-
-        df = pd.DataFrame(values, columns=["Set", "Censored", "Uncensored"])
-        df = df.append(df.sum(axis=0), ignore_index=True)
-        df['Total'] = df.sum(axis=1)
-        df.loc[df['Set'] == "TestTrain", 'Set'] = "Total"
-
-        logger.info("Maximum number of pairs")
-        logger.info(df)
-
-    def folds(self, n_folds: int = 4) -> Iterator[Tuple[List[PairComp], List[PairComp]]]:
+    def folds(self, n_folds: int = 4, compare_train: bool = False) -> Iterator[Tuple[List[PairComp], List[PairComp]]]:
         """
         Creates different folds of data for use with CV
 
         :param n_folds: Number of folds to be created
+        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
+                              test set and the other one to the train set
         :return: Generator yielding a train/test pair
         """
         skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
 
         for train_ids, test_ids in skf.split(self.total_x, self.total_y):
-            yield self._create_train_test(train_ids, test_ids)
+            yield self._create_train_test(train_ids, test_ids, compare_train=compare_train)
 
-    def train_test_split(self, test_size: float = .25) -> Tuple[List[PairComp], List[PairComp]]:
+    def train_test_split(self, test_size: float = .25, compare_train: bool = False) \
+            -> Tuple[List[PairComp], List[PairComp]]:
         """
         Split data in train/test with the specified proportion
 
         :param test_size: ``float`` between ``0`` and ``1`` with the test set size
+        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
+                              test set and the other one to the train set
         :return: Tuple with the train set and the test set
         """
         rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_SEED)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
-        return self._create_train_test(train_ids, test_ids)
+        return self._create_train_test(train_ids, test_ids, compare_train=compare_train)
 
-    def _create_train_test(self, train_ids: List[int], test_ids: List[int]) -> \
+    def _create_train_test(self, train_ids: List[int], test_ids: List[int], compare_train: bool = False) -> \
             Tuple[List[PairComp], List[PairComp]]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
@@ -89,38 +68,20 @@ class SplitPairs:
 
         :param train_ids: Ids for the train set should be between ``0`` and ``len(self.total_x) - 1``
         :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
+        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
+                              test set and the other one to the train set
         :return: List for the train set and list for the test set respectively
         """
-        self._train_data = self.clinical_data.iloc[train_ids]
-        self._test_data = self.clinical_data.iloc[test_ids]
+        train_data = self.clinical_data.iloc[train_ids]
+        test_data = self.clinical_data.iloc[test_ids]
 
-        train_pairs = self._get_pairs(self._train_data)
-        test_pairs = self._get_pairs(self._test_data)
+        train_pairs = self._get_pairs(train_data)
+        if not compare_train:
+            test_pairs = self._get_pairs(test_data)
+        else:
+            test_pairs = self._get_compare_train(train_data, test_data)
 
         return list(train_pairs), list(test_pairs)
-
-    @staticmethod
-    def _possible_pairs(df: pd.DataFrame, data_augmentation=True) -> Tuple[int, int]:
-        """
-        Counts the number of possible pairs that can be generated (maximum límit)
-
-        :param df: Pandas data frame containing all the data, it should have at least the columns ``event`` and ``id``
-        :param data_augmentation: If data augmentation should be taken into account when counting the values.
-                                  The results will be multiplied by the ``TOTAL_ROTATIONS`` value
-        :return: Count with the number of possible censored pairs and the possible uncensored pairs
-        """
-        count = df.groupby('event').count()['id']
-        censored_count = count[0]
-        uncensored_count = count[1]
-
-        censored_pairs = censored_count*uncensored_count
-        uncensored_pairs = scipy.misc.comb(uncensored_count, 2, exact=True)
-        if data_augmentation:
-            # For now we will only be using 4 rotations in one axis to avoid having too much data
-            censored_pairs *= TOTAL_ROTATIONS
-            uncensored_pairs *= TOTAL_ROTATIONS
-
-        return censored_pairs, uncensored_pairs
 
     @staticmethod
     def _get_pairs(df: pd.DataFrame) -> Iterator[PairComp]:
@@ -129,16 +90,9 @@ class SplitPairs:
         data
 
         :param df: DataFrame containing all the clinical data
-        :return: Iterator over PairComp
+        :return: Iterator over PairComp with all the generated pairs
         """
-        df = df.sort_values('time', ascending=True)
-        df1 = df[df['event'] == 1]
-
-        pairs = []
-        for _, row in df.iterrows():
-            values = df1.loc[(df1['time'] < row['time']), 'id'].values
-            elems = zip(values, [row['id']]*len(values), [True]*len(values))
-            pairs += [PairComp(*x) for x in elems]
+        pairs = SplitPairs._get_inner_pairs(df, df)
 
         # Since we have provided all the pairs sorted in the algorithm the output will be always
         # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
@@ -148,8 +102,47 @@ class SplitPairs:
         return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
+    def _get_compare_train(train_df: pd.DataFrame, test_df: pd.DataFrame) -> Iterator[PairComp]:
+        """
+        Create the pairs by having one member belonging to the train dataset and the other to the test dataset
+
+        :param train_df: DataFrame containing the clinical data for the train data set
+        :param test_df: DataFrame containing the clinical data for the test data set
+        :return: Iterator over PairComp with all the generated pairs
+        """
+        # Create the pairs where test_elem > train_elem
+        pairs = SplitPairs._get_inner_pairs(test_df, train_df)
+
+        # Create the pairs where train_elem > test_elem
+        pairs += SplitPairs._get_inner_pairs(train_df, test_df)
+        random.shuffle(pairs)
+
+        return map(SplitPairs._swap_random, pairs)
+
+    @staticmethod
+    def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> List[PairComp]:
+        """
+        Generate the pairs by iterating through a :class:`DataFrame` and for each element create pairs for all elements
+        that have a survival time bigger than :param:`df1`.
+
+        :param df: :class:`DataFrame` that will be iterated
+        :param df_comp: :class:`DataFrame` that will be compared against and if its values are smaller than the compared
+                    value a pair will be created
+        :return: List with all the generated pairs
+        """
+        df_comp = df_comp[df_comp['event'] == 1]
+
+        pairs = []
+        for _, row in df.iterrows():
+            values = df_comp.loc[(df_comp['time'] < row['time']), 'id'].values
+            elems = zip(values, [row['id']]*len(values), [True]*len(values))
+            pairs += [PairComp(*x) for x in elems]
+
+        return pairs
+
+    @staticmethod
     def _swap_random(tup: PairComp) -> PairComp:
-        if bool(random.getrandbits(1)):
+        if bool(random.randint(0, 1)):
             return PairComp(p_a=tup.p_b, p_b=tup.p_a, comp=not tup.comp)
         return tup
 
@@ -232,6 +225,8 @@ class BatchData:
         pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + total_rotations)]
         labels = [float(l) for p in pairs for l in [p.comp]*total_rotations]
         assert len(pairs_a) == len(pairs_b) == len(labels)
+
+        labels = np.array(labels).reshape((-1, 1))
 
         df = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
         df = df.sub(df.mean(axis=1), axis=0)

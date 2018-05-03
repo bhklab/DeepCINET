@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import os
 from typing import Dict, List, Tuple, Any, Iterator
@@ -159,7 +161,7 @@ def get_tensors(siamese_model: models.BasicSiamese) -> Dict[str, tf.Tensor]:
     tensors = {
         'loss': siamese_model.loss(),
         'classification_loss': siamese_model.classification_loss(),
-        'regularization_loss': siamese_model.loss() - siamese_model.classification_loss(),
+        'regularization_loss': siamese_model.regularization_loss(),
         'c-index': siamese_model.c_index(),
         'true-predictions': siamese_model.good_predictions_count(),
         'predictions': siamese_model.y_estimate,
@@ -186,18 +188,20 @@ def get_tensors(siamese_model: models.BasicSiamese) -> Dict[str, tf.Tensor]:
     return tensors
 
 
-def get_sets_generator(cv_folds: int, test_size: int) -> Iterator[Tuple[int, Tuple[List[data.PairComp], List[data.PairComp]]]]:
+def get_sets_generator(cv_folds: int, test_size: int, test_mode: str) \
+        -> Iterator[Tuple[int, Tuple[List[data.PairComp], List[data.PairComp]]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
     if cv_folds < 2:
-        enum_generator = enumerate([dataset.train_test_split(test_size)])
+        generator = dataset.train_test_split(test_size, compare_train=(test_mode == "compare_train"))
+        enum_generator = (0, generator)
     else:
-        generator = dataset.folds(cv_folds)
+        generator = dataset.folds(cv_folds, compare_train=(test_mode == "compare_train"))
 
-        total_tasks = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+        # Slurm configuration
         task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
-        if total_tasks == cv_folds:
+        if int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0)) == cv_folds:
             task_id = int(task_id)
             logger.info(f"Task number: {task_id}")
             enum_generator = [(task_id, list(generator)[task_id])]
@@ -221,7 +225,7 @@ def main(args: Dict[str, Any]):
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'])
+        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'], args['test_mode'])
 
         counts = {
             'train': {
@@ -350,10 +354,20 @@ if __name__ == '__main__':
         type=str
     )
 
+    parser.add_argument(
+        "--test-mode",
+        help="When testing the results test one individual against the train set or against the other members of the "
+             "test set",
+        default="compare_test",
+        choices=["compare_test", "compare_train"],
+        type=str
+    )
+
     # See if we are running in a SLURM task array
     array_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
 
-    arguments = vars(parser.parse_known_args()[0])
+    arguments, unknown = parser.parse_known_args()
+    arguments = vars(arguments)
 
     if not os.path.exists(arguments['results_path']):
         os.makedirs(arguments['results_path'])
@@ -362,6 +376,9 @@ if __name__ == '__main__':
 
     logger.debug("Script starts")
     logger.debug(arguments)
+
+    if len(unknown) > 0:
+        logger.warning(f"Warning: there are unknown arguments {unknown}")
 
     if arguments['batch_size'] < 2:
         logger.error("Batch size is too small! It should be at least 2. Exiting")
