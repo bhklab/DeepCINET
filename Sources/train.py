@@ -151,6 +151,8 @@ def select_model(model_key: str, gpu_level: int) -> models.BasicSiamese:
         return models.ImageScalarSiamese(gpu_level)
     elif model_key == "ScalarOnlySiamese":
         return models.ScalarOnlySiamese(gpu_level)
+    elif model_key == "VolumeOnlySiamese":
+        return models.VolumeOnlySiamese()
     else:
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
@@ -343,7 +345,7 @@ if __name__ == '__main__':
         "--model",
         help="Choose the model that you want to use for training",
         default="SimpleImageSiamese",
-        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese'],
+        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese', 'VolumeOnlySiamese'],
         type=str
     )
 

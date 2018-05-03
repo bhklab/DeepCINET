@@ -629,12 +629,10 @@ class ImageScalarSiamese(BasicImageSiamese):
 class ScalarOnlySiamese(BasicSiamese):
 
     def __init__(self, gpu_level: int = 0, regularization_factor: float = 0.01):
-        self._gpu_level = gpu_level
-
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
         self._reg_factor = regularization_factor
 
-        super().__init__()
+        super().__init__(gpu_level=gpu_level)
 
     def _sister(self):
         # Out: [batch, 500]
@@ -698,4 +696,37 @@ class ScalarOnlySiamese(BasicSiamese):
         :return: :any:`False` since this model does not use images to work
         """
         return False
+
+
+class VolumeOnlySiamese(BasicSiamese):
+
+    def __init__(self):
+        self.x_volume = tf.placeholder(tf.float32, [None, 1])
+
+        super().__init__()
+
+    def _sister(self) -> tf.Tensor:
+        """
+        Super greedy predictor, more volume means less survival time so we only have to invert the volume size to
+        create an inverse relation. This model does not have trainable variables
+
+        :return: Greedy siamese applied
+        """
+        w = tf.Variable(-1., name="weight")
+        b = tf.Variable(0., name="bias")
+        return w*self.x_volume + b
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+
+        volumes = batch.features[:, settings.VOLUME_FEATURE_INDEX].reshape((-1, 1))
+
+        return {
+            **super().feed_dict(batch, training),
+            self.x_volume: volumes
+        }
+
+    def uses_images(self):
+        return False
+
+
 
