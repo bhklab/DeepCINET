@@ -63,7 +63,7 @@ class PairBatch(NamedTuple):
     """
     pairs_a: List[int]
     pairs_b: List[int]
-    labels: List[float]
+    labels: np.ndarray
     # TODO: Fix the status with the images
     images: np.ndarray
     features: np.ndarray

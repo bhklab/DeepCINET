@@ -226,6 +226,8 @@ class BatchData:
         labels = [float(l) for p in pairs for l in [p.comp]*total_rotations]
         assert len(pairs_a) == len(pairs_b) == len(labels)
 
+        labels = np.array(labels).reshape((-1, 1))
+
         df = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
         df = df.sub(df.mean(axis=1), axis=0)
         df = df.div(df.std(axis=1), axis=0)

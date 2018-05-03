@@ -30,18 +30,32 @@ class BasicModel:
         """
 
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
-        self.y = tf.placeholder(tf.float32, [None], name="Y")
-        self._y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
+        self.y = tf.placeholder(tf.float32, [None, 1    ], name="Y")
 
         #: **Attribute**: Placeholder to tell the model if we are training (:any:`True`) or not (:any:`False`)
         self.training = tf.placeholder(tf.bool, shape=(), name="Training")
 
         #: **Attribute**: Probability of :math:`\hat{y} = 1`
-        self.y_prob = self._model()
+        self.y_prob = self._model()  # This method is inherited and modified by its inheritors
 
         #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicModel.y_prob` and
         #: :any:`BasicSiamese.THRESHOLD`
         self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
+
+        with tf.variable_scope("loss"):
+            self._classification_loss = tf.losses.log_loss(self.y, self.y_prob, scope="classification_loss")
+            self._regularization_loss = tf.losses.get_regularization_loss()
+            self._total_loss = tf.add(self._classification_loss, self._regularization_loss, name="final_loss")
+
+        with tf.variable_scope("c-index"):
+            y_bool = tf.greater_equal(self.y, self.THRESHOLD)
+            equals = tf.equal(y_bool, self.y_estimate)
+
+            self._good_predictions = tf.cast(tf.count_nonzero(equals), tf.float32)
+
+            with tf.variable_scope("batch_size"):
+                batch_size = tf.cast(tf.shape(self.y, name="y_shape")[0], tf.float32, name="cast")
+            self._c_index = self._good_predictions/batch_size
 
     @abc.abstractmethod
     def _model(self) -> tf.Tensor:
@@ -75,13 +89,13 @@ class BasicModel:
                  the c-index we only have to divide by the batch size
         """
         # y ∈ {0, 1}   y_estimate ∈ {True, False}
-        y_bool = tf.greater_equal(self._y, self.THRESHOLD)
-        equals = tf.equal(y_bool, self.y_estimate)
-
-        return tf.cast(tf.count_nonzero(equals), tf.float32)
+        return self._good_predictions
 
     def classification_loss(self) -> tf.Tensor:
-        return tf.losses.log_loss(self._y, self.y_prob)
+        return self._classification_loss
+
+    def regularization_loss(self) -> tf.Tensor:
+        return self._regularization_loss
 
     def loss(self) -> tf.Tensor:
         r"""
@@ -96,7 +110,7 @@ class BasicModel:
 
         :return: Scalar tensor with the negative log loss function for the model computed.
         """
-        return self.classification_loss() + tf.losses.get_regularization_loss()
+        return self._total_loss
 
     def c_index(self) -> tf.Tensor:
         r"""
@@ -108,8 +122,7 @@ class BasicModel:
 
         :return: c-index tensor
         """
-        batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
-        return self.good_predictions_count()/batch_size
+        return self._c_index
 
     @abc.abstractmethod
     def uses_images(self) -> bool:
@@ -198,14 +211,18 @@ class BasicSiamese(BasicModel):
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for contrastive loss")
         with tf.device(device):
-            self.gathered_a = tf.gather(sister_out, self.pairs_a, name="contrastive_gather_a")
-            self.gathered_b = tf.gather(sister_out, self.pairs_b, name="contrastive_gather_b")
+            with tf.variable_scope("contrastive_loss"):
+                self.gathered_a = tf.gather(sister_out, self.pairs_a, name="gather_a")
+                self.gathered_b = tf.gather(sister_out, self.pairs_b, name="gather_b")
 
-            self.gathered_a = tf.reduce_sum(tf.square(self.gathered_a), 1, keepdims=True)
-            self.gathered_b = tf.reduce_sum(tf.square(self.gathered_b), 1, keepdims=True)
+                self.gathered_a = tf.square(self.gathered_a, name="square_a")
+                self.gathered_b = tf.square(self.gathered_b, name="square_b")
 
-            sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
-            return tf.sigmoid(10*sub, name="contrastive_sigmoid")
+                self.gathered_a = tf.reduce_sum(self.gathered_a, 1, keepdims=True, name="reduce_b")
+                self.gathered_b = tf.reduce_sum(self.gathered_b, 1, keepdims=True, name="reduce_a")
+
+                sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
+                return tf.sigmoid(10*sub, name="contrastive_sigmoid")
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         return {

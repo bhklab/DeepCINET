@@ -161,7 +161,7 @@ def get_tensors(siamese_model: models.BasicSiamese) -> Dict[str, tf.Tensor]:
     tensors = {
         'loss': siamese_model.loss(),
         'classification_loss': siamese_model.classification_loss(),
-        'regularization_loss': siamese_model.loss() - siamese_model.classification_loss(),
+        'regularization_loss': siamese_model.regularization_loss(),
         'c-index': siamese_model.c_index(),
         'true-predictions': siamese_model.good_predictions_count(),
         'predictions': siamese_model.y_estimate,
