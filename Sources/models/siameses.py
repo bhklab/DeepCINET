@@ -611,7 +611,7 @@ class ImageScalarSiamese(BasicImageSiamese):
 
 class ScalarOnlySiamese(BasicSiamese):
 
-    def __init__(self, gpu_level: int = 0, regularization_factor: float = 0.000001):
+    def __init__(self, gpu_level: int = 0, regularization_factor: float = 0.01):
         self._gpu_level = gpu_level
 
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
@@ -635,11 +635,11 @@ class ScalarOnlySiamese(BasicSiamese):
             "fc2"
         )
 
-        # x = tf.layers.dropout(
-        #     x,
-        #     rate=.1,
-        #     training=self.training
-        # )
+        x = tf.layers.dropout(
+            x,
+            rate=.2,
+            training=self.training
+        )
 
         # Out: [batch, 50]
         x = self._dense(
@@ -664,7 +664,7 @@ class ScalarOnlySiamese(BasicSiamese):
             units=units,
             activation=activation,
             kernel_initializer=tf.contrib.layers.xavier_initializer(),
-            kernel_regularizer=tf.contrib.layers.l1_regularizer(self._reg_factor),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._reg_factor),
             name=name
         )
 
