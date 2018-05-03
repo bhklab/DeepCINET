@@ -71,5 +71,5 @@ else:
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
-# The total number of features that are provided by the CSV of radiomic features
+#: The total number of features that are provided by the CSV of radiomic features
 NUMBER_FEATURES = 725

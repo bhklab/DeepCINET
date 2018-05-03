@@ -5,7 +5,7 @@ To do so a Siamese network will be used. Two individuals will be used as an inpu
 should predict which one will live longer.
 
 More documentation can be found in the documentation page:
-https://jmigual.github.io/CNNSurv/index.html
+[https://jmigual.github.io/CNNSurv](https://jmigual.github.io/CNNSurv)
 
 ## Installation
 

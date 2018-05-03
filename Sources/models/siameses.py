@@ -21,7 +21,7 @@ class BasicModel:
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
     """
-    #: Threshold in when considering a float number between ``0`` and ``1`` a :any:`True` value for classification
+    #: Threshold to cast a float number between ``0`` and ``1`` to a :any:`True` value for classification
     THRESHOLD = .5
 
     def __init__(self):
@@ -33,10 +33,13 @@ class BasicModel:
         self.y = tf.placeholder(tf.float32, [None], name="Y")
         self._y = tf.reshape(self.y, [-1, 1], name="Y_reshape")
 
+        #: **Attribute**: Placeholder to tell the model if we are training (:any:`True`) or not (:any:`False`)
+        self.training = tf.placeholder(tf.bool, shape=(), name="Training")
+
         #: **Attribute**: Probability of :math:`\hat{y} = 1`
         self.y_prob = self._model()
 
-        #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicSiamese.y_prob` and
+        #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicModel.y_prob` and
         #: :any:`BasicSiamese.THRESHOLD`
         self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
@@ -49,16 +52,19 @@ class BasicModel:
         :return: Tensor with shape ``[batch, 1]`` with the probability of single class classification.
         """
 
-    def feed_dict(self, batch: data.PairBatch) -> Dict:
+    def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         """
         Get the ``feed_dict`` required by Tensorflow when calling ``sess.run(...)``. Classes that inherit
         :class:`BasicModel` should reimplement this function
 
-        :param batch: Information about the batch, usually provided by :method:`BatchData.batches`
+        :param batch: Information about the batch, usually provided by :func:`BatchData.batches`
+        :param training: Whether we are training or not. Useful for training layers like dropout where we do not
+                         want to apply dropout if we are not training
         :return: Dictionary that can be feed to the ``feed_dict`` parameter of ``sess.run(...)``.
         """
         return {
-            self.y: batch.labels
+            self.y: batch.labels,
+            self.training: training
         }
 
     def good_predictions_count(self) -> tf.Tensor:
@@ -74,6 +80,9 @@ class BasicModel:
 
         return tf.cast(tf.count_nonzero(equals), tf.float32)
 
+    def classification_loss(self) -> tf.Tensor:
+        return tf.losses.log_loss(self._y, self.y_prob)
+
     def loss(self) -> tf.Tensor:
         r"""
         Loss function for the model. It uses the negative log loss function:
@@ -87,7 +96,7 @@ class BasicModel:
 
         :return: Scalar tensor with the negative log loss function for the model computed.
         """
-        return tf.losses.log_loss(self._y, self.y_prob) + tf.losses.get_regularization_loss()
+        return self.classification_loss() + tf.losses.get_regularization_loss()
 
     def c_index(self) -> tf.Tensor:
         r"""
@@ -102,6 +111,15 @@ class BasicModel:
         batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
         return self.good_predictions_count()/batch_size
 
+    @abc.abstractmethod
+    def uses_images(self) -> bool:
+        """
+        Tells us if the model uses images. If it does not use images then loading images from disk can be avoided.
+        This can have a huge performance boos since loading images from disk is a slow operation.
+
+        :return: :any:`True` if the model needs images to work, otherwise returns :any:`False`
+        """
+
 
 class BasicSiamese(BasicModel):
     """
@@ -109,12 +127,16 @@ class BasicSiamese(BasicModel):
     contrastive loss.
 
     :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
-    :var BasicSiamese.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
     :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
     :vartype BasicSiamese.y: tf.Tensor
     :vartype BasicSiamese.pairs_a: tf.Tensor
     :vartype BasicSiamese.pairs_b: tf.Tensor
+    :vartype BasicSiamese.gathered_a: tf.Tensor
+    :vartype BasicSiamese.gathered_b: tf.Tensor
     """
 
     def __init__(self, gpu_level: int = 0):
@@ -132,11 +154,17 @@ class BasicSiamese(BasicModel):
         #: **Attribute**: Placeholder for the indices of the second pairs (B)
         self.pairs_b = tf.placeholder(tf.int32, [None], name="pairs_b")
 
+        #: **Attribute**: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
+        self.gathered_a = None
+
+        #: **Attribute**: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
+        self.gathered_b = None
+
         super().__init__()
 
     def _model(self) -> tf.Tensor:
         """
-        Implementation of :method:`BasicModel._model`
+        Implementation of :func:`BasicModel._model`
 
         :return: Tensor where a Siamese network has been applied to the input with shape ``[batch, 1]``
         """
@@ -170,15 +198,18 @@ class BasicSiamese(BasicModel):
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
         logger.debug(f"Using device: {device} for contrastive loss")
         with tf.device(device):
-            gathered_a = tf.gather(sister_out, self.pairs_a, name="contrastive_gather_a")
-            gathered_b = tf.gather(sister_out, self.pairs_b, name="contrastive_gather_b")
+            self.gathered_a = tf.gather(sister_out, self.pairs_a, name="contrastive_gather_a")
+            self.gathered_b = tf.gather(sister_out, self.pairs_b, name="contrastive_gather_b")
 
-            sub = tf.subtract(gathered_a, gathered_b, name="contrastive_sub")
+            self.gathered_a = tf.reduce_sum(tf.square(self.gathered_a), 1, keepdims=True)
+            self.gathered_b = tf.reduce_sum(tf.square(self.gathered_b), 1, keepdims=True)
+
+            sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
             return tf.sigmoid(10*sub, name="contrastive_sigmoid")
 
-    def feed_dict(self, batch: data.PairBatch) -> Dict:
+    def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         return {
-            **super().feed_dict(batch),
+            **super().feed_dict(batch, training),
             self.pairs_a: batch.pairs_a,
             self.pairs_b: batch.pairs_b,
         }
@@ -191,8 +222,8 @@ class BasicImageSiamese(BasicSiamese):
 
     The model has some tensors that need to be fed when using ``sess.run(...)``:
 
-    :var BasicSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
-    :var BasicSiamese.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
     :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
     :vartype BasicSiamese.x_image: tf.Tensor
@@ -246,24 +277,34 @@ class BasicImageSiamese(BasicSiamese):
         :return: Tensor with shape ``[batch, 1]``
         """
 
-    def feed_dict(self, batch: data.PairBatch) -> Dict:
+    def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         """
         Method to create the ``feed_dict`` required by Tensorflow when passing the data. Classes that inherit
         :class:`BasicSiamese` must re-implement this method if they use different tensors than:
 
-            - :any:`BasicSiamese.x_image`
-            - :any:`BasicSiamese.y`
+            - :any:`BasicImageSiamese.x_image`
+            - :any:`BasicModel.y`
             - :any:`BasicSiamese.pairs_a`
             - :any:`BasicSiamese.pairs_b`
 
         :param batch: Data containing for the current batch, usually this would be generated by
                       :func:`~BatchData.batches`
+        :param training: Whether we are training or not. Useful for training layers like dropout where we do not
+                         want to apply dropout if we are not training
         :return: Return the ``feed_dict`` as a dictionary
         """
         return {
-            **super().feed_dict(batch),
+            **super().feed_dict(batch, training=training),
             self.x_image: batch.images
         }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`.
+
+        :return: :any:`True`, the model uses images as input to work
+        """
+        return True
 
 
 class SimpleImageSiamese(BasicImageSiamese):
@@ -552,23 +593,25 @@ class ImageScalarSiamese(BasicImageSiamese):
             name=name
         )
 
-    def feed_dict(self, batch: data.PairBatch) -> Dict:
+    def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         """
         Re-implementation of :func:`~BasicSiamese.feed_dict` to create a custom dict including the scalar values
 
         :param batch: Data containing for the current batch, usually this would be generated by
                       :func:`~BatchData.batches`
+        :param training: Whether we are training or not. Useful for training layers like dropout where we do not
+                         want to apply dropout if we are not training
         :return: Return the ``feed_dict`` as a dictionary
         """
         return {
-            **super().feed_dict(batch),
+            **super().feed_dict(batch, training=training),
             self.x_scalar: batch.features
         }
 
 
 class ScalarOnlySiamese(BasicSiamese):
 
-    def __init__(self, gpu_level: int = 0, regularization_factor: int = 0.001):
+    def __init__(self, gpu_level: int = 0, regularization_factor: float = 0.01):
         self._gpu_level = gpu_level
 
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
@@ -578,8 +621,9 @@ class ScalarOnlySiamese(BasicSiamese):
 
     def _sister(self):
         # Out: [batch, 500]
+        x = self.x_scalar
         x = self._dense(
-            self.x_scalar,
+            x,
             500,
             "fc1"
         )
@@ -589,6 +633,12 @@ class ScalarOnlySiamese(BasicSiamese):
             x,
             200,
             "fc2"
+        )
+
+        x = tf.layers.dropout(
+            x,
+            rate=.2,
+            training=self.training
         )
 
         # Out: [batch, 50]
@@ -601,8 +651,9 @@ class ScalarOnlySiamese(BasicSiamese):
         # Out: [batch, 1]
         x = self._dense(
             x,
-            1,
-            "fc4"
+            10,
+            "fc4",
+            activation=tf.nn.relu
         )
 
         return x
@@ -617,9 +668,22 @@ class ScalarOnlySiamese(BasicSiamese):
             name=name
         )
 
-    def feed_dict(self, batch: data.PairBatch):
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
         return {
-            **super().feed_dict(batch),
-            self.x_scalar: batch.features
+            **super().feed_dict(batch, training),
+            self.x_scalar: batch.features,
         }
+
+    # def loss(self):
+    #     batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
+    #     class_loss = tf.reduce_sum((2*(1 - self._y) - 1)*(2*self.y_prob - 1))/batch_size
+    #     return class_loss + tf.losses.get_regularization_loss()
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
 
