@@ -350,10 +350,20 @@ if __name__ == '__main__':
         type=str
     )
 
+    parser.add_argument(
+        "--test-mode",
+        help="When testing the results test one individual against the train set or against the other members of the "
+             "test set",
+        default="compare_test",
+        choices=["compare_test", "compare_train"],
+        type=str
+    )
+
     # See if we are running in a SLURM task array
     array_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
 
-    arguments = vars(parser.parse_known_args()[0])
+    arguments, unknown = parser.parse_known_args()
+    arguments = vars(arguments)
 
     if not os.path.exists(arguments['results_path']):
         os.makedirs(arguments['results_path'])
@@ -362,6 +372,9 @@ if __name__ == '__main__':
 
     logger.debug("Script starts")
     logger.debug(arguments)
+
+    if len(unknown) > 0:
+        logger.warning(f"Warning: there are unknown arguments {unknown}")
 
     if arguments['batch_size'] < 2:
         logger.error("Batch size is too small! It should be at least 2. Exiting")
