@@ -674,11 +674,6 @@ class ScalarOnlySiamese(BasicSiamese):
             self.x_scalar: batch.features,
         }
 
-    # def loss(self):
-    #     batch_size = tf.cast(tf.shape(self._y)[0], tf.float32, name="batch_size_cast")
-    #     class_loss = tf.reduce_sum((2*(1 - self._y) - 1)*(2*self.y_prob - 1))/batch_size
-    #     return class_loss + tf.losses.get_regularization_loss()
-
     def uses_images(self) -> bool:
         """
         Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
