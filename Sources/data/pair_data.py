@@ -5,7 +5,6 @@ from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List
 
 import numpy as np
 import pandas as pd
-import scipy
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
 from data.data_structures import PairComp, PairBatch
@@ -32,29 +31,34 @@ class SplitPairs:
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
 
-    def folds(self, n_folds: int = 4) -> Iterator[Tuple[List[PairComp], List[PairComp]]]:
+    def folds(self, n_folds: int = 4, compare_train: bool = False) -> Iterator[Tuple[List[PairComp], List[PairComp]]]:
         """
         Creates different folds of data for use with CV
 
         :param n_folds: Number of folds to be created
+        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
+                              test set and the other one to the train set
         :return: Generator yielding a train/test pair
         """
         skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
 
         for train_ids, test_ids in skf.split(self.total_x, self.total_y):
-            yield self._create_train_test(train_ids, test_ids)
+            yield self._create_train_test(train_ids, test_ids, compare_train=compare_train)
 
-    def train_test_split(self, test_size: float = .25) -> Tuple[List[PairComp], List[PairComp]]:
+    def train_test_split(self, test_size: float = .25, compare_train: bool = False) \
+            -> Tuple[List[PairComp], List[PairComp]]:
         """
         Split data in train/test with the specified proportion
 
         :param test_size: ``float`` between ``0`` and ``1`` with the test set size
+        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
+                              test set and the other one to the train set
         :return: Tuple with the train set and the test set
         """
         rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_SEED)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
-        return self._create_train_test(train_ids, test_ids)
+        return self._create_train_test(train_ids, test_ids, compare_train=compare_train)
 
     def _create_train_test(self, train_ids: List[int], test_ids: List[int], compare_train: bool = False) -> \
             Tuple[List[PairComp], List[PairComp]]:
@@ -88,7 +92,7 @@ class SplitPairs:
         :param df: DataFrame containing all the clinical data
         :return: Iterator over PairComp with all the generated pairs
         """
-        pairs = SplitPairs._get_inner_pairs(df.iterrows(), df[df['event'] == 1])
+        pairs = SplitPairs._get_inner_pairs(df, df)
 
         # Since we have provided all the pairs sorted in the algorithm the output will be always
         # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
@@ -107,25 +111,30 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         # Create the pairs where test_elem > train_elem
-        pairs = SplitPairs._get_inner_pairs(test_df.iterrows(), train_df[train_df['event'] == 1])
+        pairs = SplitPairs._get_inner_pairs(test_df, train_df)
 
         # Create the pairs where train_elem > test_elem
-        pairs += SplitPairs._get_inner_pairs(train_df.iterrows(), test_df[test_df['event'] == 1])
+        pairs += SplitPairs._get_inner_pairs(train_df, test_df)
+        random.shuffle(pairs)
+
+        return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
-    def _get_inner_pairs(df_it: Iterator, df1: pd.DataFrame) -> List[PairComp]:
+    def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> List[PairComp]:
         """
         Generate the pairs by iterating through a :class:`DataFrame` and for each element create pairs for all elements
         that have a survival time bigger than :param:`df1`.
 
-        :param df_it: :class:`DataFrame` iterator that will be iterated
-        :param df1: :class:`DataFrame` that will be compared against and if its values are smaller than the compared
+        :param df: :class:`DataFrame` that will be iterated
+        :param df_comp: :class:`DataFrame` that will be compared against and if its values are smaller than the compared
                     value a pair will be created
         :return: List with all the generated pairs
         """
+        df_comp = df_comp[df_comp['event'] == 1]
+
         pairs = []
-        for _, row in df_it:
-            values = df1.loc[(df1['time'] < row['time']), 'id'].values
+        for _, row in df.iterrows():
+            values = df_comp.loc[(df_comp['time'] < row['time']), 'id'].values
             elems = zip(values, [row['id']]*len(values), [True]*len(values))
             pairs += [PairComp(*x) for x in elems]
 

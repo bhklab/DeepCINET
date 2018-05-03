@@ -194,13 +194,14 @@ def get_sets_generator(cv_folds: int, test_size: int, test_mode: str) \
 
     # Decide whether to use CV or only a single test/train sets
     if cv_folds < 2:
-        enum_generator = enumerate([dataset.train_test_split(test_size)])
+        generator = dataset.train_test_split(test_size, compare_train=(test_mode == "compare_train"))
+        enum_generator = (0, generator)
     else:
-        generator = dataset.folds(cv_folds)
+        generator = dataset.folds(cv_folds, compare_train=(test_mode == "compare_train"))
 
-        total_tasks = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+        # Slurm configuration
         task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
-        if total_tasks == cv_folds:
+        if int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0)) == cv_folds:
             task_id = int(task_id)
             logger.info(f"Task number: {task_id}")
             enum_generator = [(task_id, list(generator)[task_id])]
