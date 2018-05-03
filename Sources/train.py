@@ -338,7 +338,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "--model",
         help="Choose the model that you want to use for training",
-        default="SimpleSiamese",
+        default="SimpleImageSiamese",
         choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese'],
         type=str
     )
