@@ -32,31 +32,6 @@ class SplitPairs:
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
 
-        self._train_data = pd.DataFrame()
-        self._test_data = pd.DataFrame()
-
-    def print_pairs(self, data_augmentation: bool = True):
-        """
-        Print the number of possible pairs for the train and test sets
-
-        :param data_augmentation: If data augmentation should be taken into account when counting the number of pairs
-        """
-        test_pairs_cens, test_pairs_uncens = self._possible_pairs(self._test_data, data_augmentation)
-        train_pairs_cens, train_pairs_uncens = self._possible_pairs(self._train_data, data_augmentation)
-
-        values = [
-            ["Test", test_pairs_cens, test_pairs_uncens],
-            ["Train", train_pairs_cens, train_pairs_uncens]
-        ]
-
-        df = pd.DataFrame(values, columns=["Set", "Censored", "Uncensored"])
-        df = df.append(df.sum(axis=0), ignore_index=True)
-        df['Total'] = df.sum(axis=1)
-        df.loc[df['Set'] == "TestTrain", 'Set'] = "Total"
-
-        logger.info("Maximum number of pairs")
-        logger.info(df)
-
     def folds(self, n_folds: int = 4) -> Iterator[Tuple[List[PairComp], List[PairComp]]]:
         """
         Creates different folds of data for use with CV
@@ -91,36 +66,13 @@ class SplitPairs:
         :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
         :return: List for the train set and list for the test set respectively
         """
-        self._train_data = self.clinical_data.iloc[train_ids]
-        self._test_data = self.clinical_data.iloc[test_ids]
+        train_data = self.clinical_data.iloc[train_ids]
+        test_data = self.clinical_data.iloc[test_ids]
 
-        train_pairs = self._get_pairs(self._train_data)
-        test_pairs = self._get_pairs(self._test_data)
+        train_pairs = self._get_pairs(train_data)
+        test_pairs = self._get_pairs(test_data)
 
         return list(train_pairs), list(test_pairs)
-
-    @staticmethod
-    def _possible_pairs(df: pd.DataFrame, data_augmentation=True) -> Tuple[int, int]:
-        """
-        Counts the number of possible pairs that can be generated (maximum límit)
-
-        :param df: Pandas data frame containing all the data, it should have at least the columns ``event`` and ``id``
-        :param data_augmentation: If data augmentation should be taken into account when counting the values.
-                                  The results will be multiplied by the ``TOTAL_ROTATIONS`` value
-        :return: Count with the number of possible censored pairs and the possible uncensored pairs
-        """
-        count = df.groupby('event').count()['id']
-        censored_count = count[0]
-        uncensored_count = count[1]
-
-        censored_pairs = censored_count*uncensored_count
-        uncensored_pairs = scipy.misc.comb(uncensored_count, 2, exact=True)
-        if data_augmentation:
-            # For now we will only be using 4 rotations in one axis to avoid having too much data
-            censored_pairs *= TOTAL_ROTATIONS
-            uncensored_pairs *= TOTAL_ROTATIONS
-
-        return censored_pairs, uncensored_pairs
 
     @staticmethod
     def _get_pairs(df: pd.DataFrame) -> Iterator[PairComp]:
