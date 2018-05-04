@@ -137,20 +137,22 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.DataFrame(result_data)
 
 
-def select_model(model_key: str, gpu_level: int) -> models.BasicSiamese:
+def select_model(model_key: str, gpu_level: int, regularization: float, dropout: float) -> models.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
     :param model_key: String key to select the model
     :param gpu_level: Amount of GPU to be used, required to create a model's instance
+    :param regularization: Regularization factor to be used
+    :param dropout: Amount of dropout to be used with the model
     :return: Instance of `models.BasicSiamese` with the proper subclass selected
     """
     if model_key == "SimpleImageSiamese":
         return models.SimpleImageSiamese(gpu_level)
     elif model_key == "ImageScalarSiamese":
-        return models.ImageScalarSiamese(gpu_level)
+        return models.ImageScalarSiamese(gpu_level, regularization, dropout=dropout)
     elif model_key == "ScalarOnlySiamese":
-        return models.ScalarOnlySiamese(gpu_level)
+        return models.ScalarOnlySiamese(gpu_level, regularization, dropout=dropout)
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese()
     else:
@@ -220,7 +222,7 @@ def main(args: Dict[str, Any]):
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
 
-    siamese_model = select_model(args['model'], args['gpu_level'])
+    siamese_model = select_model(args['model'], args['gpu_level'], args['regularization'], args['dropout'])
     tensors = get_tensors(siamese_model, args['learning_rate'])
 
     conf = tf.ConfigProto()
@@ -370,6 +372,21 @@ if __name__ == '__main__':
         help="Optimizer (adam) learning rate",
         default=0.001,
         type=float
+    )
+
+    parser.add_argument(
+        "--regularization",
+        help="Regularization factor to apply",
+        default=0.01,
+        type=float
+    )
+
+    parser.add_argument(
+        "--dropout",
+        help="Dropout probability to use",
+        default=0.2,
+        type=float,
+        choices=[utils.ArgRange(0., 1.)]
     )
 
     # See if we are running in a SLURM task array

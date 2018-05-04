@@ -24,16 +24,25 @@ class BasicModel:
     #: Threshold to cast a float number between ``0`` and ``1`` to a :any:`True` value for classification
     THRESHOLD = .5
 
-    def __init__(self):
+    def __init__(self, regularization: float = .001, dropout: float = .2):
         """
         Construct a BasicModel. This model is a basic structure to create a classification model.
+
+        :param regularization: Regularization factor
+        :param dropout: Dropout probability
         """
 
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
-        self.y = tf.placeholder(tf.float32, [None, 1    ], name="Y")
+        self.y = tf.placeholder(tf.float32, [None, 1], name="Y")
 
         #: **Attribute**: Placeholder to tell the model if we are training (:any:`True`) or not (:any:`False`)
         self.training = tf.placeholder(tf.bool, shape=(), name="Training")
+
+        #: **Attribute**: Regularization factor
+        self._regularization = regularization
+
+        #: **Attribute**: Dropout probability
+        self._dropout = dropout
 
         #: **Attribute**: Probability of :math:`\hat{y} = 1`
         self.y_prob = self._model()  # This method is inherited and modified by its inheritors
@@ -152,11 +161,13 @@ class BasicSiamese(BasicModel):
     :vartype BasicSiamese.gathered_b: tf.Tensor
     """
 
-    def __init__(self, gpu_level: int = 0):
+    def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2):
         """
         Construct a BasicSiamese model.
 
         :param gpu_level: Amount of GPU to be used with the model
+        :param regularization: Regularization factor
+        :param dropout: Dropout probability
         """
         #: **Attribute**: Amount of GPU to be used with the model
         self._gpu_level = gpu_level
@@ -173,7 +184,7 @@ class BasicSiamese(BasicModel):
         #: **Attribute**: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
         self.gathered_b = None
 
-        super().__init__()
+        super().__init__(regularization=regularization, dropout=dropout)
 
     def _model(self) -> tf.Tensor:
         """
@@ -249,16 +260,18 @@ class BasicImageSiamese(BasicSiamese):
     :vartype BasicSiamese.pairs_b: tf.Tensor
     """
 
-    def __init__(self, gpu_level: int = 0):
+    def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2):
         """
         Construct a BasicSiamese model.
 
         :param gpu_level: Amount of GPU to be used with the model
+        :param regularization: Regularization factor
+        :param dropout: Dropout probability
         """
         #: **Attribute**: Placeholder for the image input, it has shape ``[batch, 64, 64, 64, 1]``
         self.x_image = tf.placeholder(tf.float32, [None, 64, 64, 64, 1], name="X")
 
-        super().__init__(gpu_level=gpu_level)
+        super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout)
 
     def _sister(self) -> tf.Tensor:
         """
@@ -469,19 +482,21 @@ class ImageScalarSiamese(BasicImageSiamese):
         - 1 unit, activation ReLu
     """
 
-    def __init__(self, gpu_level: int = 0, regularization_factor: int = 0.001):
+    def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2):
         """
         Initialize a ScalarSiamese model. This model uses scalar features extracted with PyRadiomics and
         provided through a CSV file in the dataset, the model assumes that there are :any:`settings.NUMBER_FEATURES`
         for each input.
 
         :param gpu_level: Amount of GPU that should be used with the model
-        :param regularization_factor: Regularization factor for the weights
+        :param regularization: Regularization factor for the weights
+        :param dropout: Dropout probability
         """
-        self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
-        self._reg_factor = regularization_factor
 
-        super().__init__(gpu_level=gpu_level)
+        #: **Attribute**: Scalar features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
+
+        super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout)
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
         """
@@ -596,7 +611,7 @@ class ImageScalarSiamese(BasicImageSiamese):
             strides=strides,
             activation=tf.nn.relu,
             kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
-            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._reg_factor),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
             name=name
         )
 
@@ -628,11 +643,10 @@ class ImageScalarSiamese(BasicImageSiamese):
 
 class ScalarOnlySiamese(BasicSiamese):
 
-    def __init__(self, gpu_level: int = 0, regularization_factor: float = 0.01):
+    def __init__(self, gpu_level: int = 0, regularization: float = 0.01, dropout: float = 0.2):
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
-        self._reg_factor = regularization_factor
 
-        super().__init__(gpu_level=gpu_level)
+        super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout)
 
     def _sister(self):
         # Out: [batch, 500]
@@ -679,7 +693,7 @@ class ScalarOnlySiamese(BasicSiamese):
             units=units,
             activation=activation,
             kernel_initializer=tf.contrib.layers.xavier_initializer(),
-            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._reg_factor),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
             name=name
         )
 

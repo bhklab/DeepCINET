@@ -110,3 +110,18 @@ def _select_time_age(clinical_info: pd.DataFrame, results: pd.DataFrame) -> pd.D
                    'gather_a', 'gather_b']]
     merge = merge.rename(index=str, columns={'age': 'age_b', 'time': 'time_b'})
     return merge
+
+
+class ArgRange:
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    def __eq__(self, other):
+        return self.start <= other <= self.end
+
+    def __contains__(self, item):
+        return self.__eq__(item)
+
+    def __repr__(self):
+        return f"{self.start} - {self.end}"
