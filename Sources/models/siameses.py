@@ -568,7 +568,7 @@ class ImageScalarSiamese(BasicImageSiamese):
         """
 
         #: **Attribute**: Scalar features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
-        self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
+        self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES], name="radiomic_features")
 
         super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout)
 
@@ -664,16 +664,28 @@ class ImageScalarSiamese(BasicImageSiamese):
             # Out: [batch, 100]
             x = self._dense(
                 x=x,
-                units=100,
+                units=500,
                 name="fc2"
             )
 
-            # Out: [batch, 1]
+            x = tf.layers.dropout(
+                x,
+                rate=self._dropout,
+                training=self.training
+            )
+
             x = self._dense(
                 x=x,
-                units=1,
-                activation=tf.nn.relu,
+                units=100,
                 name="fc3"
+            )
+
+            # Out: [batch, 10]
+            x = self._dense(
+                x=x,
+                units=10,
+                activation=tf.nn.relu,
+                name="fc4"
             )
         return x
 
@@ -769,7 +781,7 @@ class ScalarOnlySiamese(BasicSiamese):
 
         x = tf.layers.dropout(
             x,
-            rate=.2,
+            rate=self._dropout,
             training=self.training
         )
 
