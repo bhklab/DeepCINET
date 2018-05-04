@@ -17,9 +17,13 @@ class BasicModel:
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel._regularization: Regularization factor
+    :var BasicModel._dropout: Dropout probability
     :vartype BasicModel.y: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel._regularization: float
+    :vartype BasicModel._dropout: float
     """
     #: Threshold to cast a float number between ``0`` and ``1`` to a :any:`True` value for classification
     THRESHOLD = .5
@@ -48,7 +52,7 @@ class BasicModel:
         self.y_prob = self._model()  # This method is inherited and modified by its inheritors
 
         #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicModel.y_prob` and
-        #: :any:`BasicSiamese.THRESHOLD`
+        #: :any:`BasicModel.THRESHOLD`
         self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
         with tf.variable_scope("loss"):
@@ -148,17 +152,26 @@ class BasicSiamese(BasicModel):
     Class representing a basic siamese structure. It contains a few convolutional layers and then the
     contrastive loss.
 
-    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
+    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel._regularization: Regularization factor
+    :var BasicModel._dropout: Dropout probability
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
     :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
     :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
     :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
-    :vartype BasicSiamese.y: tf.Tensor
+    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
+    :vartype BasicModel.y: tf.Tensor
+    :vartype BasicModel.y_prob: tf.Tensor
+    :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel._regularization: float
+    :vartype BasicModel._dropout: float
     :vartype BasicSiamese.pairs_a: tf.Tensor
     :vartype BasicSiamese.pairs_b: tf.Tensor
     :vartype BasicSiamese.gathered_a: tf.Tensor
     :vartype BasicSiamese.gathered_b: tf.Tensor
+    :vartype BasicSiamese._gpu_level: int
     """
 
     def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2):
@@ -248,16 +261,28 @@ class BasicImageSiamese(BasicSiamese):
     Class representing a basic siamese structure. It contains a few convolutional layers and then the
     contrastive loss.
 
-    The model has some tensors that need to be fed when using ``sess.run(...)``:
-
-    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
+    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel._regularization: Regularization factor
+    :var BasicModel._dropout: Dropout probability
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
     :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
-    :vartype BasicSiamese.x_image: tf.Tensor
-    :vartype BasicSiamese.y: tf.Tensor
+    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
+    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
+    :vartype BasicModel.y: tf.Tensor
+    :vartype BasicModel.y_prob: tf.Tensor
+    :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel._regularization: float
+    :vartype BasicModel._dropout: float
     :vartype BasicSiamese.pairs_a: tf.Tensor
     :vartype BasicSiamese.pairs_b: tf.Tensor
+    :vartype BasicSiamese.gathered_a: tf.Tensor
+    :vartype BasicSiamese.gathered_b: tf.Tensor
+    :vartype BasicSiamese._gpu_level: int
+    :vartype BasicImageSiamese.x_image: tf.Tensor
     """
 
     def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2):
@@ -353,6 +378,29 @@ class SimpleImageSiamese(BasicImageSiamese):
         - 100 units, activation ReLU
         - 50 units, activation ReLu
         - 1 unit, activation ReLu
+
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
+    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel._regularization: Regularization factor
+    :var BasicModel._dropout: Dropout probability
+    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
+    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
+    :vartype BasicModel.y: tf.Tensor
+    :vartype BasicModel.y_prob: tf.Tensor
+    :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel._regularization: float
+    :vartype BasicModel._dropout: float
+    :vartype BasicSiamese.pairs_a: tf.Tensor
+    :vartype BasicSiamese.pairs_b: tf.Tensor
+    :vartype BasicSiamese.gathered_a: tf.Tensor
+    :vartype BasicSiamese.gathered_b: tf.Tensor
+    :vartype BasicSiamese._gpu_level: int
+    :vartype BasicImageSiamese.x_image: tf.Tensor
     """
 
     def __init__(self, gpu_level: int = 0):
@@ -466,7 +514,8 @@ class SimpleImageSiamese(BasicImageSiamese):
 class ImageScalarSiamese(BasicImageSiamese):
     """
     This class creates a Siamese model that uses both images and scalar features extracted using
-    PyRadiomics. The features are not extracted by the model but they have to be provided in one of the placeholders
+    `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_.
+    The features are not extracted by the model but they have to be provided in one of the placeholders
 
     ** Network structure **
 
@@ -480,6 +529,32 @@ class ImageScalarSiamese(BasicImageSiamese):
         - 8000 units, activation tanh
         - 100 units, activation tanh
         - 1 unit, activation ReLu
+
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
+    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel._regularization: Regularization factor
+    :var BasicModel._dropout: Dropout probability
+    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
+    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
+    :var ImageScalarSiamese.x_scalar: Scalar features obtained with
+                                      `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    :vartype BasicModel.y: tf.Tensor
+    :vartype BasicModel.y_prob: tf.Tensor
+    :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel._regularization: float
+    :vartype BasicModel._dropout: float
+    :vartype BasicSiamese.pairs_a: tf.Tensor
+    :vartype BasicSiamese.pairs_b: tf.Tensor
+    :vartype BasicSiamese.gathered_a: tf.Tensor
+    :vartype BasicSiamese.gathered_b: tf.Tensor
+    :vartype BasicSiamese._gpu_level: int
+    :vartype BasicImageSiamese.x_image: tf.Tensor
+    :vartype ImageScalarSiamese.x_scalar: tf.Tensor
     """
 
     def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2):
@@ -642,8 +717,37 @@ class ImageScalarSiamese(BasicImageSiamese):
 
 
 class ScalarOnlySiamese(BasicSiamese):
+    """
+    Machine Learning model that only uses the radiomic features obtained with
+    `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
+    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel._regularization: Regularization factor
+    :var BasicModel._dropout: Dropout probability
+    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
+    :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
+                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    :vartype BasicModel.y: tf.Tensor
+    :vartype BasicModel.y_prob: tf.Tensor
+    :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel._regularization: float
+    :vartype BasicModel._dropout: float
+    :vartype BasicSiamese.pairs_a: tf.Tensor
+    :vartype BasicSiamese.pairs_b: tf.Tensor
+    :vartype BasicSiamese.gathered_a: tf.Tensor
+    :vartype BasicSiamese.gathered_b: tf.Tensor
+    :vartype BasicSiamese._gpu_level: int
+    :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
+    """
 
     def __init__(self, gpu_level: int = 0, regularization: float = 0.01, dropout: float = 0.2):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
 
         super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout)
@@ -713,8 +817,39 @@ class ScalarOnlySiamese(BasicSiamese):
 
 
 class VolumeOnlySiamese(BasicSiamese):
+    """
+    Model that only uses the volume radiomic feature from `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+    It trains a model in the form :math:`y = w \cdot V + b`
+
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
+    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel._regularization: Regularization factor
+    :var BasicModel._dropout: Dropout probability
+    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
+    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
+    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
+    :var ScalarOnlySiamese.x_volume: Radiomic volume feature obtained with
+                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    :vartype BasicModel.y: tf.Tensor
+    :vartype BasicModel.y_prob: tf.Tensor
+    :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel._regularization: float
+    :vartype BasicModel._dropout: float
+    :vartype BasicSiamese.pairs_a: tf.Tensor
+    :vartype BasicSiamese.pairs_b: tf.Tensor
+    :vartype BasicSiamese.gathered_a: tf.Tensor
+    :vartype BasicSiamese.gathered_b: tf.Tensor
+    :vartype BasicSiamese._gpu_level: int
+    :vartype VolumeOnlySiamese.x_volume: tf.Tensor
+    """
 
     def __init__(self):
+        #: **Attribute**: Radiomic volume feature obtained with
+        #: `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
         self.x_volume = tf.placeholder(tf.float32, [None, 1])
 
         super().__init__()

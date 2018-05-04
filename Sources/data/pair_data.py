@@ -123,7 +123,7 @@ class SplitPairs:
     def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> List[PairComp]:
         """
         Generate the pairs by iterating through a :class:`DataFrame` and for each element create pairs for all elements
-        that have a survival time bigger than :param:`df1`.
+        that have a survival time bigger than ``df1``.
 
         :param df: :class:`DataFrame` that will be iterated
         :param df_comp: :class:`DataFrame` that will be compared against and if its values are smaller than the compared
