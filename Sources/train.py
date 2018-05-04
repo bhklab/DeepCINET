@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import logging
 from typing import Dict, List, Tuple, Any, Iterator
 
 import tensorflow as tf
@@ -45,22 +44,28 @@ def train_iterations(sess: tf.Session,
 
     for j in range(epochs):
         total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
-        logger.info(f"Epoch: {j + 1} of {epochs}")
         for i, batch in enumerate(data.BatchData.batches(pairs,
                                                          batch_size=batch_size,
                                                          load_images=model.uses_images())):
-            # Execute graph operations
-            _, c_index_result, loss, summary = sess.run(
-                [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
-                feed_dict=model.feed_dict(batch)
-            )
 
             total_pairs -= len(batch.pairs_a)
-            if i % 10 == 0 or total_pairs <= 0:
-                logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
-                            f"c-index: {c_index_result:.3}, loss: {loss:.3}")
 
-            summary_writer.add_summary(summary, final_iterations + i)
+            # Execute graph operations but only write summaries once every 5 iterations
+            if final_iterations % 5 == 0:
+                _, c_index_result, loss, summary = sess.run(
+                    [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
+                    feed_dict=model.feed_dict(batch)
+                )
+                summary_writer.add_summary(summary, final_iterations + i)
+                logger.info(f"Epoch: {j:>3}, Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: "
+                            f"{total_pairs:>5}, "
+                            f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
+            else:
+                _, c_index_result, loss = sess.run(
+                    [tensors['minimize'], tensors['c-index'], tensors['loss']],
+                    feed_dict=model.feed_dict(batch)
+                )
+
             if total_pairs <= 0:
                 final_iterations += i + 1
 
