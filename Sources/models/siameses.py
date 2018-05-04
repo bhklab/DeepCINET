@@ -348,7 +348,7 @@ class ImageSiamese(BasicImageSiamese):
         """
         super().__init__(gpu_level)
 
-    def _inception_block(self, x:tf.Tensor, filters, stage, block):
+    def _inception_block(self, x:tf.Tensor, stage: str, block:str):
         """
 
         :param x: Network's input images with shape ``[batch, 64, 64, 64, 1]``
@@ -360,7 +360,7 @@ class ImageSiamese(BasicImageSiamese):
         conv_name_base = 'res' + str(stage) + block + '_branch'
         bn_name_base = 'bn' + str(stage) + block + '_branch'
         # Retrieve Filters
-        F1, F2, F3 = filters
+        #F1, F2, F3 = filters
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
         logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
@@ -369,7 +369,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 x,
 
-                filters=F1,
+                filters=16,
 
                 kernel_size=[1, 1, 1],
 
@@ -387,9 +387,9 @@ class ImageSiamese(BasicImageSiamese):
 
                 a1,
 
-                filters=F1,
+                filters=16,
 
-                kernel_size=[3, 3, 3],
+                kernel_size=[4, 4, 4],
 
                 strides=1,
 
@@ -408,7 +408,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 x,
 
-                filters=F2,
+                filters=16,
 
                 kernel_size=[1, 1, 1],
 
@@ -426,7 +426,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 b1,
 
-                filters=F2,
+                filters=16,
 
                 kernel_size=[8, 8, 8],
 
@@ -446,11 +446,12 @@ class ImageSiamese(BasicImageSiamese):
 
                 x,
 
-                kernel_size=[4, 4, 4],
+                ksize=[1, 4, 4, 4, 1],
 
-                strides=1,
+                strides=[1,1,1,1,1],
 
                 padding='SAME',
+
 
                 name=conv_name_base + 'c1'
 
@@ -460,7 +461,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 c1,
 
-                filters=F3,
+                filters=16,
 
                 kernel_size=[1, 1, 1],
 
@@ -474,7 +475,8 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-        d1 = tf.concat([a2, b2, c2], 0)
+        d1 = tf.concat([a2, b2], 0)
+        d1 = tf.concat([d1 , c2], 0)
 
         d2 = tf.layers.conv3d(
 
@@ -492,6 +494,10 @@ class ImageSiamese(BasicImageSiamese):
 
             name=conv_name_base + 'd'
         )
+        d2 = tf.contrib.layers.batch_norm(d2,
+                                     center=True, scale=True,
+                                     scope='bn')
+        tf.layers.BatchNormalization(d2)
         return d2
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
@@ -502,8 +508,9 @@ class ImageSiamese(BasicImageSiamese):
         :return: Filtered image with the convolutions applied
         """
         # In: [batch, 64, 64, 64, 1]
+        x1 = self._inception_block(x,"1s", "b1")
 
-        self._inception_block(self, x, filters=[16,16,64], stage="1s", block="b1")
+        return x1
 
 
     def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
