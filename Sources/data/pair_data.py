@@ -29,57 +29,49 @@ class SplitPairs:
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
 
-    def folds(self, n_folds: int = 4, compare_train: bool = False) -> Iterator[Tuple[List[PairComp], List[PairComp]]]:
+    def folds(self, n_folds: int = 4) -> Iterator[Tuple[List[PairComp], List[PairComp], List[PairComp]]]:
         """
         Creates different folds of data for use with CV
 
         :param n_folds: Number of folds to be created
-        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
-                              test set and the other one to the train set
         :return: Generator yielding a train/test pair
         """
         skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
 
         for train_ids, test_ids in skf.split(self.total_x, self.total_y):
-            yield self._create_train_test(train_ids, test_ids, compare_train=compare_train)
+            yield self._create_train_test(train_ids, test_ids)
 
-    def train_test_split(self, test_size: float = .25, compare_train: bool = False) \
-            -> Tuple[List[PairComp], List[PairComp]]:
+    def train_test_split(self, test_size: float = .25) \
+            -> Tuple[List[PairComp], List[PairComp], List[PairComp]]:
         """
         Split data in train/test with the specified proportion
 
         :param test_size: ``float`` between ``0`` and ``1`` with the test set size
-        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
-                              test set and the other one to the train set
         :return: Tuple with the train set and the test set
         """
         rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_SEED)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
-        return self._create_train_test(train_ids, test_ids, compare_train=compare_train)
+        return self._create_train_test(train_ids, test_ids)
 
-    def _create_train_test(self, train_ids: List[int], test_ids: List[int], compare_train: bool = False) -> \
-            Tuple[List[PairComp], List[PairComp]]:
+    def _create_train_test(self, train_ids: List[int], test_ids: List[int]) -> \
+            Tuple[List[PairComp], List[PairComp], List[PairComp]]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
         for each set
 
         :param train_ids: Ids for the train set should be between ``0`` and ``len(self.total_x) - 1``
         :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
-        :param compare_train: When creating the test pairs, create this pairs with one member belonging to the
-                              test set and the other one to the train set
         :return: List for the train set and list for the test set respectively
         """
         train_data = self.clinical_data.iloc[train_ids]
         test_data = self.clinical_data.iloc[test_ids]
 
         train_pairs = self._get_pairs(train_data)
-        if not compare_train:
-            test_pairs = self._get_pairs(test_data)
-        else:
-            test_pairs = self._get_compare_train(train_data, test_data)
+        test_pairs = self._get_pairs(test_data)
+        test_mix_pairs = self._get_compare_train(train_data, test_data)
 
-        return list(train_pairs), list(test_pairs)
+        return list(train_pairs), list(test_pairs), list(test_mix_pairs)
 
     @staticmethod
     def _get_pairs(df: pd.DataFrame) -> Iterator[PairComp]:
@@ -96,7 +88,6 @@ class SplitPairs:
         # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
         # That's why we swap random pairs
         random.shuffle(pairs)
-        # logger.debug(pairs)
         return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
@@ -114,14 +105,12 @@ class SplitPairs:
         # Create the pairs where train_elem > test_elem
         pairs += SplitPairs._get_inner_pairs(train_df, test_df)
         random.shuffle(pairs)
-
         return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
     def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> List[PairComp]:
         """
-        Generate the pairs by iterating through a :class:`DataFrame` and for each element create pairs for all elements
-        that have a survival time bigger than ``df1``.
+        Generate pairs where the survival time of ``df`` is bigger than the survival time of ``df_comp``
 
         :param df: :class:`DataFrame` that will be iterated
         :param df_comp: :class:`DataFrame` that will be compared against and if its values are smaller than the compared

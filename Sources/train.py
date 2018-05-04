@@ -196,16 +196,16 @@ def get_tensors(siamese_model: models.BasicSiamese, learning_rate: float) -> Dic
     return tensors
 
 
-def get_sets_generator(cv_folds: int, test_size: int, test_mode: str) \
-        -> Iterator[Tuple[int, Tuple[List[data.PairComp], List[data.PairComp]]]]:
+def get_sets_generator(cv_folds: int, test_size: int) \
+        -> Iterator[Tuple[int, Tuple[List[data.PairComp], List[data.PairComp], List[data.PairComp]]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
     if cv_folds < 2:
-        generator = dataset.train_test_split(test_size, compare_train=(test_mode == "compare_train"))
+        generator = dataset.train_test_split(test_size)
         enum_generator = [(0, generator)]
     else:
-        generator = dataset.folds(cv_folds, compare_train=(test_mode == "compare_train"))
+        generator = dataset.folds(cv_folds)
 
         # Slurm configuration
         task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
@@ -233,7 +233,7 @@ def main(args: Dict[str, Any]):
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'], args['test_mode'])
+        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'])
 
         counts = {
             'train': {
@@ -243,10 +243,14 @@ def main(args: Dict[str, Any]):
             'test': {
                 'total': 0,
                 'correct': 0
+            },
+            'mixed': {
+                'total': 0,
+                'correct': 0
             }
         }
 
-        for i, (train_pairs, test_pairs) in enum_generator:
+        for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
             # Initialize all the variables
             sess.run(tf.global_variables_initializer())
 
@@ -265,33 +269,26 @@ def main(args: Dict[str, Any]):
                              args['batch_size'],
                              args['num_epochs'])
 
-            # Get test error on the training set
-            logger.info("Computing train c-index")
-            train_correct, train_total, train_results = \
-                test_iterations(sess, siamese_model, tensors, train_pairs, args['batch_size'])
+            predictions = {}
+            for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                logger.info(f"Computing {name} c-index")
+                correct, total, results = \
+                    test_iterations(sess, siamese_model, tensors, pairs, args['batch_size'])
 
-            # Run the test iterations after all the epochs
-            logger.info("Computing test c-index")
-            test_correct, test_total, test_results = \
-                test_iterations(sess, siamese_model, tensors, test_pairs, args['batch_size'])
+                counts[name]['total'] += total
+                counts[name]['correct'] += correct
 
-            counts['train']['total'] += train_total
-            counts['train']['correct'] += train_correct
-            counts['test']['total'] += test_total
-            counts['test']['correct'] += test_correct
+                predictions[name] = results
+
+                logger.info(f"{name} set c-index: {correct/total}, correct: {correct}, total: {total}")
 
             # Save each fold in a different directory
             results_save_path = os.path.join(args['results_path'], f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
-            utils.save_results(sess, train_results, test_results, results_save_path)
+            utils.save_results(sess, predictions, results_save_path)
 
-            logger.info(f"Train set c-index: {train_correct/train_total}, correct: {train_correct}, total: "
-                        f"{train_total}")
-            logger.info(f"Test set c-index {test_correct/test_total}, correct: {test_correct}, total: "
-                        f"{test_total}")
-
-        logger.info(f"Final train c-index: {counts['train']['correct']/counts['train']['total']}")
-        logger.info(f"Final test c-index: {counts['test']['correct']/counts['test']['total']}")
+        for key in counts:
+            logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
 
 
 if __name__ == '__main__':
@@ -359,15 +356,6 @@ if __name__ == '__main__':
         "--results-path",
         help="Path where the results and the model should be saved",
         default=settings.SESSION_SAVE_PATH,
-        type=str
-    )
-
-    parser.add_argument(
-        "--test-mode",
-        help="When testing the results test one individual against the train set or against the other members of the "
-             "test set",
-        default="compare_test",
-        choices=["compare_test", "compare_train"],
         type=str
     )
 

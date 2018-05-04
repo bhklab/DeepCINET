@@ -5,6 +5,7 @@ look for the :any:`utils.logger` submodule.
 
 import os
 import shutil
+from typing import Dict
 
 import numpy as np
 import tensorflow as tf
@@ -50,7 +51,7 @@ def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
     return clip
 
 
-def save_results(sess: tf.Session, train_results: pd.DataFrame, test_results: pd.DataFrame, path: str):
+def save_results(sess: tf.Session, results: Dict[str, pd.DataFrame], path: str):
     """
     Save the current results to disk. It creates a CSV file with the pairs and its values. Keeping in
     mind that the results are pairs it uses the suffixes ``_a`` and ``_b`` to denote each member of the pair
@@ -73,10 +74,9 @@ def save_results(sess: tf.Session, train_results: pd.DataFrame, test_results: pd
     >>>     saver.restore(sess, "<path>/weights/weights.ckpt")
 
     :param sess: Current session that should be saved when saving the model
-    :param train_results: :class:`pandas.DataFrame` containing the train results, it must have at least the columns
-                          ``pairs_a``, ``pairs_b``, ``labels`` and ``predictions``.
-    :param test_results: :class:`pandas.DataFrame` containing the test results, it must have at least the columns
-                          ``pairs_a``, ``pairs_b``, ``labels`` and ``predictions``.
+    :param results: List with tuples with a name and a :class:`pandas.DataFrame` of results that should be saved.
+                    the :class:`pandas.DataFrame` should contain at least the columns
+                    ``pairs_a``, ``pairs_b``, ``labels`` and ``predictions``.
     :param path: Directory path where all the results should be saved
     """
     weights_dir = os.path.join(path, 'weights')
@@ -92,11 +92,10 @@ def save_results(sess: tf.Session, train_results: pd.DataFrame, test_results: pd
 
     # Load clinical info
     clinical_info = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
-    merge_train = _select_time_age(clinical_info, train_results)
-    merge_test = _select_time_age(clinical_info, test_results)
 
-    merge_train.to_csv(os.path.join(path, 'train_results.csv'))
-    merge_test.to_csv(os.path.join(path, 'test_results.csv'))
+    for name, result in results.items():
+        merged = _select_time_age(clinical_info, result)
+        merged.to_csv(os.path.join(path, f"{name}_results.csv"))
 
 
 def _select_time_age(clinical_info: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
