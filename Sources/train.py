@@ -137,27 +137,31 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.DataFrame(result_data)
 
 
-def select_model(model_key: str, gpu_level: int) -> models.BasicSiamese:
+def select_model(model_key: str, gpu_level: int, regularization: float, dropout: float) -> models.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
     :param model_key: String key to select the model
     :param gpu_level: Amount of GPU to be used, required to create a model's instance
+    :param regularization: Regularization factor to be used
+    :param dropout: Amount of dropout to be used with the model
     :return: Instance of `models.BasicSiamese` with the proper subclass selected
     """
     if model_key == "SimpleImageSiamese":
         return models.SimpleImageSiamese(gpu_level)
     elif model_key == "ImageScalarSiamese":
-        return models.ImageScalarSiamese(gpu_level)
+        return models.ImageScalarSiamese(gpu_level, regularization, dropout=dropout)
     elif model_key == "ScalarOnlySiamese":
-        return models.ScalarOnlySiamese(gpu_level)
+        return models.ScalarOnlySiamese(gpu_level, regularization, dropout=dropout)
+    elif model_key == "VolumeOnlySiamese":
+        return models.VolumeOnlySiamese()
     else:
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
 
 
-def get_tensors(siamese_model: models.BasicSiamese) -> Dict[str, tf.Tensor]:
-    optimizer = tf.train.AdamOptimizer()
+def get_tensors(siamese_model: models.BasicSiamese, learning_rate: float) -> Dict[str, tf.Tensor]:
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     tensors = {
         'loss': siamese_model.loss(),
         'classification_loss': siamese_model.classification_loss(),
@@ -218,8 +222,8 @@ def main(args: Dict[str, Any]):
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
 
-    siamese_model = select_model(args['model'], args['gpu_level'])
-    tensors = get_tensors(siamese_model)
+    siamese_model = select_model(args['model'], args['gpu_level'], args['regularization'], args['dropout'])
+    tensors = get_tensors(siamese_model, args['learning_rate'])
 
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
@@ -343,7 +347,7 @@ if __name__ == '__main__':
         "--model",
         help="Choose the model that you want to use for training",
         default="SimpleImageSiamese",
-        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese'],
+        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese', 'VolumeOnlySiamese'],
         type=str
     )
 
@@ -361,6 +365,28 @@ if __name__ == '__main__':
         default="compare_test",
         choices=["compare_test", "compare_train"],
         type=str
+    )
+
+    parser.add_argument(
+        "--learning-rate",
+        help="Optimizer (adam) learning rate",
+        default=0.001,
+        type=float
+    )
+
+    parser.add_argument(
+        "--regularization",
+        help="Regularization factor to apply",
+        default=0.01,
+        type=float
+    )
+
+    parser.add_argument(
+        "--dropout",
+        help="Dropout probability to use",
+        default=0.2,
+        type=float,
+        choices=[utils.ArgRange(0., 1.)]
     )
 
     # See if we are running in a SLURM task array
