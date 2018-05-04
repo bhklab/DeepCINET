@@ -275,7 +275,7 @@ if __name__ == '__main__':
         "--model",
         help="Choose the model that you want to use for training",
         default="SimpleSiamese",
-        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese'],
+        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese', 'ImageSiamese'],
         type=str
     )
 
