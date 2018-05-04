@@ -203,7 +203,7 @@ def get_sets_generator(cv_folds: int, test_size: int, test_mode: str) \
     # Decide whether to use CV or only a single test/train sets
     if cv_folds < 2:
         generator = dataset.train_test_split(test_size, compare_train=(test_mode == "compare_train"))
-        enum_generator = (0, generator)
+        enum_generator = [(0, generator)]
     else:
         generator = dataset.folds(cv_folds, compare_train=(test_mode == "compare_train"))
 
