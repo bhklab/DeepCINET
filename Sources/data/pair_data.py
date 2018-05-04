@@ -147,10 +147,21 @@ class SplitPairs:
         return tup
 
 
+def get_radiomic_features() -> pd.DataFrame:
+    logger = logging.getLogger(__name__)
+    logger.debug("Reading radiomic features")
+    radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
+    radiomic_df = radiomic_df.sub(radiomic_df.mean(axis=1), axis=0)
+    radiomic_df = radiomic_df.div(radiomic_df.std(axis=1), axis=0)
+    logger.debug("Radiomic features processed")
+    return radiomic_df
+
+
 class BatchData:
     """
     Useful methods for working with batch data
     """
+    radiomic_df = get_radiomic_features()
 
     @staticmethod
     def batches(pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids', load_images: bool = True) \
@@ -228,10 +239,6 @@ class BatchData:
 
         labels = np.array(labels).reshape((-1, 1))
 
-        df = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
-        df = df.sub(df.mean(axis=1), axis=0)
-        df = df.div(df.std(axis=1), axis=0)
-
         images = []
         features = []
         for idx in ids_list:
@@ -242,7 +249,7 @@ class BatchData:
                 logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
                 raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
-            column = df[idx].values
+            column = BatchData.radiomic_df[idx].values
             features += [column]*total_rotations
 
             if load_images:
