@@ -41,8 +41,7 @@ def train_iterations(sess: tf.Session,
 
     # Train iterations
     final_iterations = 0
-
-    for j in range(epochs):
+    for epoch in range(epochs):
         total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
         for i, batch in enumerate(data.BatchData.batches(pairs,
                                                          batch_size=batch_size,
@@ -56,8 +55,8 @@ def train_iterations(sess: tf.Session,
                     [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
                     feed_dict=model.feed_dict(batch)
                 )
-                summary_writer.add_summary(summary, final_iterations + i)
-                logger.info(f"Epoch: {j:>3}, Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: "
+                summary_writer.add_summary(summary, final_iterations)
+                logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: "
                             f"{total_pairs:>5}, "
                             f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
             else:
@@ -66,8 +65,7 @@ def train_iterations(sess: tf.Session,
                     feed_dict=model.feed_dict(batch)
                 )
 
-            if total_pairs <= 0:
-                final_iterations += i + 1
+            final_iterations += 1
 
 
 def test_iterations(sess: tf.Session,
@@ -386,6 +384,8 @@ if __name__ == '__main__':
 
     arguments, unknown = parser.parse_known_args()
     arguments = vars(arguments)
+
+    arguments['results_path'] = os.path.abspath(arguments['results_path'])
 
     if not os.path.exists(arguments['results_path']):
         os.makedirs(arguments['results_path'])
