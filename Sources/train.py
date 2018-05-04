@@ -151,6 +151,8 @@ def select_model(model_key: str, gpu_level: int) -> models.BasicSiamese:
         return models.ImageScalarSiamese(gpu_level)
     elif model_key == "ScalarOnlySiamese":
         return models.ScalarOnlySiamese(gpu_level)
+    elif model_key == "ImageSiamese":
+        return models.ScalarOnlySiamese(gpu_level)
     else:
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
@@ -195,7 +197,7 @@ def get_sets_generator(cv_folds: int, test_size: int, test_mode: str) \
     # Decide whether to use CV or only a single test/train sets
     if cv_folds < 2:
         generator = dataset.train_test_split(test_size, compare_train=(test_mode == "compare_train"))
-        enum_generator = (0, generator)
+        enum_generator = [(0, generator)]
     else:
         generator = dataset.folds(cv_folds, compare_train=(test_mode == "compare_train"))
 
