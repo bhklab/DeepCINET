@@ -13,10 +13,10 @@ from moviepy.editor import ImageSequenceClip
 
 import settings
 
-from .logger import get_logger, init_logger
+from .logger import init_logger
 
 # Only export the functions that we need
-__all__ = ['get_logger', 'init_logger', 'movie', 'save_results']
+__all__ = ['init_logger', 'movie', 'save_results']
 
 
 def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
@@ -28,7 +28,7 @@ def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
     >>> movie('test.mp4', X)
 
     :param filename: The filename of the gif to write to
-    :param array: A numpy array that contains a squence of images
+    :param array: A numpy array that contains a sequence of images
     :param fps: frames per second (default: 10)
     :param scale: how much to rescale each image by (default: 1.0)
 

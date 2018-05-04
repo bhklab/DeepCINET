@@ -1,13 +1,11 @@
 import abc
+import logging
 from typing import Dict
 
 import tensorflow as tf
 
-import utils
 import data
 import settings
-
-logger = utils.get_logger('train.siamese')
 
 
 class BasicModel:
@@ -35,6 +33,7 @@ class BasicModel:
         :param regularization: Regularization factor
         :param dropout: Dropout probability
         """
+        self.logger = logging.getLogger(__name__)
 
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
         self.y = tf.placeholder(tf.float32, [None, 1], name="Y")
@@ -233,7 +232,7 @@ class BasicSiamese(BasicModel):
         :return: Tensor with the contrastive loss, comparing the two sister's output with shape ``[batch, 1]``
         """
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        logger.debug(f"Using device: {device} for contrastive loss")
+        self.logger.debug(f"Using device: {device} for contrastive loss")
         with tf.device(device):
             with tf.variable_scope("contrastive_loss"):
                 self.gathered_a = tf.gather(sister_out, self.pairs_a, name="gather_a")
@@ -426,7 +425,7 @@ class SimpleImageSiamese(BasicImageSiamese):
         # In: [batch, 64, 64, 64, 1]
 
         device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
-        logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
             # Out: [batch, 31, 31, 31, 30]
             x = tf.layers.conv3d(
@@ -448,7 +447,7 @@ class SimpleImageSiamese(BasicImageSiamese):
             )
 
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
-        logger.debug(f"Using device: {device} for second conv layers")
+        self.logger.debug(f"Using device: {device} for second conv layers")
         with tf.device(device):
             # Out: [batch, 27, 27, 27, 40]
             x = tf.layers.conv3d(
@@ -477,7 +476,7 @@ class SimpleImageSiamese(BasicImageSiamese):
         :return: Tensor with shape ``[batch, 1]``
         """
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        logger.debug(f"Using device: {device} for FC layers")
+        self.logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
             # Out: [batch, 25*25*25*50]
             x = tf.layers.flatten(
@@ -583,7 +582,7 @@ class ImageScalarSiamese(BasicImageSiamese):
         # In: [batch, 64, 64, 64, 1]
 
         device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
-        logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
             # Out: [batch, 31, 31, 31, 30]
             x = self._conv3d(
@@ -604,7 +603,7 @@ class ImageScalarSiamese(BasicImageSiamese):
             )
 
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
-        logger.debug(f"Using device: {device} for second conv layers")
+        self.logger.debug(f"Using device: {device} for second conv layers")
         with tf.device(device):
             # Out: [batch, 13, 13, 13, 40]
             x = self._conv3d(
@@ -643,7 +642,7 @@ class ImageScalarSiamese(BasicImageSiamese):
         # In this case we will be using the same idea seen in SimpleSiamese but we will be adding the scalar
         # features instead
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        logger.debug(f"Using device: {device} for FC layers")
+        self.logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
             # Out: [batch, 9*9*9*50]
             x = tf.layers.flatten(
@@ -696,7 +695,7 @@ class ImageScalarSiamese(BasicImageSiamese):
             units=units,
             activation=activation,
             kernel_initializer=tf.contrib.layers.xavier_initializer(),
-            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._reg_factor),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
             name=name
         )
 
@@ -876,6 +875,3 @@ class VolumeOnlySiamese(BasicSiamese):
 
     def uses_images(self):
         return False
-
-
-

@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import logging
 from typing import Dict, List, Tuple, Any, Iterator
 
 import tensorflow as tf
@@ -12,8 +13,6 @@ import data
 import models
 import settings
 import utils
-
-logger = utils.get_logger('train')
 
 
 def train_iterations(sess: tf.Session,
@@ -398,7 +397,7 @@ if __name__ == '__main__':
     if not os.path.exists(arguments['results_path']):
         os.makedirs(arguments['results_path'])
 
-    logger = utils.init_logger(f'train_{array_id}', arguments['results_path'])
+    logger = utils.init_logger(f'{__name__}_{array_id}', arguments['results_path'])
 
     logger.debug("Script starts")
     logger.debug(arguments)
