@@ -1,5 +1,6 @@
 import os
 import random
+import logging
 from itertools import takewhile, islice, repeat
 from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List
 
@@ -14,9 +15,6 @@ from settings import \
     DATA_PATH_RADIOMIC_PROCESSED, \
     TOTAL_ROTATIONS, \
     RANDOM_SEED
-from utils.logger import get_logger
-
-logger = get_logger('pair_data')
 
 
 class SplitPairs:
@@ -135,8 +133,8 @@ class SplitPairs:
         pairs = []
         for _, row in df.iterrows():
             values = df_comp.loc[(df_comp['time'] < row['time']), 'id'].values
-            elems = zip(values, [row['id']]*len(values), [True]*len(values))
-            pairs += [PairComp(*x) for x in elems]
+            elements = zip(values, [row['id']]*len(values), [True]*len(values))
+            pairs += [PairComp(*x) for x in elements]
 
         return pairs
 
@@ -220,6 +218,7 @@ class BatchData:
         :param ids: npz files' ids that will be added to the PairBatch
         :return: PairBatch containing the pairs and the requested npz files loaded
         """
+        logger = logging.getLogger(__name__)
 
         # Convert ids from string to int index. Since there can be multiple images with one pair this will mean that
         # We have to return more indices related to the same pair so that's why we are using the TOTAL_ROTATIONS
