@@ -166,10 +166,10 @@ def get_tensors(siamese_model: models.BasicSiamese, learning_rate: float) -> Dic
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     tensors = {
         'loss': siamese_model.loss(),
-        'classification_loss': siamese_model.classification_loss(),
-        'regularization_loss': siamese_model.regularization_loss(),
-        'c-index': siamese_model.c_index(),
-        'true-predictions': siamese_model.good_predictions_count(),
+        'classification_loss': siamese_model.classification_loss,
+        'regularization_loss': siamese_model.regularization_loss,
+        'c-index': siamese_model.c_index,
+        'true-predictions': siamese_model.good_predictions,
         'predictions': siamese_model.y_estimate,
         'probabilities': siamese_model.y_prob,
         'gather_a': siamese_model.gathered_a,
@@ -390,7 +390,7 @@ if __name__ == '__main__':
     if not os.path.exists(arguments['results_path']):
         os.makedirs(arguments['results_path'])
 
-    logger = utils.init_logger(f'{__name__}_{array_id}', arguments['results_path'])
+    logger = utils.init_logger(f'train_{array_id}', arguments['results_path'])
 
     logger.debug("Script starts")
     logger.debug(arguments)

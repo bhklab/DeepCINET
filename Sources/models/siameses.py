@@ -9,17 +9,42 @@ import settings
 
 
 class BasicModel:
-    """
+    r"""
     Simple class to build a classification model.
+
+    **Attributes**:
 
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+
+                                         .. math::
+                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
+                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
+                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
+                                             \quad m := \text{batch size}
+
+    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
+    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
+    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
+                                      it only needs to be divided by the batch size
+    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
+                             comparisons between the total
+
+                             .. math::
+                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
+
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :vartype BasicModel.y: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel.classification_loss: tf.Tensor
+    :vartype BasicModel.regularization_loss: tf.Tensor
+    :vartype BasicModel.total_loss: tf.Tensor
+    :vartype BasicModel.good_predictions: tf.Tensor
+    :vartype BasicModel.c_index: tf.Tensor
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     """
@@ -55,19 +80,27 @@ class BasicModel:
         self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
 
         with tf.variable_scope("loss"):
-            self._classification_loss = tf.losses.log_loss(self.y, self.y_prob, scope="classification_loss")
-            self._regularization_loss = tf.losses.get_regularization_loss()
-            self._total_loss = tf.add(self._classification_loss, self._regularization_loss, name="final_loss")
+            #: **Attribute**: Classification loss using the negative log loss function
+            self.classification_loss = tf.losses.log_loss(self.y, self.y_prob, scope="classification_loss")
+
+            #: **Attribute**: L2 norm of the weights to add to the loss function to regularize
+            self.regularization_loss = tf.losses.get_regularization_loss()
+
+            #: **Attribute**: Total loss to be minimized with the optimizer
+            self.total_loss = tf.add(self.classification_loss, self.regularization_loss, name="final_loss")
 
         with tf.variable_scope("c-index"):
             y_bool = tf.greater_equal(self.y, self.THRESHOLD)
             equals = tf.equal(y_bool, self.y_estimate)
 
-            self._good_predictions = tf.cast(tf.count_nonzero(equals), tf.float32)
+            #: **Attribute**: Number of good predictions found on the current batch
+            self.good_predictions = tf.cast(tf.count_nonzero(equals), tf.float32)
 
             with tf.variable_scope("batch_size"):
                 batch_size = tf.cast(tf.shape(self.y, name="y_shape")[0], tf.float32, name="cast")
-            self._c_index = self._good_predictions/batch_size
+
+            #: **Attribute**: Concordance index for the current batch
+            self.c_index = self.good_predictions/batch_size
 
     @abc.abstractmethod
     def _model(self) -> tf.Tensor:
@@ -93,49 +126,6 @@ class BasicModel:
             self.training: training
         }
 
-    def good_predictions_count(self) -> tf.Tensor:
-        """
-        Return the count of elements that have been a good prediction
-
-        :return: Tensorflow tensor with the count for good predictions. Then to get
-                 the c-index we only have to divide by the batch size
-        """
-        # y ∈ {0, 1}   y_estimate ∈ {True, False}
-        return self._good_predictions
-
-    def classification_loss(self) -> tf.Tensor:
-        return self._classification_loss
-
-    def regularization_loss(self) -> tf.Tensor:
-        return self._regularization_loss
-
-    def loss(self) -> tf.Tensor:
-        r"""
-        Loss function for the model. It uses the negative log loss function:
-
-        .. math::
-            \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
-            \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) + (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
-            \quad m := \text{batch size}
-
-        Also, the regularization term defined by the other layers is added
-
-        :return: Scalar tensor with the negative log loss function for the model computed.
-        """
-        return self._total_loss
-
-    def c_index(self) -> tf.Tensor:
-        r"""
-        Create the tensor for the c-index. It's obtained by counting the number of comparisons that are right
-        and dividing them by the total amount of comparisons, it's as follows:
-
-        .. math::
-            \frac{\text{correct comparisons}}{\text{total comparisons}}
-
-        :return: c-index tensor
-        """
-        return self._c_index
-
     @abc.abstractmethod
     def uses_images(self) -> bool:
         """
@@ -147,13 +137,32 @@ class BasicModel:
 
 
 class BasicSiamese(BasicModel):
-    """
-    Class representing a basic siamese structure. It contains a few convolutional layers and then the
-    contrastive loss.
+    r"""
+    Basic class to build a siamese model. Uses the contrastive loss for comparison
+
+    **Attributes**:
 
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+
+                                         .. math::
+                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
+                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
+                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
+                                             \quad m := \text{batch size}
+
+    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
+    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
+    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
+                                      it only needs to be divided by the batch size
+    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
+                             comparisons between the total
+
+                             .. math::
+                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
+
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
@@ -164,6 +173,11 @@ class BasicSiamese(BasicModel):
     :vartype BasicModel.y: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel.classification_loss: tf.Tensor
+    :vartype BasicModel.regularization_loss: tf.Tensor
+    :vartype BasicModel.total_loss: tf.Tensor
+    :vartype BasicModel.good_predictions: tf.Tensor
+    :vartype BasicModel.c_index: tf.Tensor
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     :vartype BasicSiamese.pairs_a: tf.Tensor
@@ -256,13 +270,32 @@ class BasicSiamese(BasicModel):
 
 
 class BasicImageSiamese(BasicSiamese):
-    """
-    Class representing a basic siamese structure. It contains a few convolutional layers and then the
-    contrastive loss.
+    r"""
+    Basic class to build a siamese model that uses images as input
+
+    **Attributes**:
 
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+
+                                         .. math::
+                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
+                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
+                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
+                                             \quad m := \text{batch size}
+
+    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
+    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
+    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
+                                      it only needs to be divided by the batch size
+    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
+                             comparisons between the total
+
+                             .. math::
+                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
+
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
@@ -274,6 +307,11 @@ class BasicImageSiamese(BasicSiamese):
     :vartype BasicModel.y: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel.classification_loss: tf.Tensor
+    :vartype BasicModel.regularization_loss: tf.Tensor
+    :vartype BasicModel.total_loss: tf.Tensor
+    :vartype BasicModel.good_predictions: tf.Tensor
+    :vartype BasicModel.c_index: tf.Tensor
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     :vartype BasicSiamese.pairs_a: tf.Tensor
@@ -362,9 +400,8 @@ class BasicImageSiamese(BasicSiamese):
 
 
 class SimpleImageSiamese(BasicImageSiamese):
-    """
-    Class representing the initial and simple siamese structure used for the first steps of the project. It
-    inherits :any:`BasicSiamese` so it has the same tensors to be fed.
+    r"""
+    Simple siamese network implementation that uses images as input
 
     **Convolutional Model**:
 
@@ -378,9 +415,29 @@ class SimpleImageSiamese(BasicImageSiamese):
         - 50 units, activation ReLu
         - 1 unit, activation ReLu
 
+    **Attributes**:
+
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+
+                                         .. math::
+                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
+                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
+                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
+                                             \quad m := \text{batch size}
+
+    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
+    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
+    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
+                                      it only needs to be divided by the batch size
+    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
+                             comparisons between the total
+
+                             .. math::
+                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
+
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
@@ -392,6 +449,11 @@ class SimpleImageSiamese(BasicImageSiamese):
     :vartype BasicModel.y: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel.classification_loss: tf.Tensor
+    :vartype BasicModel.regularization_loss: tf.Tensor
+    :vartype BasicModel.total_loss: tf.Tensor
+    :vartype BasicModel.good_predictions: tf.Tensor
+    :vartype BasicModel.c_index: tf.Tensor
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     :vartype BasicSiamese.pairs_a: tf.Tensor
@@ -511,12 +573,14 @@ class SimpleImageSiamese(BasicImageSiamese):
 
 
 class ImageScalarSiamese(BasicImageSiamese):
-    """
+    r"""
+    Siamese model that uses both images and scalar values as input.
+
     This class creates a Siamese model that uses both images and scalar features extracted using
     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_.
     The features are not extracted by the model but they have to be provided in one of the placeholders
 
-    ** Network structure **
+    **Network structure**:
 
         - :math:`3^3` kernel with 30 filters and stride = 2 with ReLu
         - :math:`3^3` kernel with 30 filters and stride = 2 with ReLu
@@ -529,9 +593,29 @@ class ImageScalarSiamese(BasicImageSiamese):
         - 100 units, activation tanh
         - 1 unit, activation ReLu
 
+    **Attributes**:
+
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+
+                                         .. math::
+                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
+                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
+                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
+                                             \quad m := \text{batch size}
+
+    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
+    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
+    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
+                                      it only needs to be divided by the batch size
+    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
+                             comparisons between the total
+
+                             .. math::
+                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
+
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
@@ -545,6 +629,11 @@ class ImageScalarSiamese(BasicImageSiamese):
     :vartype BasicModel.y: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel.classification_loss: tf.Tensor
+    :vartype BasicModel.regularization_loss: tf.Tensor
+    :vartype BasicModel.total_loss: tf.Tensor
+    :vartype BasicModel.good_predictions: tf.Tensor
+    :vartype BasicModel.c_index: tf.Tensor
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     :vartype BasicSiamese.pairs_a: tf.Tensor
@@ -728,13 +817,33 @@ class ImageScalarSiamese(BasicImageSiamese):
 
 
 class ScalarOnlySiamese(BasicSiamese):
-    """
+    r"""
+    Model that uses only radiomic features as input to train
+
     Machine Learning model that only uses the radiomic features obtained with
     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
 
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+
+                                         .. math::
+                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
+                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
+                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
+                                             \quad m := \text{batch size}
+
+    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
+    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
+    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
+                                      it only needs to be divided by the batch size
+    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
+                             comparisons between the total
+
+                             .. math::
+                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
+
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
@@ -747,6 +856,11 @@ class ScalarOnlySiamese(BasicSiamese):
     :vartype BasicModel.y: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel.classification_loss: tf.Tensor
+    :vartype BasicModel.regularization_loss: tf.Tensor
+    :vartype BasicModel.total_loss: tf.Tensor
+    :vartype BasicModel.good_predictions: tf.Tensor
+    :vartype BasicModel.c_index: tf.Tensor
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     :vartype BasicSiamese.pairs_a: tf.Tensor
@@ -828,14 +942,34 @@ class ScalarOnlySiamese(BasicSiamese):
 
 
 class VolumeOnlySiamese(BasicSiamese):
-    """
-    Model that only uses the volume radiomic feature from `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    r"""
+    Model that only uses the volume radiomic feature
+
+    The features are provided by the package from `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
 
     It trains a model in the form :math:`y = w \cdot V + b`
 
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
+    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+
+                                         .. math::
+                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
+                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
+                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
+                                             \quad m := \text{batch size}
+
+    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
+    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
+    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
+                                      it only needs to be divided by the batch size
+    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
+                             comparisons between the total
+
+                             .. math::
+                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
+
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
@@ -848,6 +982,11 @@ class VolumeOnlySiamese(BasicSiamese):
     :vartype BasicModel.y: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
+    :vartype BasicModel.classification_loss: tf.Tensor
+    :vartype BasicModel.regularization_loss: tf.Tensor
+    :vartype BasicModel.total_loss: tf.Tensor
+    :vartype BasicModel.good_predictions: tf.Tensor
+    :vartype BasicModel.c_index: tf.Tensor
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     :vartype BasicSiamese.pairs_a: tf.Tensor
