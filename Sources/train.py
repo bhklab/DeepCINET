@@ -166,7 +166,7 @@ def select_model(model_key: str, gpu_level: int, regularization: float, dropout:
 def get_tensors(siamese_model: models.basics.BasicSiamese, learning_rate: float) -> Dict[str, tf.Tensor]:
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     tensors = {
-        'loss': siamese_model.loss(),
+        'loss': siamese_model.total_loss,
         'classification_loss': siamese_model.classification_loss,
         'regularization_loss': siamese_model.regularization_loss,
         'c-index': siamese_model.c_index,
