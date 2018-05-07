@@ -10,12 +10,13 @@ import pandas as pd
 
 import data
 import models
+import models.basics
 import settings
 import utils
 
 
 def train_iterations(sess: tf.Session,
-                     model: models.BasicModel,
+                     model: models.basics.BasicModel,
                      tensors: Dict[str, tf.Tensor],
                      pairs: List[data.PairComp],
                      summary_writer: tf.summary.FileWriter,
@@ -69,7 +70,7 @@ def train_iterations(sess: tf.Session,
 
 
 def test_iterations(sess: tf.Session,
-                    model: models.BasicModel,
+                    model: models.basics.BasicModel,
                     tensors: Dict[str, tf.Tensor],
                     pairs: List[data.PairComp],
                     batch_size: int) -> Tuple[int, int, pd.DataFrame]:
@@ -139,7 +140,7 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.DataFrame(result_data)
 
 
-def select_model(model_key: str, gpu_level: int, regularization: float, dropout: float) -> models.BasicSiamese:
+def select_model(model_key: str, gpu_level: int, regularization: float, dropout: float) -> models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
@@ -162,7 +163,7 @@ def select_model(model_key: str, gpu_level: int, regularization: float, dropout:
         exit(1)
 
 
-def get_tensors(siamese_model: models.BasicSiamese, learning_rate: float) -> Dict[str, tf.Tensor]:
+def get_tensors(siamese_model: models.basics.BasicSiamese, learning_rate: float) -> Dict[str, tf.Tensor]:
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     tensors = {
         'loss': siamese_model.loss(),

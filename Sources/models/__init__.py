@@ -6,7 +6,5 @@ from .siameses import \
     SimpleImageSiamese, \
     ImageScalarSiamese, \
     ScalarOnlySiamese, \
-    VolumeOnlySiamese, \
-    BasicModel, \
-    BasicSiamese
-
+    VolumeOnlySiamese
+from .basics import BasicModel, BasicSiamese, BasicImageSiamese
