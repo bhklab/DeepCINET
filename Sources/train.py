@@ -57,7 +57,7 @@ def train_iterations(sess: tf.Session,
                 )
                 summary_writer.add_summary(summary, final_iterations)
                 logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: "
-                            f"{total_pairs:>5}, "
+                            f"{total_pairs:>6}, "
                             f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
             else:
                 _, c_index_result, loss = sess.run(
@@ -133,8 +133,8 @@ def test_iterations(sess: tf.Session,
         result_data['gather_b'] = np.append(result_data['gather_b'], np.array(gather_b))
 
         if i % 10 == 0 or total_pairs == 0:
-            logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
-                        f"c-index: {c_index_result:.3}, final c-index:{correct_count/pairs_count:.3}")
+            logger.info(f"Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: {total_pairs:>5}, "
+                        f"c-index: {c_index_result:>#5.3}, final c-index:{correct_count/pairs_count:>#5.3}")
 
     return correct_count, pairs_count, pd.DataFrame(result_data)
 
