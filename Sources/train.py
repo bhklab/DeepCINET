@@ -18,7 +18,7 @@ import utils
 def train_iterations(sess: tf.Session,
                      model: models.basics.BasicModel,
                      tensors: Dict[str, tf.Tensor],
-                     pairs: List[data.PairComp],
+                     pairs: pd.DataFrame,
                      summary_writer: tf.summary.FileWriter,
                      batch_size: int,
                      epochs: int):
@@ -72,7 +72,7 @@ def train_iterations(sess: tf.Session,
 def test_iterations(sess: tf.Session,
                     model: models.basics.BasicModel,
                     tensors: Dict[str, tf.Tensor],
-                    pairs: List[data.PairComp],
+                    pairs: pd.DataFrame,
                     batch_size: int) -> Tuple[int, int, pd.DataFrame]:
     """
     Iterations to test the data provided.
@@ -253,10 +253,10 @@ def main(args: Dict[str, Any]):
 
         for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
             # Initialize all the variables
-            sess.run(tf.global_variables_initializer())
-
             logger.info("\r ")
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+
+            sess.run(tf.global_variables_initializer())
 
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)

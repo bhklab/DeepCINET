@@ -186,14 +186,17 @@ class BatchData:
             yield BatchData._create_pair_batch(batch_pairs, ids, load_images)
 
     @staticmethod
-    def _batch_by_pairs(pairs: Iterable[PairComp], batch_size: int, load_images=True) \
+    def _batch_by_pairs(pairs: pd.DataFrame, batch_size: int, load_images=True) \
             -> Generator[PairBatch, None, None]:
-        for i, values in enumerate(BatchData._split(pairs, batch_size)):
-            values = list(values)
-            yield BatchData._create_pair_batch(values, {idx for p in values for idx in (p.p1, p.p2)}, load_images)
+
+        for i in range(0, len(pairs), batch_size):
+            values = pairs.iloc[i:(i + batch_size)]
+            ids = pd.concat([values['pA'], values['pB']])
+            ids = set(ids.values)
+            yield BatchData._create_pair_batch(values, ids, load_images)
 
     @staticmethod
-    def _create_pair_batch(pairs: Collection[PairComp], ids: Set[str], load_images: bool = True) -> PairBatch:
+    def _create_pair_batch(pairs: pd.DataFrame, ids: Set[str], load_images: bool = True) -> PairBatch:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
