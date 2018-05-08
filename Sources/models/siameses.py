@@ -358,24 +358,17 @@ class ImageScalarSiamese(BasicImageSiamese):
                 name="fc1"
             )
 
-            # Out: [batch, 100]
-            # x = self._dense(
-            #     x=x,
-            #     units=500,
-            #     name="fc2"
-            # )
+            x = self._dense(
+                x=x,
+                units=1000,
+                name="fc3"
+            )
 
             # x = tf.layers.dropout(
             #     x,
             #     rate=self._dropout,
             #     training=self.training
             # )
-
-            x = self._dense(
-                x=x,
-                units=1000,
-                name="fc3"
-            )
 
             # Out: [batch, 10]
             x = self._dense(
