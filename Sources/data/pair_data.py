@@ -30,6 +30,7 @@ class SplitPairs:
         self.total_y = self.clinical_data['event'].values
         self.mean = 0
         self.std = 1
+        self.logger = logging.getLogger(__name__)
 
     def folds(self, n_folds: int = 4) -> Iterator[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """
@@ -69,8 +70,13 @@ class SplitPairs:
         train_data = self.clinical_data.iloc[train_ids]
         test_data = self.clinical_data.iloc[test_ids]
 
+        self.logger.debug("Generating train pairs")
         train_pairs = self._get_pairs(train_data)
+
+        self.logger.debug("Generating test pairs")
         test_pairs = self._get_pairs(test_data)
+
+        self.logger.debug("Generating mixed pairs")
         test_mix_pairs = self._get_compare_train(train_data, test_data)
 
         train_pairs = self._normalize(train_pairs)
@@ -121,7 +127,7 @@ class SplitPairs:
         """
         df_comp = df_comp[df_comp['event'] == 1]
 
-        pairs = pd.DataFrame()
+        pairs = []
         for _, row in df.iterrows():
             temp_df = df_comp.loc[(df_comp['time'] < row['time'])]
 
@@ -131,19 +137,22 @@ class SplitPairs:
             row_pairs['distance'] = row['time'] - temp_df['time']
             row_pairs['comp'] = True
 
-            pairs = pd.concat([pairs, row_pairs])
+            pairs.append(row_pairs)
 
-        pairs = pairs.apply(SplitPairs._swap_random, axis=1)
+        pairs = pd.concat(pairs)
+        pairs = pairs.reset_index(drop=True)
+
+        # Swap some pairs because the comparison value would be always true otherwise
+        subset = pairs.sample(frac=.5)
+        pairs: pd.DataFrame = pairs.drop(subset.index, axis=0)
+
+        subset.loc[:, ['pA', 'pB']] = subset.loc[:, ['pB', 'pA']]
+        subset['distance'] *= -1
+        subset['comp'] ^= True
+
+        pairs = pairs.append(subset)
 
         return pairs
-
-    @staticmethod
-    def _swap_random(tup: pd.Series):
-        if bool(random.randint(0, 1)):
-            tup['pA'], tup['pB'] = tup['pB'], tup['pA']
-            tup['distance'] *= -1
-            tup['comp'] ^= True
-        return tup
 
     def _normalize(self, pairs: pd.DataFrame, train: bool = True) -> pd.DataFrame:
         """
@@ -237,6 +246,8 @@ class BatchData:
         # idx*TOTAL_ROTATIONS ... (idx + 1)*TOTAL_ROTATIONS
         total_rotations = TOTAL_ROTATIONS if load_images else 1
         ids_list = list(ids)
+
+        replicated_pairs = pd.DataFrame([pairs]*total_rotations)
 
         # Direct and inverse mapping
         ids_map = {idx: idx_num*total_rotations for idx_num, idx in enumerate(ids_list)}
