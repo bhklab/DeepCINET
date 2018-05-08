@@ -29,7 +29,7 @@ class SplitPairs:
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
 
-    def folds(self, n_folds: int = 4) -> Iterator[Tuple[List[PairComp], List[PairComp], List[PairComp]]]:
+    def folds(self, n_folds: int = 4) -> Iterator[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """
         Creates different folds of data for use with CV
 
@@ -42,7 +42,7 @@ class SplitPairs:
             yield self._create_train_test(train_ids, test_ids)
 
     def train_test_split(self, test_size: float = .25) \
-            -> Tuple[List[PairComp], List[PairComp], List[PairComp]]:
+            -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Split data in train/test with the specified proportion
 
@@ -55,7 +55,7 @@ class SplitPairs:
         return self._create_train_test(train_ids, test_ids)
 
     def _create_train_test(self, train_ids: List[int], test_ids: List[int]) -> \
-            Tuple[List[PairComp], List[PairComp], List[PairComp]]:
+            Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
         for each set
@@ -71,10 +71,10 @@ class SplitPairs:
         test_pairs = self._get_pairs(test_data)
         test_mix_pairs = self._get_compare_train(train_data, test_data)
 
-        return list(train_pairs), list(test_pairs), list(test_mix_pairs)
+        return train_pairs, test_pairs, test_mix_pairs
 
     @staticmethod
-    def _get_pairs(df: pd.DataFrame) -> Iterator[PairComp]:
+    def _get_pairs(df: pd.DataFrame) -> pd.DataFrame:
         """
         Get all the possible pairs for a DataFrame containing the clinical data, keeping in mind the censored
         data
@@ -86,7 +86,7 @@ class SplitPairs:
         return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
-    def _get_compare_train(train_df: pd.DataFrame, test_df: pd.DataFrame) -> Iterator[PairComp]:
+    def _get_compare_train(train_df: pd.DataFrame, test_df: pd.DataFrame) -> pd.DataFrame:
         """
         Create the pairs by having one member belonging to the train dataset and the other to the test dataset
 
@@ -147,7 +147,7 @@ class BatchData:
     radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
 
     @staticmethod
-    def batches(pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids', load_images: bool = True) \
+    def batches(pairs: pd.DataFrame, batch_size: int = 64, group_by: str = 'ids', load_images: bool = True) \
             -> Generator[PairBatch, None, None]:
         """
         Generates batches based on all the pairs and the batch size
@@ -164,24 +164,23 @@ class BatchData:
             return BatchData._batch_by_pairs(pairs, batch_size, load_images)
 
     @staticmethod
-    def _batch_by_ids(pairs: Iterable[PairComp], batch_size: int, load_images: bool = True) \
+    def _batch_by_ids(pairs: pd.DataFrame, batch_size: int, load_images: bool = True) \
             -> Generator[PairBatch, None, None]:
-        total_pairs = set(pairs)
+
+        pairs_iter = iter(pairs.itertuples())
+        row = next(pairs_iter)
 
         # Extract bath_size ids
-        while len(total_pairs) > 0:
+        while row is not None:
             ids = set()
-            batch_pairs = set()
 
             # Create a batch of batch_size ids
-            while len(ids) < batch_size and len(total_pairs) > 0:
-                pair = total_pairs.pop()
-                ids |= {pair.p_a, pair.p_b}
-                batch_pairs.add(pair)
+            while len(ids) < batch_size and row is not None:
+                ids |= {row.pA, row.pB}
+                row = next(pairs_iter, None)
 
             # Get all the pairs that can be formed with those ids and then remove the batch pairs from the total pairs
-            batch_pairs |= {x for x in total_pairs if x.p_a in ids and x.p_b in ids}
-            total_pairs -= batch_pairs
+            batch_pairs = pairs.loc[pairs['pA'].isin(ids) & pairs['pB'].isin(ids)]
             assert len(batch_pairs)*2 >= len(ids)
 
             yield BatchData._create_pair_batch(batch_pairs, ids, load_images)

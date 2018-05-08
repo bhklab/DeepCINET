@@ -196,7 +196,7 @@ def get_tensors(siamese_model: models.basics.BasicSiamese, learning_rate: float)
 
 
 def get_sets_generator(cv_folds: int, test_size: int) \
-        -> Iterator[Tuple[int, Tuple[List[data.PairComp], List[data.PairComp], List[data.PairComp]]]]:
+        -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
@@ -214,6 +214,8 @@ def get_sets_generator(cv_folds: int, test_size: int) \
             enum_generator = [(task_id, list(generator)[task_id])]
         else:
             enum_generator = enumerate(generator)
+
+    logger.debug("Folds created")
 
     return enum_generator
 
