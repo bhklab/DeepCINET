@@ -28,6 +28,8 @@ class SplitPairs:
 
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
+        self.mean = 0
+        self.std = 1
 
     def folds(self, n_folds: int = 4) -> Iterator[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """
@@ -70,6 +72,10 @@ class SplitPairs:
         train_pairs = self._get_pairs(train_data)
         test_pairs = self._get_pairs(test_data)
         test_mix_pairs = self._get_compare_train(train_data, test_data)
+
+        train_pairs = self._normalize(train_pairs)
+        test_pairs = self._normalize(test_pairs, train=False)
+        test_mix_pairs = self._normalize(test_mix_pairs, train=False)
 
         return train_pairs, test_pairs, test_mix_pairs
 
@@ -138,6 +144,24 @@ class SplitPairs:
             tup['distance'] *= -1
             tup['comp'] ^= True
         return tup
+
+    def _normalize(self, pairs: pd.DataFrame, train: bool = True) -> pd.DataFrame:
+        """
+        Normalize the data and return the normalization values
+
+        :param pairs: Pandas :any:`DataFrame` containing the information, the ``distance`` column will be normalized
+        :param train: If true the mean and the standard deviation will be computed with the passed data, otherwise
+                      the previously computed variance will be used to normalize the data
+        :return: Normalized :any:`DataFrame`
+        """
+
+        if train:
+            self.mean = pairs['distance'].mean()
+            self.std = pairs['distance'].std()
+
+        pairs['distance'] -= self.mean
+        pairs['distance'] /= self.std
+        return pairs
 
 
 class BatchData:
