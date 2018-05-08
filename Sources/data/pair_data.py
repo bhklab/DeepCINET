@@ -83,12 +83,7 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         pairs = SplitPairs._get_inner_pairs(df, df)
-
-        # Since we have provided all the pairs sorted in the algorithm the output will be always
-        # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
-        # That's why we swap random pairs
-        random.shuffle(pairs)
-        return map(SplitPairs._swap_random, pairs)
+        return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
     def _get_compare_train(train_df: pd.DataFrame, test_df: pd.DataFrame) -> Iterator[PairComp]:
@@ -100,12 +95,13 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         # Create the pairs where test_elem > train_elem
-        pairs = SplitPairs._get_inner_pairs(test_df, train_df)
+        pairs_test = SplitPairs._get_inner_pairs(test_df, train_df)
 
         # Create the pairs where train_elem > test_elem
-        pairs += SplitPairs._get_inner_pairs(train_df, test_df)
-        random.shuffle(pairs)
-        return map(SplitPairs._swap_random, pairs)
+        pairs_train = SplitPairs._get_inner_pairs(train_df, test_df)
+
+        pairs = pd.concat([pairs_test, pairs_train])
+        return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
     def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> pd.DataFrame:
@@ -131,12 +127,16 @@ class SplitPairs:
 
             pairs = pd.concat([pairs, row_pairs])
 
+        pairs = pairs.apply(SplitPairs._swap_random, axis=1)
+
         return pairs
 
     @staticmethod
-    def _swap_random(tup: PairComp) -> PairComp:
+    def _swap_random(tup: pd.Series):
         if bool(random.randint(0, 1)):
-            return PairComp(p_a=tup.p_b, p_b=tup.p_a, comp=not tup.comp, distance=-tup.distance)
+            tup['pA'], tup['pB'] = tup['pB'], tup['pA']
+            tup['distance'] *= -1
+            tup['comp'] ^= True
         return tup
 
 
