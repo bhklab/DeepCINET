@@ -121,16 +121,18 @@ class SplitPairs:
 
         pairs = []
         for _, row in df.iterrows():
-            values = df_comp.loc[(df_comp['time'] < row['time']), 'id'].values
-            elements = zip(values, [row['id']]*len(values), [True]*len(values))
-            pairs += [PairComp(*x) for x in elements]
+            temp_df = df_comp.loc[(df_comp['time'] < row['time'])]
+            ids = temp_df['id'].values
+            times = (row['time'] - temp_df['time']).values
+            elements = zip(ids, [row['id']]*len(ids), [True]*len(ids), times)
+            pairs += [PairComp(p_a=idA, p_b=idB, comp=comp, distance=d) for idA, idB, comp, d in elements]
 
         return pairs
 
     @staticmethod
     def _swap_random(tup: PairComp) -> PairComp:
         if bool(random.randint(0, 1)):
-            return PairComp(p_a=tup.p_b, p_b=tup.p_a, comp=not tup.comp)
+            return PairComp(p_a=tup.p_b, p_b=tup.p_a, comp=not tup.comp, distance=-tup.distance)
         return tup
 
 

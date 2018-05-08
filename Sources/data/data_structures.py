@@ -20,6 +20,8 @@ class PairComp(NamedTuple):
     :ivar PairComp.comp: True if :math:`T(p_a) < T(p_b)`
     :ivar PairComp.p_a: Key for pair's element A
     :ivar PairComp.p_b: Key for pair's element B
+    :ivar PairComp.distance: Distance between the two pairs. The distance is positive if :any:`PairComp.comp` is
+                             :any:`True`, otherwise the distance is negative
     :vartype PairComp.comp: bool
     :vartype PairComp.p_a: str
     :vartype PairComp.p_b: str
@@ -27,6 +29,7 @@ class PairComp(NamedTuple):
     p_a: str
     p_b: str
     comp: bool
+    distance: float
 
 
 class PairBatch(NamedTuple):
