@@ -247,28 +247,11 @@ class BatchData:
         total_rotations = TOTAL_ROTATIONS if load_images else 1
         ids_list = list(ids)
 
-        replicated_pairs = pd.DataFrame([pairs]*total_rotations)
-
-        # Direct and inverse mapping
-        ids_map = {idx: idx_num*total_rotations for idx_num, idx in enumerate(ids_list)}
-        ids_inverse = {idx_num: idx for idx, i in ids_map.items() for idx_num in range(i, i + total_rotations)}
-
-        pairs_a, pairs_b, labels, distances = [], [], [], []
-        for p in pairs:
-            idx_a, idx_b = ids_map[p.p_a], ids_map[p.p_b]
-            pairs_a += list(range(idx_a, idx_a + total_rotations))
-            pairs_b += list(range(idx_b, idx_b + total_rotations))
-            labels += [p.comp]*total_rotations
-            distances += [p.distance]*total_rotations
-
-        assert len(pairs_a) == len(pairs_b) == len(labels) == len(distances)
-
-        labels = np.array(labels).reshape((-1, 1))
-        distances = np.array(distances).reshape((-1, 1))
-
-        images = []
-        features = []
-        for idx in ids_list:
+        # Direct and inverse mapping from string key to index
+        ids_map = {}
+        features, images = [], []
+        for i, idx in enumerate(ids_list):
+            ids_map[idx] = i
             file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
 
             # Check if the file exists, so the data has been preprocessed
@@ -276,16 +259,40 @@ class BatchData:
                 logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
                 raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
-            column = BatchData.radiomic_df[idx].values
-            features += [column]*total_rotations
-
             if load_images:
                 loaded_npz = np.load(file_path)
+                assert len(loaded_npz.files) == total_rotations
                 for item in loaded_npz:
                     images.append(loaded_npz[item])
                 loaded_npz.close()
             else:
                 images += [np.array([])]*total_rotations
+
+            column = BatchData.radiomic_df[idx].values
+            features += [column]*total_rotations
+
+        ids_inverse = {idx_num: idx for idx, i in ids_map.items() for idx_num in range(i, i + total_rotations)}
+
+        total_df = []
+        for row in pairs.itertuples():
+            row = row._asdict()
+            idx_a, idx_b = ids_map[row['pA']], ids_map[row['pB']]
+
+            temp_dict = {
+                "pA_id": list(range(idx_a, idx_a + total_rotations)),
+                "pB_id": list(range(idx_b, idx_b + total_rotations)),
+            }
+
+            for val in row:
+                temp_dict[val] = [row[val]]*total_rotations
+
+            total_df.append(pd.DataFrame(temp_dict))
+
+        total_df = pd.concat(total_df).drop(columns=["Index"])
+
+        labels = np.array(labels).reshape((-1, 1))
+        distances = np.array(distances).reshape((-1, 1))
+
 
         assert len(images) == len(features)
 
