@@ -222,12 +222,18 @@ class BatchData:
         ids_map = {idx: idx_num*total_rotations for idx_num, idx in enumerate(ids_list)}
         ids_inverse = {idx_num: idx for idx, i in ids_map.items() for idx_num in range(i, i + total_rotations)}
 
-        pairs_a = [idx for p in pairs for idx in range(ids_map[p.p_a], ids_map[p.p_a] + total_rotations)]
-        pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + total_rotations)]
-        labels = [float(l) for p in pairs for l in [p.comp]*total_rotations]
-        assert len(pairs_a) == len(pairs_b) == len(labels)
+        pairs_a, pairs_b, labels, distances = [], [], [], []
+        for p in pairs:
+            idx_a, idx_b = ids_map[p.p_a], ids_map[p.p_b]
+            pairs_a += list(range(idx_a, idx_a + total_rotations))
+            pairs_b += list(range(idx_b, idx_b + total_rotations))
+            labels += [p.comp]*total_rotations
+            distances += [p.distance]*total_rotations
+
+        assert len(pairs_a) == len(pairs_b) == len(labels) == len(distances)
 
         labels = np.array(labels).reshape((-1, 1))
+        distances = np.array(distances).reshape((-1, 1))
 
         images = []
         features = []
@@ -261,6 +267,7 @@ class BatchData:
         return PairBatch(pairs_a=pairs_a,
                          pairs_b=pairs_b,
                          labels=labels,
+                         distances=distances,
                          images=images,
                          ids_map=ids_map,
                          ids_inverse=ids_inverse,
