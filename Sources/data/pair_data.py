@@ -108,7 +108,7 @@ class SplitPairs:
         return map(SplitPairs._swap_random, pairs)
 
     @staticmethod
-    def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> List[PairComp]:
+    def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> pd.DataFrame:
         """
         Generate pairs where the survival time of ``df`` is bigger than the survival time of ``df_comp``
 
@@ -119,13 +119,17 @@ class SplitPairs:
         """
         df_comp = df_comp[df_comp['event'] == 1]
 
-        pairs = []
+        pairs = pd.DataFrame()
         for _, row in df.iterrows():
             temp_df = df_comp.loc[(df_comp['time'] < row['time'])]
-            ids = temp_df['id'].values
-            times = (row['time'] - temp_df['time']).values
-            elements = zip(ids, [row['id']]*len(ids), [True]*len(ids), times)
-            pairs += [PairComp(p_a=idA, p_b=idB, comp=comp, distance=d) for idA, idB, comp, d in elements]
+
+            row_pairs = pd.DataFrame()
+            row_pairs['pA'] = temp_df['id']
+            row_pairs['pB'] = row['id']
+            row_pairs['distance'] = row['time'] - temp_df['time']
+            row_pairs['comp'] = True
+
+            pairs = pd.concat([pairs, row_pairs])
 
         return pairs
 
@@ -136,21 +140,11 @@ class SplitPairs:
         return tup
 
 
-def get_radiomic_features() -> pd.DataFrame:
-    logger = logging.getLogger(__name__)
-    logger.debug("Reading radiomic features")
-    radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
-    radiomic_df = radiomic_df.sub(radiomic_df.mean(axis=1), axis=0)
-    radiomic_df = radiomic_df.div(radiomic_df.std(axis=1), axis=0)
-    logger.debug("Radiomic features processed")
-    return radiomic_df
-
-
 class BatchData:
     """
     Useful methods for working with batch data
     """
-    radiomic_df = get_radiomic_features()
+    radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
 
     @staticmethod
     def batches(pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids', load_images: bool = True) \
@@ -263,6 +257,8 @@ class BatchData:
         # images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
 
         features = np.array(features)
+        features -= features.mean(axis=0)
+        features /= features.std(axis=0)
 
         return PairBatch(pairs_a=pairs_a,
                          pairs_b=pairs_b,
