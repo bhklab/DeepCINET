@@ -10,12 +10,13 @@ import pandas as pd
 
 import data
 import models
+import models.basics
 import settings
 import utils
 
 
 def train_iterations(sess: tf.Session,
-                     model: models.BasicModel,
+                     model: models.basics.BasicModel,
                      tensors: Dict[str, tf.Tensor],
                      pairs: List[data.PairComp],
                      summary_writer: tf.summary.FileWriter,
@@ -57,7 +58,7 @@ def train_iterations(sess: tf.Session,
                 )
                 summary_writer.add_summary(summary, final_iterations)
                 logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: "
-                            f"{total_pairs:>5}, "
+                            f"{total_pairs:>6}, "
                             f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
             else:
                 _, c_index_result, loss = sess.run(
@@ -69,7 +70,7 @@ def train_iterations(sess: tf.Session,
 
 
 def test_iterations(sess: tf.Session,
-                    model: models.BasicModel,
+                    model: models.basics.BasicModel,
                     tensors: Dict[str, tf.Tensor],
                     pairs: List[data.PairComp],
                     batch_size: int) -> Tuple[int, int, pd.DataFrame]:
@@ -133,13 +134,13 @@ def test_iterations(sess: tf.Session,
         result_data['gather_b'] = np.append(result_data['gather_b'], np.array(gather_b))
 
         if i % 10 == 0 or total_pairs == 0:
-            logger.info(f"Batch: {i}, size: {len(batch.pairs_a)}, remaining: {total_pairs}, "
-                        f"c-index: {c_index_result:.3}, final c-index:{correct_count/pairs_count:.3}")
+            logger.info(f"Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: {total_pairs:>5}, "
+                        f"c-index: {c_index_result:>#5.3}, final c-index:{correct_count/pairs_count:>#5.3}")
 
     return correct_count, pairs_count, pd.DataFrame(result_data)
 
 
-def select_model(model_key: str, gpu_level: int, regularization: float, dropout: float) -> models.BasicSiamese:
+def select_model(model_key: str, gpu_level: int, regularization: float, dropout: float) -> models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
@@ -162,14 +163,14 @@ def select_model(model_key: str, gpu_level: int, regularization: float, dropout:
         exit(1)
 
 
-def get_tensors(siamese_model: models.BasicSiamese, learning_rate: float) -> Dict[str, tf.Tensor]:
+def get_tensors(siamese_model: models.basics.BasicSiamese, learning_rate: float) -> Dict[str, tf.Tensor]:
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     tensors = {
-        'loss': siamese_model.loss(),
-        'classification_loss': siamese_model.classification_loss(),
-        'regularization_loss': siamese_model.regularization_loss(),
-        'c-index': siamese_model.c_index(),
-        'true-predictions': siamese_model.good_predictions_count(),
+        'loss': siamese_model.total_loss,
+        'classification_loss': siamese_model.classification_loss,
+        'regularization_loss': siamese_model.regularization_loss,
+        'c-index': siamese_model.c_index,
+        'true-predictions': siamese_model.good_predictions,
         'predictions': siamese_model.y_estimate,
         'probabilities': siamese_model.y_prob,
         'gather_a': siamese_model.gathered_a,
@@ -390,7 +391,7 @@ if __name__ == '__main__':
     if not os.path.exists(arguments['results_path']):
         os.makedirs(arguments['results_path'])
 
-    logger = utils.init_logger(f'{__name__}_{array_id}', arguments['results_path'])
+    logger = utils.init_logger(f'train_{array_id}', arguments['results_path'])
 
     logger.debug("Script starts")
     logger.debug(arguments)
