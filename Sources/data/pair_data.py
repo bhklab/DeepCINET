@@ -239,22 +239,21 @@ class BatchData:
         :return: Generator with the different batches that should be sent to the Machine Learning model
         """
 
-        pairs_iter = iter(pairs.itertuples())
-        row = next(pairs_iter)
+        # Fix this function
+        ids = set()
+        for row in pairs.itertuples():
+            ids |= {row.pA, row.pB}
 
-        # Extract bath_size ids
-        while row is not None:
-            ids = set()
+            if len(ids) >= batch_size:
+                batch_pairs = pairs.loc[pairs['pA'].isin(ids) & pairs['pB'].isin(ids)]
+                assert len(batch_pairs)*2 >= len(ids)
+                yield self._create_pair_batch(batch_pairs, features, load_images)
 
-            # Create a batch of batch_size ids
-            while len(ids) < batch_size and row is not None:
-                ids |= {row.pA, row.pB}
-                row = next(pairs_iter, None)
+                ids = set()
 
-            # Get all the pairs that can be formed with those ids and then remove the batch pairs from the total pairs
+        if len(ids) > 0:
             batch_pairs = pairs.loc[pairs['pA'].isin(ids) & pairs['pB'].isin(ids)]
             assert len(batch_pairs)*2 >= len(ids)
-
             yield self._create_pair_batch(batch_pairs, features, load_images)
 
     def _batch_by_pairs(self,
