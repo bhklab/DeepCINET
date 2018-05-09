@@ -144,7 +144,7 @@ class SplitPairs:
         subset = pairs.sample(frac=.5)
         pairs: pd.DataFrame = pairs.drop(subset.index, axis=0)
 
-        subset.loc[:, ['pA', 'pB']] = subset.loc[:, ['pB', 'pA']]
+        subset.loc[:, ['pA', 'pB']] = subset.loc[:, ['pB', 'pA']].values
         subset['distance'] *= -1
         subset['comp'] ^= True
 
