@@ -192,34 +192,52 @@ class BatchData:
         """
         Generates batches based on all the pairs and the batch size
 
-        :param pairs:
-        :param batch_size:
-        :param group_by:
-        :param load_images:
-        :param train:
-        :return:
+        :param pairs: Pairs to create the batch from
+        :param batch_size: Size of the batch that it's going to be created. The final size will depend on the
+                           ``group_by`` parameter
+        :param group_by: If ``ids`` then the batch size will imply that ``batch_size == len(different_ids)`` otherwise
+                         if it's ``pairs`` the batch size will imply ``batch_size == len(selected_pairs)``.
+        :param load_images: Whether to load the images or not when generating the batch. This can improve performance
+                            if the images are not needed.
+        :param train: If this batch is to be generated for training data or for validation data. If it's for training
+                      then the normalization values will be computed and stored using this data, otherwise the
+                      previously computed values will be used.
+        :return: Generator with the different batches that should be sent to the Machine Learning model
         """
 
         total_ids = np.append(pairs["pA"].values, pairs["pB"].values)
-        total_ids = set(total_ids)
+        total_ids = list(set(total_ids))  # To avoid repetitions
 
-        features: pd.DataFrame = self.radiomic_df[self.radiomic_df["id"].isin(total_ids)]
+        features: pd.DataFrame = self.radiomic_df[total_ids]
 
         if train:
             self.norm_mean = features.mean(axis=1)
-            self.norm_mean = features.std(axis=1)
+            self.norm_std = features.std(axis=1)
 
-        features -= self.norm_mean
-        features /= self.norm_std
+        features = features.sub(self.norm_mean, axis=0)
+        features = features.div(self.norm_std, axis=0)
 
         if group_by == 'ids':
-            return BatchData._batch_by_ids(pairs, batch_size, load_images)
+            return self._batch_by_ids(pairs, features, batch_size, load_images)
         else:
-            return BatchData._batch_by_pairs(pairs, batch_size, load_images)
+            return self._batch_by_pairs(pairs, features, batch_size, load_images)
 
-    @staticmethod
-    def _batch_by_ids(pairs: pd.DataFrame, batch_size: int, load_images: bool = True) \
-            -> Generator[PairBatch, None, None]:
+    def _batch_by_ids(self,
+                      pairs: pd.DataFrame,
+                      features: pd.DataFrame,
+                      batch_size: int,
+                      load_images: bool = True) -> Generator[PairBatch, None, None]:
+        """
+        Create batch of pairs by setting the number of different ids = ``batch_size``
+
+        :param pairs: Pairs to create the batch from
+        :param features: :class:`pandas.DataFrame` containing the patients' features
+        :param batch_size: Size of the batch that it's going to be created. The final size will depend on the
+                           ``group_by`` parameter
+        :param load_images: Whether to load the images or not when generating the batch. This can improve performance
+                            if the images are not needed.
+        :return: Generator with the different batches that should be sent to the Machine Learning model
+        """
 
         pairs_iter = iter(pairs.itertuples())
         row = next(pairs_iter)
@@ -237,26 +255,39 @@ class BatchData:
             batch_pairs = pairs.loc[pairs['pA'].isin(ids) & pairs['pB'].isin(ids)]
             assert len(batch_pairs)*2 >= len(ids)
 
-            yield BatchData._create_pair_batch(batch_pairs, ids, load_images)
+            yield self._create_pair_batch(batch_pairs, features, load_images)
 
-    @staticmethod
-    def _batch_by_pairs(pairs: pd.DataFrame, batch_size: int, load_images=True) \
-            -> Generator[PairBatch, None, None]:
+    def _batch_by_pairs(self,
+                        pairs: pd.DataFrame,
+                        features: pd.DataFrame,
+                        batch_size: int,
+                        load_images=True) -> Generator[PairBatch, None, None]:
+        """
+        Create batch of pairs by setting the ``batch_size == len(selected_pairs)``
+
+        :param pairs: Pairs to select the batch size from
+        :param features: :class:`pandas.DataFrame` containing the patients' features
+        :param batch_size: Size of the batch that it's going to be created. The final size will depend on the
+                           ``group_by`` parameter
+        :param load_images: Whether to load the images or not when generating the batch. This can improve performance
+                            if the images are not needed.
+        :return: Generator with the different batches that should be sent to the Machine Learning model
+        """
 
         for i in range(0, len(pairs), batch_size):
             values = pairs.iloc[i:(i + batch_size)]
-            ids = pd.concat([values['pA'], values['pB']])
-            ids = set(ids.values)
-            yield BatchData._create_pair_batch(values, ids, load_images)
+            yield self._create_pair_batch(values, features, load_images)
 
-    @staticmethod
-    def _create_pair_batch(pairs: pd.DataFrame, ids: Set[str], load_images: bool = True) -> PairBatch:
+    def _create_pair_batch(self,
+                           pairs: pd.DataFrame,
+                           features: pd.DataFrame,
+                           load_images: bool = True) -> PairBatch:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
 
         :param pairs: Pairs to be added to the PairBatch
-        :param ids: npz files' ids that will be added to the PairBatch
+        :param features: :class:`pandas.DataFrame` containing the patients' features
         :return: PairBatch containing the pairs and the requested npz files loaded
         """
         # Convert ids from string to int index. Since there can be multiple images with one pair this will mean that
@@ -265,7 +296,8 @@ class BatchData:
         # idx*TOTAL_ROTATIONS ... (idx + 1)*TOTAL_ROTATIONS
         total_rotations = TOTAL_ROTATIONS if load_images else 1
 
-        ids_map, elements = BatchData._load_elements(list(ids), total_rotations, load_images)
+        ids_list = list(set(pd.concat([pairs["pA"], pairs["pB"]])))
+        ids_map, elements = self._load_patients(ids_list, features, total_rotations, load_images)
 
         # Create pairs information
         batch_pairs = []
@@ -289,12 +321,23 @@ class BatchData:
 
         return PairBatch(pairs=batch_pairs, elements=elements, ids_map=ids_map)
 
-    @staticmethod
-    def _load_elements(ids_list: List[str], total_rotations: int, load_images: bool = True) \
-            -> Tuple[Dict[str, int], pd.DataFrame]:
+    def _load_patients(self,
+                       ids_list: List[str],
+                       features: pd.DataFrame,
+                       total_rotations: int,
+                       load_images: bool = True) -> Tuple[Dict[str, int], pd.DataFrame]:
+        """
+        Load the patients information for the batch of ids, such as the image CT scan and the radiomic features
+        
+        :param ids_list: List of string keys to load the information for 
+        :param features: :class:`pandas.DataFrame` containing all the patients' features
+        :param total_rotations: 
+        :param load_images: 
+        :return: 
+        """
         # Direct and inverse mapping from string key to index
         ids_map = {}
-        features, images, final_ids = [], [], []
+        selected_features, images, final_ids = [], [], []
         for i, idx in enumerate(ids_list):
             ids_map[idx] = i
             final_ids += [idx]*total_rotations
@@ -302,7 +345,7 @@ class BatchData:
 
             # Check if the file exists, so the data has been preprocessed
             if not os.path.exists(file_path):
-                BatchData.logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
+                self.logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
                 raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
             if load_images:
@@ -316,13 +359,14 @@ class BatchData:
             else:
                 images += [np.array([])]*total_rotations
 
-            column = BatchData.radiomic_df[idx].values.reshape(-1, 1)
-            features += [column]*total_rotations
+            # Select radiomic features
+            column = features[idx].values.reshape(-1, 1)
+            selected_features += [column]*total_rotations
 
-        assert len(images) == len(features) == len(final_ids)
+        assert len(images) == len(selected_features) == len(final_ids)
         elements = pd.DataFrame({
             "ids": final_ids,
-            "features": features,
+            "features": selected_features,
             "images": images
         })
 
