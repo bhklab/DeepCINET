@@ -297,29 +297,23 @@ class BatchData:
         total_rotations = TOTAL_ROTATIONS if load_images else 1
 
         ids_list = list(set(pd.concat([pairs["pA"], pairs["pB"]])))
-        ids_map, elements = self._load_patients(ids_list, features, total_rotations, load_images)
+        ids_map, patients = self._load_patients(ids_list, features, total_rotations, load_images)
 
         # Create pairs information
-        batch_pairs = []
+        pairs_a, pairs_b = [], []
         for row in pairs.itertuples():
-            row = row._asdict()
-            idx_a, idx_b = ids_map[row['pA']], ids_map[row['pB']]
+            idx_a, idx_b = ids_map[row.pA], ids_map[row.pB]
 
-            temp_dict = {
-                "pA_id": list(range(idx_a, idx_a + total_rotations)),
-                "pB_id": list(range(idx_b, idx_b + total_rotations)),
-            }
+            pairs_a += list(range(idx_a, idx_a + total_rotations))
+            pairs_b += list(range(idx_b, idx_b + total_rotations))
 
-            for val in row:
-                temp_dict[val] = [row[val]]*total_rotations
+        pairs["pA_id"] = pairs_a
+        pairs["pB_id"] = pairs_b
 
-            batch_pairs.append(pd.DataFrame(temp_dict))
-
-        batch_pairs: pd.DataFrame = pd.concat(batch_pairs).drop(columns=["Index"])
         # Create labels column
-        batch_pairs["labels"] = batch_pairs["comp"].values.astype(float)
+        pairs["labels"] = pairs["comp"].values.astype(float)
 
-        return PairBatch(pairs=batch_pairs, elements=elements, ids_map=ids_map)
+        return PairBatch(pairs=pairs, patients=patients, ids_map=ids_map)
 
     def _load_patients(self,
                        ids_list: List[str],
@@ -360,7 +354,7 @@ class BatchData:
                 images += [np.array([])]*total_rotations
 
             # Select radiomic features
-            column = features[idx].values.reshape(-1, 1)
+            column = features[idx].values
             selected_features += [column]*total_rotations
 
         assert len(images) == len(selected_features) == len(final_ids)

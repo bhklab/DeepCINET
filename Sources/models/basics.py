@@ -121,7 +121,7 @@ class BasicModel:
         :return: Dictionary that can be feed to the ``feed_dict`` parameter of ``sess.run(...)``.
         """
         return {
-            self.y: batch.labels,
+            self.y: batch.pairs["labels"].values.reshape(-1, 1),
             self.training: training
         }
 
@@ -263,8 +263,8 @@ class BasicSiamese(BasicModel):
     def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         return {
             **super().feed_dict(batch, training),
-            self.pairs_a: batch.pairs_a,
-            self.pairs_b: batch.pairs_b,
+            self.pairs_a: batch.pairs["pA_id"],
+            self.pairs_b: batch.pairs["pB_id"],
         }
 
 
@@ -386,7 +386,7 @@ class BasicImageSiamese(BasicSiamese):
         """
         return {
             **super().feed_dict(batch, training=training),
-            self.x_image: batch.images
+            self.x_image: batch.patients["images"]
         }
 
     def uses_images(self) -> bool:

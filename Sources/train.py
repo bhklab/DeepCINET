@@ -61,6 +61,7 @@ def train_iterations(sess: tf.Session,
 
     # Train iterations
     final_iterations = 0
+    sess.run(tf.global_variables_initializer())
     for epoch in range(epochs):
         total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
         for i, batch in enumerate(batch_data.batches(pairs,
@@ -246,8 +247,6 @@ def main(args: Dict[str, Any]):
             # Initialize all the variables
             logger.info("\r ")
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
-
-            sess.run(tf.global_variables_initializer())
 
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)

@@ -1,6 +1,7 @@
 from typing import Dict
 
 import tensorflow as tf
+import numpy as np
 
 import data
 import settings
@@ -528,9 +529,10 @@ class ScalarOnlySiamese(BasicSiamese):
         )
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True):
+
         return {
             **super().feed_dict(batch, training),
-            self.x_scalar: batch.features,
+            self.x_scalar: np.stack(batch.patients["features"]),
         }
 
     def uses_images(self) -> bool:
@@ -618,7 +620,7 @@ class VolumeOnlySiamese(BasicSiamese):
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True):
 
-        volumes = batch.features[:, settings.VOLUME_FEATURE_INDEX].reshape((-1, 1))
+        volumes = batch.patients["features"].values[:, settings.VOLUME_FEATURE_INDEX].reshape((-1, 1))
 
         return {
             **super().feed_dict(batch, training),

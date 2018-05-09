@@ -19,8 +19,8 @@ class PairBatch(NamedTuple):
 
     >>> import numpy as np
     >>> batch = PairBatch(...)
-    >>> images_a = np.take(batch.elements["images"], batch.pairs["pA_id"])
-    >>> images_b = np.take(batch.elements["images"], batch.pairs["pB_id"])
+    >>> images_a = np.take(batch.patients["images"], batch.pairs["pA_id"])
+    >>> images_b = np.take(batch.patients["images"], batch.pairs["pB_id"])
     >>> len(images_a) == len(images_b)  # Must-have condition
     True
 
@@ -46,6 +46,6 @@ class PairBatch(NamedTuple):
     :vartype PairBatch.ids_inverse: dict[int, str]
     """
     pairs: pd.DataFrame
-    elements: pd.DataFrame
+    patients: pd.DataFrame
 
     ids_map: Dict[str, int]
