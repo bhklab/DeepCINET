@@ -1,12 +1,12 @@
 import os
 import logging
-from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List, Dict
+from typing import Iterator, Tuple, Generator, Set, List, Dict
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
-from data.data_structures import PairComp, PairBatch
+from data.data_structures import PairBatch
 from settings import \
     DATA_PATH_CLINICAL_PROCESSED, \
     DATA_PATH_PROCESSED, \
@@ -156,10 +156,11 @@ class SplitPairs:
         """
         Normalize the data and return the normalization values
 
-        :param pairs: Pandas :any:`DataFrame` containing the information, the ``distance`` column will be normalized
+        :param pairs: Pandas :class:`pandas.DataFrame` containing the information, the ``distance`` column will be
+                      normalized
         :param train: If true the mean and the standard deviation will be computed with the passed data, otherwise
                       the previously computed variance will be used to normalize the data
-        :return: Normalized :any:`DataFrame`
+        :return: Normalized :class:`pandas.DataFrame`
         """
 
         if train:
@@ -295,7 +296,7 @@ class BatchData:
             else:
                 images += [np.array([])]*total_rotations
 
-            column = BatchData.radiomic_df[idx].values
+            column = BatchData.radiomic_df[idx].values.reshape(-1, 1)
             features += [column]*total_rotations
 
         assert len(images) == len(features) == len(final_ids)
