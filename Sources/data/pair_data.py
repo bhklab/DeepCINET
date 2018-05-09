@@ -176,12 +176,18 @@ class BatchData:
     """
     Useful methods for working with batch data
     """
-    radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
 
-    logger = logging.getLogger(__name__)
+    def __init__(self):
+        self.radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
+        self.logger = logging.getLogger(__name__)
+        self.norm_mean = 0.
+        self.norm_std = 1.
 
-    @staticmethod
-    def batches(pairs: pd.DataFrame, batch_size: int = 64, group_by: str = 'ids', load_images: bool = True) \
+    def batches(self, pairs: pd.DataFrame,
+                batch_size: int = 64,
+                group_by: str = 'ids',
+                load_images: bool = True,
+                train: bool = True) \
             -> Generator[PairBatch, None, None]:
         """
         Generates batches based on all the pairs and the batch size
@@ -190,8 +196,22 @@ class BatchData:
         :param batch_size:
         :param group_by:
         :param load_images:
+        :param train:
         :return:
         """
+
+        total_ids = np.append(pairs["pA"].values, pairs["pB"].values)
+        total_ids = set(total_ids)
+
+        features: pd.DataFrame = self.radiomic_df[self.radiomic_df["id"].isin(total_ids)]
+
+        if train:
+            self.norm_mean = features.mean(axis=1)
+            self.norm_mean = features.std(axis=1)
+
+        features -= self.norm_mean
+        features /= self.norm_std
+
         if group_by == 'ids':
             return BatchData._batch_by_ids(pairs, batch_size, load_images)
         else:
