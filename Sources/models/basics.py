@@ -50,7 +50,7 @@ class BasicModel:
     #: Threshold to cast a float number between ``0`` and ``1`` to a :any:`True` value for classification
     THRESHOLD = .5
 
-    def __init__(self, regularization: float = .001, dropout: float = .2):
+    def __init__(self, regularization: float = .001, dropout: float = .2, learning_rate: float = 0.001):
         """
         Construct a BasicModel. This model is a basic structure to create a classification model.
 
@@ -100,6 +100,22 @@ class BasicModel:
 
             #: **Attribute**: Concordance index for the current batch
             self.c_index = self.good_predictions/batch_size
+
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        self.minimizer = optimizer.minimize(self.total_loss)
+
+        # Create summaries
+        with tf.name_scope("summaries"):
+            tf.summary.scalar("loss", self.total_loss)
+            tf.summary.scalar("c-index", self.c_index)
+            tf.summary.scalar("classification_loss", self.classification_loss)
+            tf.summary.scalar("regularization_loss", self.regularization_loss)
+
+            for var in tf.trainable_variables():
+                # We have to replace `:` with `_` to avoid a warning that ends doing this replacement
+                tf.summary.histogram(str(var.name).replace(":", "_"), var)
+
+        self.summary = tf.summary.merge_all()
 
     @abc.abstractmethod
     def _model(self) -> tf.Tensor:
@@ -186,7 +202,8 @@ class BasicSiamese(BasicModel):
     :vartype BasicSiamese._gpu_level: int
     """
 
-    def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2):
+    def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2,
+                 learning_rate: float = 0.001):
         """
         Construct a BasicSiamese model.
 
@@ -209,7 +226,7 @@ class BasicSiamese(BasicModel):
         #: **Attribute**: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
         self.gathered_b = None
 
-        super().__init__(regularization=regularization, dropout=dropout)
+        super().__init__(regularization=regularization, dropout=dropout, learning_rate=learning_rate)
 
     def _model(self) -> tf.Tensor:
         """

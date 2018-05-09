@@ -43,22 +43,6 @@ def train_iterations(sess: tf.Session,
     :param epochs: Number of epochs, passes through the complete dataset, should be done when training
     """
 
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-    minimize_tensor = optimizer.minimize(model.total_loss)
-
-    # Create summaries
-    with tf.name_scope("summaries"):
-        tf.summary.scalar("loss", model.total_loss)
-        tf.summary.scalar("c-index", model.c_index)
-        tf.summary.scalar("classification_loss", model.classification_loss)
-        tf.summary.scalar("regularization_loss", model.regularization_loss)
-
-        for var in tf.trainable_variables():
-            # We have to replace `:` with `_` to avoid a warning that ends doing this replacement
-            tf.summary.histogram(str(var.name).replace(":", "_"), var)
-
-    summary_tensor = tf.summary.merge_all()
-
     # Train iterations
     final_iterations = 0
     sess.run(tf.global_variables_initializer())
@@ -75,10 +59,10 @@ def train_iterations(sess: tf.Session,
             if final_iterations % 5 == 0:
                 _, c_index_result, loss, summary = sess.run(
                     [
-                        minimize_tensor,
+                        model.minimizer,
                         model.c_index,
                         model.total_loss,
-                        summary_tensor
+                        model.summary
                     ],
                     feed_dict=model.feed_dict(batch)
                 )
@@ -89,7 +73,7 @@ def train_iterations(sess: tf.Session,
             else:
                 _, c_index_result, loss = sess.run(
                     [
-                        minimize_tensor,
+                        model.minimizer,
                         model.c_index,
                         model.total_loss
                     ],
@@ -159,7 +143,7 @@ def test_iterations(sess: tf.Session,
         result_data.append(temp_results)
 
         if i % 10 == 0 or total_pairs == 0:
-            logger.info(f"Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: {total_pairs:>5}, "
+            logger.info(f"Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: {total_pairs:>5}, "
                         f"c-index: {c_index_result:>#5.3}, final c-index:{correct_count/pairs_count:>#5.3}")
 
     return correct_count, pairs_count, pd.concat(result_data)

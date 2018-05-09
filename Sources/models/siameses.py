@@ -477,7 +477,7 @@ class ScalarOnlySiamese(BasicSiamese):
         #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
 
-        super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout)
+        super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout, learning_rate=0.1)
 
     def _sister(self):
         # Out: [batch, 500]

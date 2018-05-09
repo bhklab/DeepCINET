@@ -307,6 +307,7 @@ class BatchData:
             pairs_a += list(range(idx_a, idx_a + total_rotations))
             pairs_b += list(range(idx_b, idx_b + total_rotations))
 
+        pairs: pd.DataFrame = pairs.copy()
         pairs["pA_id"] = pairs_a
         pairs["pB_id"] = pairs_b
 
