@@ -1,8 +1,6 @@
 import os
-import random
 import logging
-from itertools import takewhile, islice, repeat
-from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List
+from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List, Dict
 
 import numpy as np
 import pandas as pd
@@ -179,6 +177,8 @@ class BatchData:
     """
     radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
 
+    logger = logging.getLogger(__name__)
+
     @staticmethod
     def batches(pairs: pd.DataFrame, batch_size: int = 64, group_by: str = 'ids', load_images: bool = True) \
             -> Generator[PairBatch, None, None]:
@@ -238,42 +238,16 @@ class BatchData:
         :param ids: npz files' ids that will be added to the PairBatch
         :return: PairBatch containing the pairs and the requested npz files loaded
         """
-        logger = logging.getLogger(__name__)
-
         # Convert ids from string to int index. Since there can be multiple images with one pair this will mean that
         # We have to return more indices related to the same pair so that's why we are using the TOTAL_ROTATIONS
         # global variable to set the indices, the generated indices are in the range:
         # idx*TOTAL_ROTATIONS ... (idx + 1)*TOTAL_ROTATIONS
         total_rotations = TOTAL_ROTATIONS if load_images else 1
-        ids_list = list(ids)
 
-        # Direct and inverse mapping from string key to index
-        ids_map = {}
-        features, images = [], []
-        for i, idx in enumerate(ids_list):
-            ids_map[idx] = i
-            file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
+        ids_map, elements = BatchData._load_elements(list(ids), total_rotations, load_images)
 
-            # Check if the file exists, so the data has been preprocessed
-            if not os.path.exists(file_path):
-                logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
-                raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
-
-            if load_images:
-                loaded_npz = np.load(file_path)
-                assert len(loaded_npz.files) == total_rotations
-                for item in loaded_npz:
-                    images.append(loaded_npz[item])
-                loaded_npz.close()
-            else:
-                images += [np.array([])]*total_rotations
-
-            column = BatchData.radiomic_df[idx].values
-            features += [column]*total_rotations
-
-        ids_inverse = {idx_num: idx for idx, i in ids_map.items() for idx_num in range(i, i + total_rotations)}
-
-        total_df = []
+        # Create pairs information
+        batch_pairs = []
         for row in pairs.itertuples():
             row = row._asdict()
             idx_a, idx_b = ids_map[row['pA']], ids_map[row['pB']]
@@ -286,41 +260,49 @@ class BatchData:
             for val in row:
                 temp_dict[val] = [row[val]]*total_rotations
 
-            total_df.append(pd.DataFrame(temp_dict))
+            batch_pairs.append(pd.DataFrame(temp_dict))
 
-        total_df = pd.concat(total_df).drop(columns=["Index"])
+        batch_pairs: pd.DataFrame = pd.concat(batch_pairs).drop(columns=["Index"])
+        # Create labels column
+        batch_pairs["labels"] = batch_pairs["comp"].values.astype(float)
 
-        labels = np.array(labels).reshape((-1, 1))
-        distances = np.array(distances).reshape((-1, 1))
-
-
-        assert len(images) == len(features)
-
-        images = np.array(images)
-        images = images.reshape((-1, 64, 64, 64, 1))
-        # images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
-
-        features = np.array(features)
-        features -= features.mean(axis=0)
-        features /= features.std(axis=0)
-
-        return PairBatch(pairs_a=pairs_a,
-                         pairs_b=pairs_b,
-                         labels=labels,
-                         distances=distances,
-                         images=images,
-                         ids_map=ids_map,
-                         ids_inverse=ids_inverse,
-                         features=features)
+        return PairBatch(pairs=batch_pairs, elements=elements, ids_map=ids_map)
 
     @staticmethod
-    def _split(it: Iterable, n: int) -> Iterable[Iterable]:
-        """
-        Given an iterable create batches of size n
+    def _load_elements(ids_list: List[str], total_rotations: int, load_images: bool = True) \
+            -> Tuple[Dict[str, int], pd.DataFrame]:
+        # Direct and inverse mapping from string key to index
+        ids_map = {}
+        features, images, final_ids = [], [], []
+        for i, idx in enumerate(ids_list):
+            ids_map[idx] = i
+            final_ids += [idx]*total_rotations
+            file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
 
-        :param it: Iterable
-        :param n: Batch size
-        :return: Batches of size n
-        """
-        it = iter(it)
-        return takewhile(bool, (list(islice(it, n)) for _ in repeat(None)))
+            # Check if the file exists, so the data has been preprocessed
+            if not os.path.exists(file_path):
+                BatchData.logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
+                raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
+
+            if load_images:
+                loaded_npz = np.load(file_path)
+                assert len(loaded_npz.files) == total_rotations
+                for item in loaded_npz:
+                    loaded_array = loaded_npz[item]
+                    assert loaded_array.shape == (64, 64, 64)
+                    images.append(loaded_array.reshape(64, 64, 64, 1))
+                loaded_npz.close()
+            else:
+                images += [np.array([])]*total_rotations
+
+            column = BatchData.radiomic_df[idx].values
+            features += [column]*total_rotations
+
+        assert len(images) == len(features) == len(final_ids)
+        elements = pd.DataFrame({
+            "ids": final_ids,
+            "features": features,
+            "images": images
+        })
+
+        return ids_map, elements

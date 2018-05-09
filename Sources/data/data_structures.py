@@ -1,6 +1,7 @@
 from typing import NamedTuple, List, Dict
 
 import numpy as np
+import pandas as pd
 
 
 class PseudoDir(NamedTuple):
@@ -69,12 +70,7 @@ class PairBatch(NamedTuple):
     :vartype PairBatch.ids_map: dict[str, int]
     :vartype PairBatch.ids_inverse: dict[int, str]
     """
-    pairs_a: List[int]
-    pairs_b: List[int]
-    labels: np.ndarray
-    distances: np.ndarray
-    # TODO: Fix the status with the images
-    images: np.ndarray
-    features: np.ndarray
+    pairs: pd.DataFrame
+    elements: pd.DataFrame
+
     ids_map: Dict[str, int]
-    ids_inverse: Dict[int, str]
