@@ -3,6 +3,7 @@ import logging
 from typing import Dict
 
 import tensorflow as tf
+import numpy as np
 
 import data
 
@@ -280,8 +281,8 @@ class BasicSiamese(BasicModel):
     def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         return {
             **super().feed_dict(batch, training),
-            self.pairs_a: batch.pairs["pA_id"],
-            self.pairs_b: batch.pairs["pB_id"],
+            self.pairs_a: batch.pairs["pA_id"].values,
+            self.pairs_b: batch.pairs["pB_id"].values,
         }
 
 
@@ -403,7 +404,7 @@ class BasicImageSiamese(BasicSiamese):
         """
         return {
             **super().feed_dict(batch, training=training),
-            self.x_image: batch.patients["images"]
+            self.x_image: np.stack(batch.patients["images"].values)
         }
 
     def uses_images(self) -> bool:

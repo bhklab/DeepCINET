@@ -17,7 +17,6 @@ import utils
 
 def train_iterations(sess: tf.Session,
                      model: models.basics.BasicSiamese,
-                     learning_rate: float,
                      batch_data: data.BatchData,
                      pairs: pd.DataFrame,
                      summary_writer: tf.summary.FileWriter,
@@ -29,7 +28,6 @@ def train_iterations(sess: tf.Session,
     :param sess: Tensorflow session
     :param model: Model with a :func:`models.BasicModel.feed_dict` method to get the ``feed_dict`` for
                   ``sess.run(...)``
-    :param learning_rate: Learning rate for the optimization algorithm
     :param batch_data: Class containing the information for the batch data, it's necessary because it contains
                        information regarding the mean and std of the radiomic features.
     :param pairs: List of pairs that can be trained. Usually this pairs can be obtained by calling
@@ -106,7 +104,7 @@ def test_iterations(sess: tf.Session,
     :return:
     """
     # After we iterate over all the data inspect the test error
-    total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
+    total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
     correct_count = 0  # To store correct predictions
     pairs_count = 0
     result_data = []
@@ -239,7 +237,6 @@ def main(args: Dict[str, Any]):
             # Epoch iterations
             train_iterations(sess,
                              siamese_model,
-                             args['learning_rate'],
                              batch_data,
                              train_pairs,
                              train_summary,

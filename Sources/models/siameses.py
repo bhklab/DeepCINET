@@ -414,7 +414,7 @@ class ImageScalarSiamese(BasicImageSiamese):
         """
         return {
             **super().feed_dict(batch, training=training),
-            self.x_scalar: batch.features
+            self.x_scalar: np.stack(batch.patients["features"].values)
         }
 
 
@@ -620,7 +620,8 @@ class VolumeOnlySiamese(BasicSiamese):
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True):
 
-        volumes = batch.patients["features"].values[:, settings.VOLUME_FEATURE_INDEX].reshape((-1, 1))
+        features = np.stack(batch.patients["features"].values)
+        volumes = features[:, settings.VOLUME_FEATURE_INDEX].reshape((-1, 1))
 
         return {
             **super().feed_dict(batch, training),
