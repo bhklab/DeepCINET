@@ -8,6 +8,245 @@ import settings
 from .basics import BasicImageSiamese, BasicSiamese
 
 
+class ImageSiamese(BasicImageSiamese):
+    """
+    Class representing the initial and simple siamese structure used for the first steps of the project. It
+    inherits :any:`BasicSiamese` so it has the same tensors to be fed.
+
+    **Convolutional Model**:
+
+    It contains parallel in inception_block and 3 FC layers
+
+    """
+
+    def __init__(self, **kwargs):
+        """
+        Construct a new SimpleSiamese class
+
+        :param gpu_level: Amount of GPU to be used with the model
+
+                            0. No GPU usage
+                            1. Only second conv layers
+                            2. All conv layers
+                            3. All layers and parameters are on the GPU
+        """
+        super().__init__(**kwargs)
+
+    def _inception_block(self, x:tf.Tensor, stage: str, block:str):
+        """
+
+        :param x: Network's input images with shape ``[batch, 64, 64, 64, 1]``
+        :param filters: list of integers, the number of filters in the CONV layers
+        :param stage: integer, Used to name the layers, depending on their position in the network
+        :param block: string, Used to name the layers, depending on their position in the network
+        :return: Tensor of shape ``[n_X, n_Y, n_Z, n_C]``
+        """
+        conv_name_base = 'res' + str(stage) + block + '_branch'
+        bn_name_base = 'bn' + str(stage) + block + '_branch'
+        # Retrieve Filters
+        #F1, F2, F3 = filters
+        device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
+        self.logger.debug(f"Using device: {device} for first conv layers")
+        with tf.device(device):
+
+            a1 = tf.layers.conv3d(
+
+                x,
+
+                filters=16,
+
+                kernel_size=[1, 1, 1],
+
+                strides=1,
+
+                activation=tf.nn.relu,
+
+                padding='SAME',
+
+                name=conv_name_base + 'a1'
+
+            )
+
+            a2 = tf.layers.conv3d(
+
+                a1,
+
+                filters=16,
+
+                kernel_size=[4, 4, 4],
+
+                strides=1,
+
+                activation=tf.nn.relu,
+
+                padding='SAME',
+
+                name=conv_name_base + 'a2'
+
+            )
+        device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
+        self.logger.debug(f"Using device: {device} for first conv layers")
+        with tf.device(device):
+
+            b1 = tf.layers.conv3d(
+
+                x,
+
+                filters=16,
+
+                kernel_size=[1, 1, 1],
+
+                strides=1,
+
+                activation=tf.nn.relu,
+
+                padding='SAME',
+
+                name=conv_name_base + 'b1'
+
+            )
+
+            b2 = tf.layers.conv3d(
+
+                b1,
+
+                filters=16,
+
+                kernel_size=[8, 8, 8],
+
+                strides=1,
+
+                activation=tf.nn.relu,
+
+                padding='SAME',
+
+                name=conv_name_base + 'b2'
+
+            )
+        device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
+        self.logger.debug(f"Using device: {device} for first conv layers")
+        with tf.device(device):
+            c1 = tf.nn.max_pool3d(
+
+                x,
+
+                ksize=[1, 4, 4, 4, 1],
+
+                strides=[1,1,1,1,1],
+
+                padding='SAME',
+
+
+                name=conv_name_base + 'c1'
+
+            )
+
+            c2 = tf.layers.conv3d(
+
+                c1,
+
+                filters=16,
+
+                kernel_size=[1, 1, 1],
+
+                strides=1,
+
+                activation=tf.nn.relu,
+
+                padding='SAME',
+
+                name=conv_name_base + 'c2'
+
+            )
+
+        d1 = tf.concat([a2, b2], 0)
+        d1 = tf.concat([d1 , c2], 0)
+
+        d2 = tf.layers.conv3d(
+
+            d1,
+
+            filters=1,
+
+            kernel_size=[1, 1, 1],
+
+            strides=1,
+
+            activation=tf.nn.relu,
+
+            padding='SAME',
+
+            name=conv_name_base + 'd'
+        )
+        d2 = tf.contrib.layers.batch_norm(d2,
+                                     center=True, scale=True,
+                                     scope='bn')
+        tf.layers.BatchNormalization(d2)
+        return d2
+
+    def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        Implementation of abstract method :func:`~BasicSiamese._conv_layers`
+
+        :param x: Network's input images with shape ``[batch, 64, 64, 64, 1]``
+        :return: Filtered image with the convolutions applied
+        """
+        # In: [batch, 64, 64, 64, 1]
+        x1 = self._inception_block(x,"1s", "b1")
+
+        return x1
+
+
+    def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        Implementation of abstract method ``BasicSiamese._fc_layers``
+
+        :param x: Image, usually previously filtered with the convolutional layers.
+        :return: Tensor with shape ``[batch, 1]``
+        """
+        device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
+        self.logger.debug(f"Using device: {device} for FC layers")
+        with tf.device(device):
+            # Out: [batch, 64*64*64*1]
+            x = tf.layers.flatten(
+                x,
+                name="flat"
+            )
+
+            # Out: [batch, 100]
+            x = tf.layers.dense(
+                x,
+                100,
+                activation=tf.nn.relu,
+                name="fc1"
+            )
+
+            # Out: [batch, 50]
+            x = tf.layers.dense(
+                x,
+                50,
+                activation=tf.nn.relu,
+                name="fc2"
+            )
+
+            # Out: [batch, 1]
+            x = tf.layers.dense(
+                x,
+                1,
+                activation=tf.nn.relu,
+                name="fc3"
+            )
+        return x
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`.
+
+        :return: :any:`True`, the model uses images as input to work
+        """
+        return True
+
+
 class SimpleImageSiamese(BasicImageSiamese):
     r"""
     Simple siamese network implementation that uses images as input.
