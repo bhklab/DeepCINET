@@ -2,4 +2,9 @@
 The Train package contains different classes designed to be trained to fit data
 """
 
-from .Siamese import Siamese
+from .siameses import \
+    SimpleImageSiamese, \
+    ImageScalarSiamese, \
+    ScalarOnlySiamese, \
+    VolumeOnlySiamese
+from .basics import BasicModel, BasicSiamese, BasicImageSiamese

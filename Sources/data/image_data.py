@@ -1,5 +1,6 @@
 import os
 import shutil
+import logging
 from typing import List, Iterator, Tuple, Dict
 
 import numpy as np
@@ -10,7 +11,6 @@ import scipy.ndimage
 from joblib import delayed, Parallel
 from skimage import transform as skt
 
-import utils
 from data.data_structures import PseudoDir
 from settings import \
     DATA_PATH_CACHE, \
@@ -18,9 +18,9 @@ from settings import \
     DATA_PATH_CLINICAL_PROCESSED, \
     DATA_PATH_PROCESSED, \
     DATA_PATH_RAW, \
+    DATA_PATH_RADIOMIC_PROCESSED, \
+    DATA_PATH_RADIOMIC, \
     IMAGE_ROTATIONS
-
-logger = utils.get_logger('data.image_data')
 
 
 class RawData:
@@ -29,7 +29,7 @@ class RawData:
     """
 
     def __init__(self):
-        super().__init__()
+        self.logger = logging.getLogger(__name__)
         self.data_path = DATA_PATH_RAW
         self.cache_path = DATA_PATH_CACHE
         self.elements_stored = False
@@ -37,13 +37,13 @@ class RawData:
         if not os.path.exists(DATA_PATH_CLINICAL):
             raise FileNotFoundError("The clinical info file has not been found at {}".format(DATA_PATH_CLINICAL))
 
-        df = pd.read_csv(DATA_PATH_CLINICAL)
-        self.clinical_ids = set(df.iloc[:, 0].tolist())
+        df_clinical = pd.read_csv(DATA_PATH_CLINICAL)
+        self.clinical_ids = set(df_clinical.iloc[:, 0].tolist())
 
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
         self._valid_dirs = [PseudoDir(x.name, x.path, x.is_dir()) for x in valid_dirs]
         self._valid_ids = [str(x.name) for x in self._valid_dirs]
-        logger.info(f"{len(self._valid_dirs)} valid ids have been found")
+        self.logger.info(f"{len(self._valid_dirs)} valid ids have been found")
 
     def total_elements(self) -> int:
         return len(self._valid_dirs)
@@ -87,7 +87,7 @@ class RawData:
 
         # To pre-process on Mordor
         jobs = int(os.getenv("NSLOTS", -1))
-        logger.debug("Jobs: {}".format(jobs))
+        self.logger.debug("Jobs: {}".format(jobs))
 
         generator = (delayed(self._generate_npz)(directory, i + 1, len(to_create))
                      for i, directory in enumerate(to_create))
@@ -135,10 +135,10 @@ class RawData:
         numpy_file = os.path.join(self.cache_path, image_dir.name + ".npz")
         numpy_file_temp = os.path.join(self.cache_path, image_dir.name + "_temp.npz")
 
-        logger.info(f"Reading {count} of {total}")
+        self.logger.info(f"Reading {count} of {total}")
 
         main_stack, mask_stack = self._compact_files(image_dir)
-        logger.debug("Saving {} file".format(numpy_file_temp))
+        self.logger.debug("Saving {} file".format(numpy_file_temp))
         np.savez_compressed(numpy_file_temp, main=main_stack, mask=mask_stack)
         os.rename(numpy_file_temp, numpy_file)  # Use a temp name to avoid problems when stopping the script
 
@@ -153,7 +153,7 @@ class RawData:
 
         # Load .npz file instead of .dcm if we have already read it
         if os.path.exists(numpy_file):
-            logger.debug(f"File {numpy_file} found reading npz file")
+            self.logger.debug(f"File {numpy_file} found reading npz file")
             npz_file = np.load(numpy_file)
             main_stack = npz_file['main']
             mask_stack = npz_file['mask']
@@ -230,8 +230,8 @@ class PreProcessedData:
 
     def __init__(self):
         self._data_path = DATA_PATH_PROCESSED
-        self._clinical_info_path = DATA_PATH_CLINICAL
         self._raw_data = RawData()
+        self.logger = logging.getLogger(__name__)
 
     def store(self, overwrite=False) -> None:
         """
@@ -259,7 +259,7 @@ class PreProcessedData:
         # To pre-process on Mordor (computing cluster), this variable is defined with Sun Grid
         # Engine and is the number of threads that we are allowed to use
         jobs = int(os.getenv("NSLOTS", -1))
-        logger.debug(f"Jobs: {jobs}")
+        self.logger.debug(f"Jobs: {jobs}")
 
         generator = (delayed(self._process_individual)(idx, main_stack, mask_stack, i + 1, len(to_create))
                      for i, (idx, main_stack, mask_stack) in enumerate(self._raw_data.elements(to_create)))
@@ -287,7 +287,7 @@ class PreProcessedData:
         save_dir = os.path.join(self._data_path, image_id)
         temp_dir = os.path.join(self._data_path, image_id + "_temp")
 
-        logger.info(f"Processing dataset {image_id}, {count} of {total}")
+        self.logger.info(f"Processing dataset {image_id}, {count} of {total}")
 
         # Remove existing temporary directory from previous runs
         if os.path.exists(temp_dir):
@@ -337,7 +337,7 @@ class PreProcessedData:
         sliced -= sliced.mean()
         sliced /= sliced.std()
 
-        logger.debug(f"Volume: {original_volume}")
+        self.logger.debug(f"Volume: {original_volume}")
         return sliced
 
     def _write_clinical_filtered(self):
@@ -347,35 +347,25 @@ class PreProcessedData:
 
         It also prints the number of maximum pairs that can be achieved with the current data.
         """
-        if not os.path.exists(self._clinical_info_path):
-            raise FileNotFoundError("The clinical info file has not been found at {}".format(self._clinical_info_path))
+        # Process the clinical CSV
+        if not os.path.exists(DATA_PATH_CLINICAL):
+            self.logger.error(f"The clinical info file has not been found at {DATA_PATH_CLINICAL}")
+            raise FileNotFoundError(f"The clinical info file has not been found at {DATA_PATH_CLINICAL}")
 
-        df = pd.read_csv(self._clinical_info_path)
+        df = pd.read_csv(DATA_PATH_CLINICAL)
         df = df.take([self.COL_ID, self.COL_AGE, self.COL_SEX, self.COL_EVENT, self.COL_TIME], axis=1)
         df.columns = ['id', 'age', 'sex', 'event', 'time']
         df = df[df['id'].isin(self._raw_data.valid_ids())]  # Remove elements that are not valid data
         df.to_csv(DATA_PATH_CLINICAL_PROCESSED)
 
-        # Compute number of possible pairs
-        censored_count = df[df['event'] == 0].count()[0]
-        uncensored_count = df.count()[0] - censored_count
+        # Process the radiomc features CSV
+        if not os.path.exists(DATA_PATH_RADIOMIC):
+            self.logger.error(f"The radiomic features file has not been found at {DATA_PATH_RADIOMIC}")
+            raise FileNotFoundError(f"The radiomic features file has not been found at {DATA_PATH_RADIOMIC}")
 
-        censored_pairs = censored_count*uncensored_count
-        uncensored_pairs = scipy.misc.comb(uncensored_count, 2, exact=True)
-
-        censored_pairs_augmented = censored_pairs*4
-        uncensored_pairs_augmented = uncensored_pairs*4
-
-        logger.info(f"Total censored: {censored_count}")
-        logger.info(f"Total uncensored: {uncensored_count}")
-
-        logger.info(f"Total censored pairs: {censored_pairs:,}")
-        logger.info(f"Total uncensored pairs: {uncensored_pairs:,}")
-        logger.info(f"Total pairs {censored_pairs + uncensored_pairs:,}")
-
-        logger.info(f"Total censored pairs augmented: {censored_pairs_augmented:,}")
-        logger.info(f"Total uncensored pairs augmented: {uncensored_pairs_augmented:,}")
-        logger.info(f"Total pairs augmented {censored_pairs_augmented + uncensored_pairs_augmented:,}")
+        df = pd.read_csv(DATA_PATH_RADIOMIC)
+        df = df[self._raw_data.valid_ids()]
+        df.to_csv(DATA_PATH_RADIOMIC_PROCESSED)
 
     @staticmethod
     def _get_rotations(sliced_norm: np.array) -> Dict[str, np.ndarray]:
