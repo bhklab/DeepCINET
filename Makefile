@@ -9,7 +9,7 @@ SOURCEDIR     = docs_source
 BUILDDIR      = docs_build
 
 EXCLUDE_PRIVATE= "_source,_asdict,_fields,_field_defaults,_field_types,_replace,_make"
-APIDOC_OPTIONS='members,private-members,undoc-members,show-inheritance,inherited-members,change-1,change-2'
+APIDOC_OPTIONS='members,private-members,undoc-members,show-inheritance,inherited-members,change-1'
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -20,7 +20,7 @@ help:
 docs:
 	rm -rf docs_source/api
 	SPHINX_APIDOC_OPTIONS=${APIDOC_OPTIONS} sphinx-apidoc -M -o docs_source/api/ Sources Sources/experimental.py
-	sed -i .bak "s/change-1:/exclude-members: $(EXCLUDE_PRIVATE)/;s/change-2:/special-members: __init__/" $(SOURCEDIR)/api/*.rst
+	sed -i .bak "s/change-1:/exclude-members: $(EXCLUDE_PRIVATE)/" $(SOURCEDIR)/api/*.rst
 	$(MAKE) html
 
 clean:

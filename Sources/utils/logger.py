@@ -5,27 +5,8 @@ import sys
 
 import settings
 
-loggers = {}
 file_formatter = logging.Formatter("[%(asctime)s - %(name)s] %(levelname)s: %(message)s")
 console_formatter = logging.Formatter("(%(name)s): %(message)s")
-
-
-def get_logger(name: str) -> logging.Logger:
-    """
-    Obtain a logger by its name. If the logger does not exists, a new one will be created instead.
-    By default all loggers are initialized and set with ``logging.DEBUG`` level.
-
-    :param name: Logger name
-    :return: Created logger
-    """
-    if name in loggers:
-        return loggers.get(name)
-
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-    loggers[name] = logger
-    logger.debug("---- Logger Initiated ----")
-    return logger
 
 
 def init_logger(app_name: str, directory: str = settings.SUMMARIES_DIR) -> logging.Logger:
@@ -39,7 +20,6 @@ def init_logger(app_name: str, directory: str = settings.SUMMARIES_DIR) -> loggi
     :param directory: Path for the directory where the log files should be saved
     :return: Initialized logger
     """
-    logger = get_logger('')
 
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -52,9 +32,9 @@ def init_logger(app_name: str, directory: str = settings.SUMMARIES_DIR) -> loggi
     ch.setLevel(settings.LOG_LEVEL_CONSOLE)
     ch.setFormatter(console_formatter)
 
+    logging.basicConfig(level=logging.DEBUG, handlers=[fh, ch])
+    logger = logging.getLogger('')
     logger.addHandler(logging.handlers.SocketHandler('127.0.0.1', 19996))
 
-    logger.addHandler(ch)
-    logger.addHandler(fh)
     return logger
 
