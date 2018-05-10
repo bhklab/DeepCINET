@@ -150,7 +150,7 @@ class SplitPairs:
         :param df_comp: :class:`DataFrame` that will be compared against and if its values are smaller than the compared
                     value a pair will be created
         :param bidirectional: Generate all the possible pairs, in the two possible directions
-        :return: List with all the generated pairs
+        :return: List with all the generated pairs. **Note**: The pairs are **not** in a random order
         """
         df_comp = df_comp[df_comp['event'] == 1]
 
@@ -176,6 +176,8 @@ class SplitPairs:
             pairs = pairs.drop(pairs_b.index, axis=0)
 
         pairs_b.loc[:, ['pA', 'pB']] = pairs_b.loc[:, ['pB', 'pA']].values
+        pairs_b['distance'] *= -1
+        pairs_b['comp'] ^= True
 
         pairs = pd.concat([pairs, pairs_b], ignore_index=True)
 

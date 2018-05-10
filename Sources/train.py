@@ -166,16 +166,16 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         exit(1)
 
 
-def get_sets_generator(cv_folds: int, test_size: int) \
+def get_sets_generator(cv_folds: int, test_size: int, bidirectional: bool) \
         -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
     if cv_folds < 2:
-        generator = dataset.train_test_split(test_size)
+        generator = dataset.train_test_split(test_size, bidirectional=bidirectional)
         enum_generator = [(0, generator)]
     else:
-        generator = dataset.folds(cv_folds)
+        generator = dataset.folds(cv_folds, bidirectional=bidirectional)
 
         # Slurm configuration
         task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
@@ -208,7 +208,7 @@ def main(args: Dict[str, Any]):
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'])
+        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'], args['bidirectional'])
 
         counts = {
             'train': {
@@ -357,6 +357,22 @@ if __name__ == '__main__':
         default=0.2,
         type=float,
         choices=[utils.ArgRange(0., 1.)]
+    )
+
+    parser.add_argument(
+        "--bidirectional-pairs",
+        help="When generating the pairs, for every two ids create the two possible pairs in the two possible "
+             "directions",
+        action="store_true",
+        dest="bidirectional",
+        default=True
+    )
+
+    parser.add_argument(
+        "--no-bidirectional-pairs",
+        help="Create pairs using only the comparisons in one direction",
+        action="store_false",
+        dest="bidirectional"
     )
 
     # See if we are running in a SLURM task array
