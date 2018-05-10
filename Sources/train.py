@@ -2,10 +2,9 @@
 
 import argparse
 import os
-from typing import Dict, List, Tuple, Any, Iterator
+from typing import Dict, Tuple, Any, Iterator
 
 import tensorflow as tf
-import numpy as np
 import pandas as pd
 
 import data
