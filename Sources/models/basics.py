@@ -55,8 +55,11 @@ class BasicModel:
     #: Threshold to cast a float number between ``0`` and ``1`` to a :any:`True` value for classification
     THRESHOLD = .5
 
-    def __init__(self, regularization: float = .001, dropout: float = .2, learning_rate: float = 0.001):
+    def __init__(self, regularization: float = .001, dropout: float = .2, learning_rate: float = 0.001, **ignored):
         self.logger = logging.getLogger(__name__)
+
+        if len(ignored) > 0:
+            self.logger.warning(f"There are unknown arguments {ignored}")
 
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
         self.y = tf.placeholder(tf.float32, [None, 1], name="Y")

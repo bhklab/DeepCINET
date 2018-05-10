@@ -146,24 +146,21 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.concat(result_data)
 
 
-def select_model(model_key: str, gpu_level: int, regularization: float, dropout: float) -> models.basics.BasicSiamese:
+def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
     :param model_key: String key to select the model
-    :param gpu_level: Amount of GPU to be used, required to create a model's instance
-    :param regularization: Regularization factor to be used
-    :param dropout: Amount of dropout to be used with the model
     :return: Instance of `models.BasicSiamese` with the proper subclass selected
     """
     if model_key == "SimpleImageSiamese":
-        return models.SimpleImageSiamese(gpu_level)
+        return models.SimpleImageSiamese(**kwargs)
     elif model_key == "ImageScalarSiamese":
-        return models.ImageScalarSiamese(gpu_level, regularization, dropout=dropout)
+        return models.ImageScalarSiamese(**kwargs)
     elif model_key == "ScalarOnlySiamese":
-        return models.ScalarOnlySiamese(gpu_level, regularization, dropout=dropout)
+        return models.ScalarOnlySiamese(**kwargs)
     elif model_key == "VolumeOnlySiamese":
-        return models.VolumeOnlySiamese()
+        return models.VolumeOnlySiamese(**kwargs)
     else:
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
@@ -201,7 +198,11 @@ def main(args: Dict[str, Any]):
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
 
-    siamese_model = select_model(args['model'], args['gpu_level'], args['regularization'], args['dropout'])
+    siamese_model = select_model(args['model'],
+                                 gpu_level=args['gpu_level'],
+                                 regularization=args['regularization'],
+                                 dropout=args['dropout'],
+                                 learning_rate=args['learning_rate'])
 
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
