@@ -306,6 +306,7 @@ class BatchData:
             pairs_b += list(range(idx_b, idx_b + total_rotations))
 
         pairs: pd.DataFrame = pairs.copy()
+        pairs = pairs.iloc[np.repeat(np.arange(len(pairs)), total_rotations)]
         pairs["pA_id"] = pairs_a
         pairs["pB_id"] = pairs_b
 
@@ -332,7 +333,7 @@ class BatchData:
         ids_map = {}
         selected_features, images, final_ids = [], [], []
         for i, idx in enumerate(ids_list):
-            ids_map[idx] = i
+            ids_map[idx] = i*total_rotations
             final_ids += [idx]*total_rotations
             file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
 
