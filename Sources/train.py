@@ -159,6 +159,8 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         return models.ImageScalarSiamese(**kwargs)
     elif model_key == "ScalarOnlySiamese":
         return models.ScalarOnlySiamese(**kwargs)
+    elif model_key == "ScalarOnlyDropoutSiamese":
+        return models.ScalarOnlyDropoutSiamese(**kwargs)
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
     else:
@@ -326,7 +328,8 @@ if __name__ == '__main__':
         "--model",
         help="Choose the model that you want to use for training",
         default="SimpleImageSiamese",
-        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese', 'VolumeOnlySiamese'],
+        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese', 'VolumeOnlySiamese',
+                 'ScalarOnlyDropoutSiamese'],
         type=str
     )
 

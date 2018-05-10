@@ -409,6 +409,63 @@ class ScalarOnlySiamese(BasicSiamese):
         return False
 
 
+class ScalarOnlyDropoutSiamese(ScalarOnlySiamese):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            500,
+            "fc1"
+        )
+
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        # Out: [batch, 200]
+        x = self._dense(
+            x,
+            200,
+            "fc2"
+        )
+
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        # Out: [batch, 50]
+        x = self._dense(
+            x,
+            50,
+            "fc3"
+        )
+
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        # Out: [batch, 1]
+        x = self._dense(
+            x,
+            10,
+            "fc4",
+            activation=tf.nn.relu
+        )
+
+        return x
+
+
 class VolumeOnlySiamese(BasicSiamese):
     r"""
     Model that only uses the volume radiomic feature
