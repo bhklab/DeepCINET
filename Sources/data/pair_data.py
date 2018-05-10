@@ -239,20 +239,19 @@ class BatchData:
         :return: Generator with the different batches that should be sent to the Machine Learning model
         """
 
-        # Fix this function
-        ids = set()
-        for row in pairs.itertuples():
-            ids |= {row.pA, row.pB}
+        pairs: pd.DataFrame = pairs.copy()
 
-            if len(ids) >= batch_size:
-                batch_pairs = pairs.loc[pairs['pA'].isin(ids) & pairs['pB'].isin(ids)]
-                assert len(batch_pairs)*2 >= len(ids)
-                yield self._create_pair_batch(batch_pairs, features, load_images)
+        while len(pairs) > 0:
+            ids = set()
+            for row in pairs.itertuples():
+                ids |= {row.pA, row.pB}
 
-                ids = set()
+                if len(ids) >= batch_size:
+                    break
 
-        if len(ids) > 0:
             batch_pairs = pairs.loc[pairs['pA'].isin(ids) & pairs['pB'].isin(ids)]
+            pairs = pairs.drop(batch_pairs.index)
+
             assert len(batch_pairs)*2 >= len(ids)
             yield self._create_pair_batch(batch_pairs, features, load_images)
 
