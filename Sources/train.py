@@ -2,10 +2,9 @@
 
 import argparse
 import os
-from typing import Dict, List, Tuple, Any, Iterator
+from typing import Dict, Tuple, Any, Iterator
 
 import tensorflow as tf
-import numpy as np
 import pandas as pd
 
 import data
@@ -16,9 +15,9 @@ import utils
 
 
 def train_iterations(sess: tf.Session,
-                     model: models.basics.BasicModel,
-                     tensors: Dict[str, tf.Tensor],
-                     pairs: List[data.PairComp],
+                     model: models.basics.BasicSiamese,
+                     batch_data: data.BatchData,
+                     pairs: pd.DataFrame,
                      summary_writer: tf.summary.FileWriter,
                      batch_size: int,
                      epochs: int):
@@ -28,7 +27,8 @@ def train_iterations(sess: tf.Session,
     :param sess: Tensorflow session
     :param model: Model with a :func:`models.BasicModel.feed_dict` method to get the ``feed_dict`` for
                   ``sess.run(...)``
-    :param tensors: Tensors that can be run, provided as a dictionary with keys as strings
+    :param batch_data: Class containing the information for the batch data, it's necessary because it contains
+                       information regarding the mean and std of the radiomic features.
     :param pairs: List of pairs that can be trained. Usually this pairs can be obtained by calling
                   :func:`data.SplitPairs.folds` or :func:`data.SplitPairs.train_test_split`
     :param summary_writer: Summary writer provided by Tensorflow to show the training progress
@@ -42,27 +42,38 @@ def train_iterations(sess: tf.Session,
 
     # Train iterations
     final_iterations = 0
+    sess.run(tf.global_variables_initializer())
     for epoch in range(epochs):
         total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
-        for i, batch in enumerate(data.BatchData.batches(pairs,
-                                                         batch_size=batch_size,
-                                                         load_images=model.uses_images())):
+        for i, batch in enumerate(batch_data.batches(pairs,
+                                                     batch_size=batch_size,
+                                                     load_images=model.uses_images(),
+                                                     train=True)):
 
-            total_pairs -= len(batch.pairs_a)
+            total_pairs -= len(batch.pairs)
 
             # Execute graph operations but only write summaries once every 5 iterations
             if final_iterations % 5 == 0:
                 _, c_index_result, loss, summary = sess.run(
-                    [tensors['minimize'], tensors['c-index'], tensors['loss'], tensors['summary']],
+                    [
+                        model.minimizer,
+                        model.c_index,
+                        model.total_loss,
+                        model.summary
+                    ],
                     feed_dict=model.feed_dict(batch)
                 )
                 summary_writer.add_summary(summary, final_iterations)
-                logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: "
+                logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: "
                             f"{total_pairs:>6}, "
                             f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
             else:
                 _, c_index_result, loss = sess.run(
-                    [tensors['minimize'], tensors['c-index'], tensors['loss']],
+                    [
+                        model.minimizer,
+                        model.c_index,
+                        model.total_loss
+                    ],
                     feed_dict=model.feed_dict(batch)
                 )
 
@@ -70,9 +81,9 @@ def train_iterations(sess: tf.Session,
 
 
 def test_iterations(sess: tf.Session,
-                    model: models.basics.BasicModel,
-                    tensors: Dict[str, tf.Tensor],
-                    pairs: List[data.PairComp],
+                    model: models.basics.BasicSiamese,
+                    batch_data: data.BatchData,
+                    pairs: pd.DataFrame,
                     batch_size: int) -> Tuple[int, int, pd.DataFrame]:
     """
     Iterations to test the data provided.
@@ -80,7 +91,8 @@ def test_iterations(sess: tf.Session,
     :param sess: Tensorflow session
     :param model: Model with a :func:`models.BasicModel.feed_dict` method to get the ``feed_dict`` for
                   ``sess.run(...)``
-    :param tensors: Tensors that can be run, provided as a dictionary with keys as strings
+    :param batch_data: Class containing the information for the batch data, it's necessary because it contains
+                       information regarding the mean and std of the radiomic features.
     :param pairs: Lis of pairs that should be evaluated. Usually this pairs can be obtained by calling
                   :func:`data.SplitPairs.folds` or :func:`data.SplitPairs.train_test_split`
     :param batch_size: Batch size for testing. Since usually images are being used, the whole dataset does not fit
@@ -91,112 +103,71 @@ def test_iterations(sess: tf.Session,
     :return:
     """
     # After we iterate over all the data inspect the test error
-    total_pairs = len(pairs)*settings.TOTAL_ROTATIONS
+    total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
     correct_count = 0  # To store correct predictions
     pairs_count = 0
-
-    result_data = {
-        'pairs_a': [],
-        'pairs_b': [],
-        'labels': np.array([], dtype=bool),
-        'predictions': np.array([], dtype=bool),
-        'probabilities': np.array([]),
-        'gather_a': np.array([]),
-        'gather_b': np.array([]),
-    }
+    result_data = []
 
     # Test iterations
-    for i, batch in enumerate(data.BatchData.batches(pairs, batch_size=batch_size, load_images=model.uses_images())):
+    for i, batch in enumerate(batch_data.batches(pairs,
+                                                 batch_size=batch_size,
+                                                 load_images=model.uses_images(),
+                                                 train=False)):
         # Execute test operations
         temp_sum, c_index_result, predictions, probabilities, gather_a, gather_b = sess.run(
             [
-                tensors['true-predictions'],
-                tensors['c-index'],
-                tensors['predictions'],
-                tensors['probabilities'],
-                tensors['gather_a'],
-                tensors['gather_b'],
+                model.good_predictions,
+                model.c_index,
+                model.y_estimate,
+                model.y_prob,
+                model.gathered_a,
+                model.gathered_b
             ],
             feed_dict=model.feed_dict(batch, training=False)
         )
 
         correct_count += temp_sum
-        total_pairs -= len(batch.pairs_a)
-        pairs_count += len(batch.pairs_a)
+        total_pairs -= len(batch.pairs)
+        pairs_count += len(batch.pairs)
 
         # Save results
-        result_data['pairs_a'] += [batch.ids_inverse[idx] for idx in batch.pairs_a]
-        result_data['pairs_b'] += [batch.ids_inverse[idx] for idx in batch.pairs_b]
-        result_data['labels'] = np.append(result_data['labels'], np.array(batch.labels).astype(bool))
-        result_data['predictions'] = np.append(result_data['predictions'], np.array(predictions).astype(bool))
-        result_data['probabilities'] = np.append(result_data['probabilities'], np.array(probabilities))
-        result_data['gather_a'] = np.append(result_data['gather_a'], np.array(gather_a))
-        result_data['gather_b'] = np.append(result_data['gather_b'], np.array(gather_b))
+        temp_results: pd.DataFrame = batch.pairs.copy()
+        temp_results['gather_a'] = gather_a
+        temp_results['gather_b'] = gather_b
+        temp_results['probabilities'] = probabilities
+        temp_results['predictions'] = predictions
+
+        result_data.append(temp_results)
 
         if i % 10 == 0 or total_pairs == 0:
-            logger.info(f"Batch: {i:>4}, size: {len(batch.pairs_a):>5}, remaining: {total_pairs:>5}, "
+            logger.info(f"Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: {total_pairs:>5}, "
                         f"c-index: {c_index_result:>#5.3}, final c-index:{correct_count/pairs_count:>#5.3}")
 
-    return correct_count, pairs_count, pd.DataFrame(result_data)
+    return correct_count, pairs_count, pd.concat(result_data)
 
 
-def select_model(model_key: str, gpu_level: int, regularization: float, dropout: float) -> models.basics.BasicSiamese:
+def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
     :param model_key: String key to select the model
-    :param gpu_level: Amount of GPU to be used, required to create a model's instance
-    :param regularization: Regularization factor to be used
-    :param dropout: Amount of dropout to be used with the model
     :return: Instance of `models.BasicSiamese` with the proper subclass selected
     """
     if model_key == "SimpleImageSiamese":
-        return models.SimpleImageSiamese(gpu_level)
+        return models.SimpleImageSiamese(**kwargs)
     elif model_key == "ImageScalarSiamese":
-        return models.ImageScalarSiamese(gpu_level, regularization, dropout=dropout)
+        return models.ImageScalarSiamese(**kwargs)
     elif model_key == "ScalarOnlySiamese":
-        return models.ScalarOnlySiamese(gpu_level, regularization, dropout=dropout)
+        return models.ScalarOnlySiamese(**kwargs)
     elif model_key == "VolumeOnlySiamese":
-        return models.VolumeOnlySiamese()
+        return models.VolumeOnlySiamese(**kwargs)
     else:
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
 
 
-def get_tensors(siamese_model: models.basics.BasicSiamese, learning_rate: float) -> Dict[str, tf.Tensor]:
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-    tensors = {
-        'loss': siamese_model.total_loss,
-        'classification_loss': siamese_model.classification_loss,
-        'regularization_loss': siamese_model.regularization_loss,
-        'c-index': siamese_model.c_index,
-        'true-predictions': siamese_model.good_predictions,
-        'predictions': siamese_model.y_estimate,
-        'probabilities': siamese_model.y_prob,
-        'gather_a': siamese_model.gathered_a,
-        'gather_b': siamese_model.gathered_b
-    }
-
-    tensors['minimize'] = optimizer.minimize(tensors['loss'])
-
-    # Create summaries
-    with tf.name_scope("summaries"):
-        tf.summary.scalar("loss", tensors['loss'])
-        tf.summary.scalar("c-index", tensors['c-index'])
-        tf.summary.scalar("classification_loss", tensors['classification_loss'])
-        tf.summary.scalar("regularization_loss", tensors['regularization_loss'])
-
-        for var in tf.trainable_variables():
-            # We have to replace `:` with `_` to avoid a warning that ends doing this replacement
-            tf.summary.histogram(str(var.name).replace(":", "_"), var)
-
-    tensors['summary'] = tf.summary.merge_all()
-    logger.debug("Tensors created")
-    return tensors
-
-
 def get_sets_generator(cv_folds: int, test_size: int) \
-        -> Iterator[Tuple[int, Tuple[List[data.PairComp], List[data.PairComp], List[data.PairComp]]]]:
+        -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
@@ -215,6 +186,8 @@ def get_sets_generator(cv_folds: int, test_size: int) \
         else:
             enum_generator = enumerate(generator)
 
+    logger.debug("Folds created")
+
     return enum_generator
 
 
@@ -225,8 +198,11 @@ def main(args: Dict[str, Any]):
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
 
-    siamese_model = select_model(args['model'], args['gpu_level'], args['regularization'], args['dropout'])
-    tensors = get_tensors(siamese_model, args['learning_rate'])
+    siamese_model = select_model(args['model'],
+                                 gpu_level=args['gpu_level'],
+                                 regularization=args['regularization'],
+                                 dropout=args['dropout'],
+                                 learning_rate=args['learning_rate'])
 
     conf = tf.ConfigProto()
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
@@ -251,18 +227,17 @@ def main(args: Dict[str, Any]):
 
         for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
             # Initialize all the variables
-            sess.run(tf.global_variables_initializer())
-
             logger.info("\r ")
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
 
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
+            batch_data = data.BatchData()
 
             # Epoch iterations
             train_iterations(sess,
                              siamese_model,
-                             tensors,
+                             batch_data,
                              train_pairs,
                              train_summary,
                              args['batch_size'],
@@ -272,7 +247,11 @@ def main(args: Dict[str, Any]):
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                 logger.info(f"Computing {name} c-index")
                 correct, total, results = \
-                    test_iterations(sess, siamese_model, tensors, pairs, args['batch_size'])
+                    test_iterations(sess,
+                                    siamese_model,
+                                    batch_data,
+                                    pairs,
+                                    args['batch_size'])
 
                 counts[name]['total'] += total
                 counts[name]['correct'] += correct

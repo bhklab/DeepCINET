@@ -6,4 +6,4 @@ get it in form of different batches
 """
 from data.image_data import RawData, PreProcessedData
 from data.pair_data import SplitPairs, BatchData
-from data.data_structures import PseudoDir, PairBatch, PairComp
+from data.data_structures import PseudoDir, PairBatch

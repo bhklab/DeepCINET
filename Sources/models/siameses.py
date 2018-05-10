@@ -1,6 +1,7 @@
 from typing import Dict
 
 import tensorflow as tf
+import numpy as np
 
 import data
 import settings
@@ -9,7 +10,9 @@ from .basics import BasicImageSiamese, BasicSiamese
 
 class SimpleImageSiamese(BasicImageSiamese):
     r"""
-    Simple siamese network implementation that uses images as input
+    Simple siamese network implementation that uses images as input.
+
+    Has the same parameters as :class:`BasicImageSiamese`
 
     **Convolutional Model**:
 
@@ -25,65 +28,11 @@ class SimpleImageSiamese(BasicImageSiamese):
 
     **Attributes**:
 
-    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
-    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
-    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
-    :var BasicModel.classification_loss: Classification loss using the negative log loss function
-
-                                         .. math::
-                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
-                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
-                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
-                                             \quad m := \text{batch size}
-
-    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
-    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
-    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
-                                      it only needs to be divided by the batch size
-    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
-                             comparisons between the total
-
-                             .. math::
-                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
-
-    :var BasicModel._regularization: Regularization factor
-    :var BasicModel._dropout: Dropout probability
-    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
-    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
-    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
-    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
-    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
-    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
-    :vartype BasicModel.y: tf.Tensor
-    :vartype BasicModel.y_prob: tf.Tensor
-    :vartype BasicModel.y_estimate: tf.Tensor
-    :vartype BasicModel.classification_loss: tf.Tensor
-    :vartype BasicModel.regularization_loss: tf.Tensor
-    :vartype BasicModel.total_loss: tf.Tensor
-    :vartype BasicModel.good_predictions: tf.Tensor
-    :vartype BasicModel.c_index: tf.Tensor
-    :vartype BasicModel._regularization: float
-    :vartype BasicModel._dropout: float
-    :vartype BasicSiamese.pairs_a: tf.Tensor
-    :vartype BasicSiamese.pairs_b: tf.Tensor
-    :vartype BasicSiamese.gathered_a: tf.Tensor
-    :vartype BasicSiamese.gathered_b: tf.Tensor
-    :vartype BasicSiamese._gpu_level: int
-    :vartype BasicImageSiamese.x_image: tf.Tensor
+    Includes the same attributes as :class:`BasicImageSiamese`
     """
 
-    def __init__(self, gpu_level: int = 0):
-        """
-        Construct a new SimpleSiamese class
-
-        :param gpu_level: Amount of GPU to be used with the model
-
-                            0. No GPU usage
-                            1. Only second conv layers
-                            2. All conv layers
-                            3. All layers and parameters are on the GPU
-        """
-        super().__init__(gpu_level)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
         """
@@ -184,9 +133,17 @@ class ImageScalarSiamese(BasicImageSiamese):
     r"""
     Siamese model that uses both images and scalar values as input.
 
+    It uses scalar features extracted with PyRadiomics and provided through a Tensorflow ``placeholder``,
+    the model assumes that there are :any:`settings.NUMBER_FEATURES` for each input.
+
+    :param learning_rate:
+    :param gpu_level: Amount of GPU that should be used with the model
+    :param regularization: Regularization factor for the weights
+    :param dropout: Dropout probability
+
     This class creates a Siamese model that uses both images and scalar features extracted using
     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_.
-    The features are not extracted by the model but they have to be provided in one of the placeholders
+    The features are not extracted by the model, so they have to be provided in one of the placeholders
 
     **Network structure**:
 
@@ -203,71 +160,18 @@ class ImageScalarSiamese(BasicImageSiamese):
 
     **Attributes**:
 
-    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
-    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
-    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
-    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+    Includes the same attributes as :class:`BasicImageSiamese` and adds the following ones:
 
-                                         .. math::
-                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
-                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
-                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
-                                             \quad m := \text{batch size}
-
-    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
-    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
-    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
-                                      it only needs to be divided by the batch size
-    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
-                             comparisons between the total
-
-                             .. math::
-                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
-
-    :var BasicModel._regularization: Regularization factor
-    :var BasicModel._dropout: Dropout probability
-    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
-    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
-    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
-    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
-    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
-    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 64, 64, 64, 1]``
     :var ImageScalarSiamese.x_scalar: Scalar features obtained with
                                       `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
-    :vartype BasicModel.y: tf.Tensor
-    :vartype BasicModel.y_prob: tf.Tensor
-    :vartype BasicModel.y_estimate: tf.Tensor
-    :vartype BasicModel.classification_loss: tf.Tensor
-    :vartype BasicModel.regularization_loss: tf.Tensor
-    :vartype BasicModel.total_loss: tf.Tensor
-    :vartype BasicModel.good_predictions: tf.Tensor
-    :vartype BasicModel.c_index: tf.Tensor
-    :vartype BasicModel._regularization: float
-    :vartype BasicModel._dropout: float
-    :vartype BasicSiamese.pairs_a: tf.Tensor
-    :vartype BasicSiamese.pairs_b: tf.Tensor
-    :vartype BasicSiamese.gathered_a: tf.Tensor
-    :vartype BasicSiamese.gathered_b: tf.Tensor
-    :vartype BasicSiamese._gpu_level: int
-    :vartype BasicImageSiamese.x_image: tf.Tensor
     :vartype ImageScalarSiamese.x_scalar: tf.Tensor
     """
 
-    def __init__(self, gpu_level: int = 0, regularization: float = 0.001, dropout: float = 0.2):
-        """
-        Initialize a ScalarSiamese model. This model uses scalar features extracted with PyRadiomics and
-        provided through a CSV file in the dataset, the model assumes that there are :any:`settings.NUMBER_FEATURES`
-        for each input.
-
-        :param gpu_level: Amount of GPU that should be used with the model
-        :param regularization: Regularization factor for the weights
-        :param dropout: Dropout probability
-        """
-
+    def __init__(self, **kwargs):
         #: **Attribute**: Scalar features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES], name="radiomic_features")
 
-        super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout)
+        super().__init__(**kwargs)
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
         """
@@ -413,7 +317,7 @@ class ImageScalarSiamese(BasicImageSiamese):
         """
         return {
             **super().feed_dict(batch, training=training),
-            self.x_scalar: batch.features
+            self.x_scalar: np.stack(batch.patients["features"].values)
         }
 
 
@@ -421,62 +325,24 @@ class ScalarOnlySiamese(BasicSiamese):
     r"""
     Model that uses only radiomic features as input to train
 
-    Machine Learning model that only uses the radiomic features obtained with
-    `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    It has the same parameters as :class:`BasicSiamese`
 
-    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
-    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
-    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
-    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+    It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
 
-                                         .. math::
-                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
-                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
-                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
-                                             \quad m := \text{batch size}
+    **Attributes**:
 
-    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
-    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
-    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
-                                      it only needs to be divided by the batch size
-    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
-                             comparisons between the total
+    Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
 
-                             .. math::
-                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
-
-    :var BasicModel._regularization: Regularization factor
-    :var BasicModel._dropout: Dropout probability
-    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
-    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
-    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
-    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
-    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
     :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
                                      `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
-    :vartype BasicModel.y: tf.Tensor
-    :vartype BasicModel.y_prob: tf.Tensor
-    :vartype BasicModel.y_estimate: tf.Tensor
-    :vartype BasicModel.classification_loss: tf.Tensor
-    :vartype BasicModel.regularization_loss: tf.Tensor
-    :vartype BasicModel.total_loss: tf.Tensor
-    :vartype BasicModel.good_predictions: tf.Tensor
-    :vartype BasicModel.c_index: tf.Tensor
-    :vartype BasicModel._regularization: float
-    :vartype BasicModel._dropout: float
-    :vartype BasicSiamese.pairs_a: tf.Tensor
-    :vartype BasicSiamese.pairs_b: tf.Tensor
-    :vartype BasicSiamese.gathered_a: tf.Tensor
-    :vartype BasicSiamese.gathered_b: tf.Tensor
-    :vartype BasicSiamese._gpu_level: int
     :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
     """
 
-    def __init__(self, gpu_level: int = 0, regularization: float = 0.01, dropout: float = 0.2):
+    def __init__(self, **kwargs):
         #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
         self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
 
-        super().__init__(gpu_level=gpu_level, regularization=regularization, dropout=dropout)
+        super().__init__(**kwargs)
 
     def _sister(self):
         # Out: [batch, 500]
@@ -528,9 +394,10 @@ class ScalarOnlySiamese(BasicSiamese):
         )
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True):
+
         return {
             **super().feed_dict(batch, training),
-            self.x_scalar: batch.features,
+            self.x_scalar: np.stack(batch.patients["features"]),
         }
 
     def uses_images(self) -> bool:
@@ -550,60 +417,20 @@ class VolumeOnlySiamese(BasicSiamese):
 
     It trains a model in the form :math:`y = w \cdot V + b`
 
-    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
-    :var BasicModel.y_prob: Tensor with the probabilities of single class classification
-    :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
-    :var BasicModel.classification_loss: Classification loss using the negative log loss function
+    **Attributes**:
 
-                                         .. math::
-                                             \mathcal{L}(\boldsymbol{y}, \boldsymbol{\hat{y}}) = -\frac{1}{m}
-                                             \sum_{i = 1}^{m} \left(y_i \cdot \log(\hat{y}_i) +
-                                             (1 - y_i) \cdot \log(1 - \hat{y}_i)\right)
-                                             \quad m := \text{batch size}
+    Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
 
-    :var BasicModel.regularization_loss: L2 norm of the weights to add to the loss function to regularize
-    :var BasicModel.total_loss: Total loss to be minimized with the optimizer
-    :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
-                                      it only needs to be divided by the batch size
-    :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
-                             comparisons between the total
-
-                             .. math::
-                                 \frac{\text{correct comparisons}}{\text{total comparisons}}
-
-    :var BasicModel._regularization: Regularization factor
-    :var BasicModel._dropout: Dropout probability
-    :var BasicSiamese.pairs_a: Indices to be selected as pairs A for the batch of input images, has shape ``[batch]``
-    :var BasicSiamese.pairs_b: Indices to be selected as pairs B for the batch of input images, has shape ``[batch]``
-    :var BasicSiamese.gathered_a: Output results for pairs members' A. It has shape ``[pairs_batch, last_layer_units]``
-    :var BasicSiamese.gathered_b: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
-    :var BasicSiamese._gpu_level: Amount of GPU that should be used when evaluating the model
-    :var ScalarOnlySiamese.x_volume: Radiomic volume feature obtained with
-                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
-    :vartype BasicModel.y: tf.Tensor
-    :vartype BasicModel.y_prob: tf.Tensor
-    :vartype BasicModel.y_estimate: tf.Tensor
-    :vartype BasicModel.classification_loss: tf.Tensor
-    :vartype BasicModel.regularization_loss: tf.Tensor
-    :vartype BasicModel.total_loss: tf.Tensor
-    :vartype BasicModel.good_predictions: tf.Tensor
-    :vartype BasicModel.c_index: tf.Tensor
-    :vartype BasicModel._regularization: float
-    :vartype BasicModel._dropout: float
-    :vartype BasicSiamese.pairs_a: tf.Tensor
-    :vartype BasicSiamese.pairs_b: tf.Tensor
-    :vartype BasicSiamese.gathered_a: tf.Tensor
-    :vartype BasicSiamese.gathered_b: tf.Tensor
-    :vartype BasicSiamese._gpu_level: int
+    :ivar VolumeOnlySiamese.x_volume: Placeholder for the volume feature
     :vartype VolumeOnlySiamese.x_volume: tf.Tensor
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         #: **Attribute**: Radiomic volume feature obtained with
         #: `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
         self.x_volume = tf.placeholder(tf.float32, [None, 1])
 
-        super().__init__()
+        super().__init__(**kwargs)
 
     def _sister(self) -> tf.Tensor:
         """
@@ -618,7 +445,8 @@ class VolumeOnlySiamese(BasicSiamese):
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True):
 
-        volumes = batch.features[:, settings.VOLUME_FEATURE_INDEX].reshape((-1, 1))
+        features = np.stack(batch.patients["features"].values)
+        volumes = features[:, settings.VOLUME_FEATURE_INDEX].reshape((-1, 1))
 
         return {
             **super().feed_dict(batch, training),

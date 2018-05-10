@@ -1,14 +1,12 @@
 import os
-import random
 import logging
-from itertools import takewhile, islice, repeat
-from typing import Iterator, Tuple, Generator, Iterable, Set, Collection, List
+from typing import Iterator, Tuple, Generator, List, Dict
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
-from data.data_structures import PairComp, PairBatch
+from data.data_structures import PairBatch
 from settings import \
     DATA_PATH_CLINICAL_PROCESSED, \
     DATA_PATH_PROCESSED, \
@@ -28,8 +26,11 @@ class SplitPairs:
 
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
+        self.mean = 0
+        self.std = 1
+        self.logger = logging.getLogger(__name__)
 
-    def folds(self, n_folds: int = 4) -> Iterator[Tuple[List[PairComp], List[PairComp], List[PairComp]]]:
+    def folds(self, n_folds: int = 4) -> Iterator[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """
         Creates different folds of data for use with CV
 
@@ -42,7 +43,7 @@ class SplitPairs:
             yield self._create_train_test(train_ids, test_ids)
 
     def train_test_split(self, test_size: float = .25) \
-            -> Tuple[List[PairComp], List[PairComp], List[PairComp]]:
+            -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Split data in train/test with the specified proportion
 
@@ -55,7 +56,7 @@ class SplitPairs:
         return self._create_train_test(train_ids, test_ids)
 
     def _create_train_test(self, train_ids: List[int], test_ids: List[int]) -> \
-            Tuple[List[PairComp], List[PairComp], List[PairComp]]:
+            Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
         for each set
@@ -67,14 +68,23 @@ class SplitPairs:
         train_data = self.clinical_data.iloc[train_ids]
         test_data = self.clinical_data.iloc[test_ids]
 
+        self.logger.debug("Generating train pairs")
         train_pairs = self._get_pairs(train_data)
+
+        self.logger.debug("Generating test pairs")
         test_pairs = self._get_pairs(test_data)
+
+        self.logger.debug("Generating mixed pairs")
         test_mix_pairs = self._get_compare_train(train_data, test_data)
 
-        return list(train_pairs), list(test_pairs), list(test_mix_pairs)
+        train_pairs = self._normalize(train_pairs)
+        test_pairs = self._normalize(test_pairs, train=False)
+        test_mix_pairs = self._normalize(test_mix_pairs, train=False)
+
+        return train_pairs, test_pairs, test_mix_pairs
 
     @staticmethod
-    def _get_pairs(df: pd.DataFrame) -> Iterator[PairComp]:
+    def _get_pairs(df: pd.DataFrame) -> pd.DataFrame:
         """
         Get all the possible pairs for a DataFrame containing the clinical data, keeping in mind the censored
         data
@@ -83,15 +93,10 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         pairs = SplitPairs._get_inner_pairs(df, df)
-
-        # Since we have provided all the pairs sorted in the algorithm the output will be always
-        # pair1 < pair2. We do not want the ML method to learn this but to understand the image features
-        # That's why we swap random pairs
-        random.shuffle(pairs)
-        return map(SplitPairs._swap_random, pairs)
+        return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
-    def _get_compare_train(train_df: pd.DataFrame, test_df: pd.DataFrame) -> Iterator[PairComp]:
+    def _get_compare_train(train_df: pd.DataFrame, test_df: pd.DataFrame) -> pd.DataFrame:
         """
         Create the pairs by having one member belonging to the train dataset and the other to the test dataset
 
@@ -100,15 +105,16 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         # Create the pairs where test_elem > train_elem
-        pairs = SplitPairs._get_inner_pairs(test_df, train_df)
+        pairs_test = SplitPairs._get_inner_pairs(test_df, train_df)
 
         # Create the pairs where train_elem > test_elem
-        pairs += SplitPairs._get_inner_pairs(train_df, test_df)
-        random.shuffle(pairs)
-        return map(SplitPairs._swap_random, pairs)
+        pairs_train = SplitPairs._get_inner_pairs(train_df, test_df)
+
+        pairs = pd.concat([pairs_test, pairs_train])
+        return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
-    def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> List[PairComp]:
+    def _get_inner_pairs(df: pd.DataFrame, df_comp: pd.DataFrame) -> pd.DataFrame:
         """
         Generate pairs where the survival time of ``df`` is bigger than the survival time of ``df_comp``
 
@@ -121,157 +127,241 @@ class SplitPairs:
 
         pairs = []
         for _, row in df.iterrows():
-            values = df_comp.loc[(df_comp['time'] < row['time']), 'id'].values
-            elements = zip(values, [row['id']]*len(values), [True]*len(values))
-            pairs += [PairComp(*x) for x in elements]
+            temp_df = df_comp.loc[(df_comp['time'] < row['time'])]
+
+            row_pairs = pd.DataFrame()
+            row_pairs['pA'] = temp_df['id']
+            row_pairs['pB'] = row['id']
+            row_pairs['distance'] = row['time'] - temp_df['time']
+            row_pairs['comp'] = True
+
+            pairs.append(row_pairs)
+
+        pairs = pd.concat(pairs)
+        pairs = pairs.reset_index(drop=True)
+
+        # Swap some pairs because the comparison value would be always true otherwise
+        subset = pairs.sample(frac=.5)
+        pairs: pd.DataFrame = pairs.drop(subset.index, axis=0)
+
+        subset.loc[:, ['pA', 'pB']] = subset.loc[:, ['pB', 'pA']].values
+        subset['distance'] *= -1
+        subset['comp'] ^= True
+
+        pairs = pairs.append(subset)
 
         return pairs
 
-    @staticmethod
-    def _swap_random(tup: PairComp) -> PairComp:
-        if bool(random.randint(0, 1)):
-            return PairComp(p_a=tup.p_b, p_b=tup.p_a, comp=not tup.comp)
-        return tup
+    def _normalize(self, pairs: pd.DataFrame, train: bool = True) -> pd.DataFrame:
+        """
+        Normalize the data and return the normalization values
 
+        :param pairs: Pandas :class:`pandas.DataFrame` containing the information, the ``distance`` column will be
+                      normalized
+        :param train: If true the mean and the standard deviation will be computed with the passed data, otherwise
+                      the previously computed variance will be used to normalize the data
+        :return: Normalized :class:`pandas.DataFrame`
+        """
 
-def get_radiomic_features() -> pd.DataFrame:
-    logger = logging.getLogger(__name__)
-    logger.debug("Reading radiomic features")
-    radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
-    radiomic_df = radiomic_df.sub(radiomic_df.mean(axis=1), axis=0)
-    radiomic_df = radiomic_df.div(radiomic_df.std(axis=1), axis=0)
-    logger.debug("Radiomic features processed")
-    return radiomic_df
+        if train:
+            self.mean = pairs['distance'].mean()
+            self.std = pairs['distance'].std()
+
+        pairs['distance'] -= self.mean
+        pairs['distance'] /= self.std
+        return pairs
 
 
 class BatchData:
     """
     Useful methods for working with batch data
     """
-    radiomic_df = get_radiomic_features()
 
-    @staticmethod
-    def batches(pairs: Iterable[PairComp], batch_size: int = 64, group_by: str = 'ids', load_images: bool = True) \
+    def __init__(self):
+        self.radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
+        self.logger = logging.getLogger(__name__)
+        self.norm_mean = 0.
+        self.norm_std = 1.
+
+    def batches(self, pairs: pd.DataFrame,
+                batch_size: int = 64,
+                group_by: str = 'ids',
+                load_images: bool = True,
+                train: bool = True) \
             -> Generator[PairBatch, None, None]:
         """
         Generates batches based on all the pairs and the batch size
 
-        :param pairs:
-        :param batch_size:
-        :param group_by:
-        :param load_images:
-        :return:
+        :param pairs: Pairs to create the batch from
+        :param batch_size: Size of the batch that it's going to be created. The final size will depend on the
+                           ``group_by`` parameter
+        :param group_by: If ``ids`` then the batch size will imply that ``batch_size == len(different_ids)`` otherwise
+                         if it's ``pairs`` the batch size will imply ``batch_size == len(selected_pairs)``.
+        :param load_images: Whether to load the images or not when generating the batch. This can improve performance
+                            if the images are not needed.
+        :param train: If this batch is to be generated for training data or for validation data. If it's for training
+                      then the normalization values will be computed and stored using this data, otherwise the
+                      previously computed values will be used.
+        :return: Generator with the different batches that should be sent to the Machine Learning model
         """
+
+        total_ids = np.append(pairs["pA"].values, pairs["pB"].values)
+        total_ids = list(set(total_ids))  # To avoid repetitions
+
+        features: pd.DataFrame = self.radiomic_df[total_ids]
+
+        if train:
+            self.norm_mean = features.mean(axis=1)
+            self.norm_std = features.std(axis=1)
+
+        features = features.sub(self.norm_mean, axis=0)
+        features = features.div(self.norm_std, axis=0)
+
         if group_by == 'ids':
-            return BatchData._batch_by_ids(pairs, batch_size, load_images)
+            return self._batch_by_ids(pairs, features, batch_size, load_images)
         else:
-            return BatchData._batch_by_pairs(pairs, batch_size, load_images)
+            return self._batch_by_pairs(pairs, features, batch_size, load_images)
 
-    @staticmethod
-    def _batch_by_ids(pairs: Iterable[PairComp], batch_size: int, load_images: bool = True) \
-            -> Generator[PairBatch, None, None]:
-        total_pairs = set(pairs)
+    def _batch_by_ids(self,
+                      pairs: pd.DataFrame,
+                      features: pd.DataFrame,
+                      batch_size: int,
+                      load_images: bool = True) -> Generator[PairBatch, None, None]:
+        """
+        Create batch of pairs by setting the number of different ids = ``batch_size``
 
-        # Extract bath_size ids
-        while len(total_pairs) > 0:
+        :param pairs: Pairs to create the batch from
+        :param features: :class:`pandas.DataFrame` containing the patients' features
+        :param batch_size: Size of the batch that it's going to be created. The final size will depend on the
+                           ``group_by`` parameter
+        :param load_images: Whether to load the images or not when generating the batch. This can improve performance
+                            if the images are not needed.
+        :return: Generator with the different batches that should be sent to the Machine Learning model
+        """
+
+        pairs: pd.DataFrame = pairs.copy()
+
+        while len(pairs) > 0:
             ids = set()
-            batch_pairs = set()
+            for row in pairs.itertuples():
+                ids |= {row.pA, row.pB}
 
-            # Create a batch of batch_size ids
-            while len(ids) < batch_size and len(total_pairs) > 0:
-                pair = total_pairs.pop()
-                ids |= {pair.p_a, pair.p_b}
-                batch_pairs.add(pair)
+                if len(ids) >= batch_size:
+                    break
 
-            # Get all the pairs that can be formed with those ids and then remove the batch pairs from the total pairs
-            batch_pairs |= {x for x in total_pairs if x.p_a in ids and x.p_b in ids}
-            total_pairs -= batch_pairs
+            batch_pairs = pairs.loc[pairs['pA'].isin(ids) & pairs['pB'].isin(ids)]
+            pairs = pairs.drop(batch_pairs.index)
+
             assert len(batch_pairs)*2 >= len(ids)
+            yield self._create_pair_batch(batch_pairs, features, load_images)
 
-            yield BatchData._create_pair_batch(batch_pairs, ids, load_images)
+    def _batch_by_pairs(self,
+                        pairs: pd.DataFrame,
+                        features: pd.DataFrame,
+                        batch_size: int,
+                        load_images=True) -> Generator[PairBatch, None, None]:
+        """
+        Create batch of pairs by setting the ``batch_size == len(selected_pairs)``
 
-    @staticmethod
-    def _batch_by_pairs(pairs: Iterable[PairComp], batch_size: int, load_images=True) \
-            -> Generator[PairBatch, None, None]:
-        for i, values in enumerate(BatchData._split(pairs, batch_size)):
-            values = list(values)
-            yield BatchData._create_pair_batch(values, {idx for p in values for idx in (p.p1, p.p2)}, load_images)
+        :param pairs: Pairs to select the batch size from
+        :param features: :class:`pandas.DataFrame` containing the patients' features
+        :param batch_size: Size of the batch that it's going to be created. The final size will depend on the
+                           ``group_by`` parameter
+        :param load_images: Whether to load the images or not when generating the batch. This can improve performance
+                            if the images are not needed.
+        :return: Generator with the different batches that should be sent to the Machine Learning model
+        """
 
-    @staticmethod
-    def _create_pair_batch(pairs: Collection[PairComp], ids: Set[str], load_images: bool = True) -> PairBatch:
+        for i in range(0, len(pairs), batch_size):
+            values = pairs.iloc[i:(i + batch_size)]
+            yield self._create_pair_batch(values, features, load_images)
+
+    def _create_pair_batch(self,
+                           pairs: pd.DataFrame,
+                           features: pd.DataFrame,
+                           load_images: bool = True) -> PairBatch:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
 
         :param pairs: Pairs to be added to the PairBatch
-        :param ids: npz files' ids that will be added to the PairBatch
+        :param features: :class:`pandas.DataFrame` containing the patients' features
         :return: PairBatch containing the pairs and the requested npz files loaded
         """
-        logger = logging.getLogger(__name__)
-
         # Convert ids from string to int index. Since there can be multiple images with one pair this will mean that
         # We have to return more indices related to the same pair so that's why we are using the TOTAL_ROTATIONS
         # global variable to set the indices, the generated indices are in the range:
         # idx*TOTAL_ROTATIONS ... (idx + 1)*TOTAL_ROTATIONS
         total_rotations = TOTAL_ROTATIONS if load_images else 1
-        ids_list = list(ids)
 
-        # Direct and inverse mapping
-        ids_map = {idx: idx_num*total_rotations for idx_num, idx in enumerate(ids_list)}
-        ids_inverse = {idx_num: idx for idx, i in ids_map.items() for idx_num in range(i, i + total_rotations)}
+        ids_list = list(set(pd.concat([pairs["pA"], pairs["pB"]])))
+        ids_map, patients = self._load_patients(ids_list, features, total_rotations, load_images)
 
-        pairs_a = [idx for p in pairs for idx in range(ids_map[p.p_a], ids_map[p.p_a] + total_rotations)]
-        pairs_b = [idx for p in pairs for idx in range(ids_map[p.p_b], ids_map[p.p_b] + total_rotations)]
-        labels = [float(l) for p in pairs for l in [p.comp]*total_rotations]
-        assert len(pairs_a) == len(pairs_b) == len(labels)
+        # Create pairs information
+        pairs_a, pairs_b = [], []
+        for row in pairs.itertuples():
+            idx_a, idx_b = ids_map[row.pA], ids_map[row.pB]
 
-        labels = np.array(labels).reshape((-1, 1))
+            pairs_a += list(range(idx_a, idx_a + total_rotations))
+            pairs_b += list(range(idx_b, idx_b + total_rotations))
 
-        images = []
-        features = []
-        for idx in ids_list:
+        pairs: pd.DataFrame = pairs.copy()
+        pairs = pairs.iloc[np.repeat(np.arange(len(pairs)), total_rotations)]
+        pairs["pA_id"] = pairs_a
+        pairs["pB_id"] = pairs_b
+
+        # Create labels column
+        pairs["labels"] = pairs["comp"].values.astype(float)
+
+        return PairBatch(pairs=pairs, patients=patients, ids_map=ids_map)
+
+    def _load_patients(self,
+                       ids_list: List[str],
+                       features: pd.DataFrame,
+                       total_rotations: int,
+                       load_images: bool = True) -> Tuple[Dict[str, int], pd.DataFrame]:
+        """
+        Load the patients information for the batch of ids, such as the image CT scan and the radiomic features
+        
+        :param ids_list: List of string keys to load the information for 
+        :param features: :class:`pandas.DataFrame` containing all the patients' features
+        :param total_rotations: 
+        :param load_images: 
+        :return: 
+        """
+        # Direct and inverse mapping from string key to index
+        ids_map = {}
+        selected_features, images, final_ids = [], [], []
+        for i, idx in enumerate(ids_list):
+            ids_map[idx] = i*total_rotations
+            final_ids += [idx]*total_rotations
             file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
 
             # Check if the file exists, so the data has been preprocessed
             if not os.path.exists(file_path):
-                logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
+                self.logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
                 raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
-
-            column = BatchData.radiomic_df[idx].values
-            features += [column]*total_rotations
 
             if load_images:
                 loaded_npz = np.load(file_path)
+                assert len(loaded_npz.files) == total_rotations
                 for item in loaded_npz:
-                    images.append(loaded_npz[item])
+                    loaded_array = loaded_npz[item]
+                    assert loaded_array.shape == (64, 64, 64)
+                    images.append(loaded_array.reshape(64, 64, 64, 1))
                 loaded_npz.close()
             else:
                 images += [np.array([])]*total_rotations
 
-        assert len(images) == len(features)
+            # Select radiomic features
+            column = features[idx].values
+            selected_features += [column]*total_rotations
 
-        images = np.array(images)
-        images = images.reshape((-1, 64, 64, 64, 1))
-        # images = {ids_map[idx]: np.array([0, 1, 2]) for idx in ids}
+        assert len(images) == len(selected_features) == len(final_ids)
+        elements = pd.DataFrame({
+            "ids": final_ids,
+            "features": selected_features,
+            "images": images
+        })
 
-        features = np.array(features)
-
-        return PairBatch(pairs_a=pairs_a,
-                         pairs_b=pairs_b,
-                         labels=labels,
-                         images=images,
-                         ids_map=ids_map,
-                         ids_inverse=ids_inverse,
-                         features=features)
-
-    @staticmethod
-    def _split(it: Iterable, n: int) -> Iterable[Iterable]:
-        """
-        Given an iterable create batches of size n
-
-        :param it: Iterable
-        :param n: Batch size
-        :return: Batches of size n
-        """
-        it = iter(it)
-        return takewhile(bool, (list(islice(it, n)) for _ in repeat(None)))
+        return ids_map, elements
