@@ -589,7 +589,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
             # Out: [batch, 64, 64, 64, 25]
             x = self._conv3d(
                 x=x,
-                name="conv_1x1",
+                name="conv_1x1x1",
                 filters=25,
                 kernel_size=1
             )
@@ -597,7 +597,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
             # Out: [batch, 31, 31, 31, 50]
             x_a = self._conv3d(
                 x=x,
-                name="conv_3x3",
+                name="conv_3x3x3",
                 filters=25,
                 kernel_size=3,
                 strides=2,
@@ -606,7 +606,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
             # Out: [batch, 31, 31, 31, 25]
             x_b = tf.layers.max_pooling3d(
                 inputs=x,
-                name="pooling_3x3",
+                name="pooling_3x3x3",
                 pool_size=3,
                 strides=2,
             )
@@ -625,9 +625,11 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
         """
 
         with tf.variable_scope(f"block_31_{self.residual_count_a}"):
+            self.residual_count_a += 1
+
             x_a = self._conv3d(
                 x=x,
-                name="a_0_conv_1x1",
+                name="a_0_conv_1x1x1",
                 filters=32,
                 kernel_size=1,
                 padding="same"
@@ -635,7 +637,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
 
             x_b = self._conv3d(
                 x=x,
-                name="b_0_conv_1x1",
+                name="b_0_conv_1x1x1",
                 filters=32,
                 kernel_size=1,
                 padding="same"
@@ -643,7 +645,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
 
             x_b = self._conv3d(
                 x=x_b,
-                name="b_1_conv_3x3",
+                name="b_1_conv_3x3x3",
                 filters=32,
                 kernel_size=3,
                 padding="same"
@@ -651,7 +653,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
 
             x_c = self._conv3d(
                 x=x,
-                name="c_0_conv_1x1",
+                name="c_0_conv_1x1x1",
                 filters=32,
                 kernel_size=1,
                 padding="same"
@@ -660,7 +662,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
             for i in range(1, 3):
                 x_c = self._conv3d(
                     x=x_c,
-                    name=f"c_{i}_conv_3x3",
+                    name=f"c_{i}_conv_3x3x3",
                     filters=32,
                     kernel_size=3,
                     padding="same"
@@ -673,7 +675,8 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
                 name="conv_1x1",
                 filters=x.get_shape()[-1],
                 kernel_size=1,
-                padding="same"
+                padding="same",
+                activation=None
             )
 
             x += x_conv
@@ -682,19 +685,19 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
     def _reduction_a(self, x: tf.Tensor) -> tf.Tensor:
         """
         :param x: Tensor with shape ``[batch, 31, 31, 31, 50]``
-        :return: Tensor with shape ``[batch, 14, 14, 14, 50]``
+        :return: Tensor with shape ``[batch, 14, 14, 14, 130]``
         """
         with tf.variable_scope("reduction_a"):
             x_a = tf.layers.max_pooling3d(
                 inputs=x,
-                name="a_0_pooling_3x3",
+                name="a_0_pooling_3x3x3",
                 pool_size=3,
                 strides=2
             )
 
             x_b = self._conv3d(
                 x=x,
-                name="b_0_conv_3x3",
+                name="b_0_conv_3x3x3",
                 filters=50,
                 kernel_size=3,
                 strides=2
@@ -702,22 +705,22 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
 
             x_c = self._conv3d(
                 x=x,
-                name="c_0_conv_1x1",
+                name="c_0_conv_1x1x1",
                 filters=30,
                 kernel_size=1
             )
 
             x_c = self._conv3d(
                 x=x_c,
-                name="c_1_conv_3x3",
-                filters=50,
+                name="c_1_conv_3x3x3",
+                filters=30,
                 kernel_size=3,
             )
 
             x_c = self._conv3d(
                 x=x_c,
-                name="c_2_conv_3x3",
-                filters=50,
+                name="c_2_conv_3x3x3",
+                filters=30,
                 kernel_size=3,
                 strides=2
             )
