@@ -567,6 +567,23 @@ class ImageScalarSiamese(BasicImageSiamese):
         }
 
 
+class ResidualImageScalarSiamese(ImageScalarSiamese):
+
+    def __init__(self, **kwargs):
+        self.residual_count_a = 0
+
+        super().__init__(**kwargs)
+
+    def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
+        x = self._stem_block(x)
+
+        for i in range(2):
+            x = self._res_block_a(x)
+
+        x = self._reduction_a(x)
+
+        return x
+
     def _stem_block(self, x: tf.Tensor) -> tf.Tensor:
         with tf.variable_scope("stem"):
             # Out: [batch, 64, 64, 64, 25]
