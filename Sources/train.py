@@ -210,7 +210,7 @@ def main(args: Dict[str, Any]):
                                  dropout=args['dropout'],
                                  learning_rate=args['learning_rate'])
 
-    conf = tf.ConfigProto()
+    conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
@@ -386,6 +386,13 @@ if __name__ == '__main__':
         help="Create pairs using only the comparisons in one direction",
         action="store_false",
         dest="bidirectional"
+    )
+
+    parser.add_argument(
+        "--log-device",
+        help="Log device placement when creating all the tensorflow tensors",
+        action="store_true",
+        default=False
     )
 
     # See if we are running in a SLURM task array
