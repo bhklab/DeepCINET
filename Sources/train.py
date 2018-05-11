@@ -339,6 +339,7 @@ if __name__ == '__main__':
             'VolumeOnlySiamese',
             'ScalarOnlyDropoutSiamese',
             'ImageSiamese',
+            'ResidualImageScalarSiamese',
         ],
         type=str
     )
