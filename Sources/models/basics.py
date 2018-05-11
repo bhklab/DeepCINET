@@ -107,7 +107,7 @@ class BasicModel:
         self.minimizer = optimizer.minimize(self.total_loss)
 
         # Create summaries
-        with tf.name_scope("summaries"):
+        with tf.variable_scope("summaries"):
             tf.summary.scalar("loss", self.total_loss)
             tf.summary.scalar("c-index", self.c_index)
             tf.summary.scalar("classification_loss", self.classification_loss)

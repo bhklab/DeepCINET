@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any, Union, Tuple
 
 import tensorflow as tf
 import numpy as np
@@ -53,7 +53,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 x,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -67,11 +67,11 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-            a2 = tf.layers.conv3d(
+            a1 = tf.layers.conv3d(
 
                 a1,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[4, 4, 4],
 
@@ -92,7 +92,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 x,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -106,13 +106,13 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-            b2 = tf.layers.conv3d(
+            b1 = tf.layers.conv3d(
 
                 b1,
 
-                filters=16,
+                filters=8,
 
-                kernel_size=[8, 8, 8],
+                kernel_size=[2, 2, 2],
 
                 strides=1,
 
@@ -141,11 +141,11 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-            c2 = tf.layers.conv3d(
+            c1 = tf.layers.conv3d(
 
                 c1,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -159,10 +159,10 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-        d1 = tf.concat([a2, b2], 0)
-        d1 = tf.concat([d1 , c2], 0)
+        d1 = tf.concat([a1, b1], 4)
+        d1 = tf.concat([d1, c1], 4)
 
-        d2 = tf.layers.conv3d(
+        d1 = tf.layers.conv3d(
 
             d1,
 
@@ -178,11 +178,11 @@ class ImageSiamese(BasicImageSiamese):
 
             name=conv_name_base + 'd'
         )
-        d2 = tf.contrib.layers.batch_norm(d2,
+        d1 = tf.contrib.layers.batch_norm(d1,
                                      center=True, scale=True,
                                      scope='bn')
-        tf.layers.BatchNormalization(d2)
-        return d2
+        tf.layers.BatchNormalization(d1)
+        return d1
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
         """
@@ -522,16 +522,23 @@ class ImageScalarSiamese(BasicImageSiamese):
             )
         return x
 
-    def _conv3d(self, x: tf.Tensor, filters: int, kernel_size: int, name: str, strides: int = 1) -> tf.Tensor:
+    def _conv3d(self, x: tf.Tensor,
+                filters: int,
+                kernel_size: Union[int, Tuple],
+                name: str,
+                strides: Union[int, Tuple] = 1,
+                activation: Any = tf.nn.relu,
+                padding="valid") -> tf.Tensor:
         return tf.layers.conv3d(
-            x,
+            name=name,
+            inputs=x,
             filters=filters,
             kernel_size=kernel_size,
             strides=strides,
-            activation=tf.nn.relu,
+            activation=activation,
             kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
             kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
-            name=name
+            padding=padding
         )
 
     def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.relu) -> tf.Tensor:
@@ -558,6 +565,352 @@ class ImageScalarSiamese(BasicImageSiamese):
             **super().feed_dict(batch, training=training),
             self.x_scalar: np.stack(batch.patients["features"].values)
         }
+
+
+class ResidualImageScalarSiamese(ImageScalarSiamese):
+
+    def __init__(self, **kwargs):
+        self.residual_count_a = 0
+        self.residual_count_b = 0
+
+        super().__init__(**kwargs)
+
+    def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
+        x = self._stem_block(x)
+
+        for i in range(2):
+            x = self._res_block_a(x)
+
+        x = self._reduction_a(x)
+
+        for i in range(2):
+            x = self._res_block_b(x)
+
+        # Out: [batch, 7, 7, 7, 350]
+        x = self._reduction_b(x)
+
+        # Out: [batch, 2, 2, 2, 350]
+        x = tf.layers.average_pooling3d(
+            inputs=x,
+            pool_size=6,
+            strides=1
+        )
+
+        return x
+
+    def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
+
+        # Out: [batch, 2*2*2*350] = [batch, 2800]
+        x = tf.layers.flatten(x, name="flat")
+
+        # Out: [batch, 2800 + 725]
+        x = tf.concat([x, self.x_scalar], axis=1)
+
+        x = self._dense(
+            x=x,
+            units=800,
+            name="fc_0",
+        )
+
+        x = self._dense(
+            x=x,
+            units=100,
+            name="fc_1",
+        )
+
+        x = self._dense(
+            x=x,
+            units=10,
+            name="fc_2",
+            activation=tf.nn.relu
+        )
+
+        return x
+
+    def _stem_block(self, x: tf.Tensor) -> tf.Tensor:
+        with tf.variable_scope("stem_reduce"):
+
+            # Out: [batch, 31, 31, 31, 25]
+            x_a = self._conv3d(
+                x=x,
+                name="a_0_conv_3x3x3",
+                filters=25,
+                kernel_size=3,
+                strides=2,
+            )
+
+            # Out: [batch, 31, 31, 31, 1]
+            x_b = tf.layers.max_pooling3d(
+                inputs=x,
+                name="b_0_pool_3x3x3",
+                pool_size=3,
+                strides=2,
+            )
+
+            # Out: [batch, 31, 31, 31, 25]
+            x_b = self._conv3d(
+                x=x_b,
+                name="b_1_conv_1x1x1",
+                filters=25,
+                kernel_size=1,
+                padding="same"
+            )
+
+            # Out: [batch, 31, 31, 31, 50]
+            x_concat: tf.Tensor = tf.concat([x_a, x_b], axis=4)
+            assert x_concat.get_shape()[-1] == 50
+
+            self.logger.debug(x_concat.get_shape())
+
+            return x_concat
+
+    def _res_block_a(self, x: tf.Tensor, activation_fn=tf.nn.relu) -> tf.Tensor:
+        """
+        Residual block with size ``[batch, 31, 31, 31, 50]``
+        :param x:
+        :return:
+        """
+
+        with tf.variable_scope(f"block_31_{self.residual_count_a}"):
+            self.residual_count_a += 1
+
+            x_a = self._conv3d(
+                x=x,
+                name="a_0_conv_1x1x1",
+                filters=32,
+                kernel_size=1,
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x,
+                name="b_0_conv_1x1x1",
+                filters=32,
+                kernel_size=1,
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x_b,
+                name="b_1_conv_3x3x3",
+                filters=32,
+                kernel_size=3,
+                padding="same"
+            )
+
+            x_c = self._conv3d(
+                x=x,
+                name="c_0_conv_1x1x1",
+                filters=32,
+                kernel_size=1,
+                padding="same"
+            )
+
+            for i in range(1, 3):
+                x_c = self._conv3d(
+                    x=x_c,
+                    name=f"c_{i}_conv_3x3x3",
+                    filters=32,
+                    kernel_size=3,
+                    padding="same"
+                )
+
+            x_conv = tf.concat([x_a, x_b, x_c], axis=4)
+
+            x_conv = self._conv3d(
+                x=x_conv,
+                name="conv_1x1",
+                filters=x.get_shape()[-1],
+                kernel_size=1,
+                padding="same",
+                activation=None
+            )
+
+            x += x_conv
+            return activation_fn(x)
+
+    def _reduction_a(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        :param x: Tensor with shape ``[batch, 31, 31, 31, 50]``
+        :return: Tensor with shape ``[batch, 15, 15, 15, 130]``
+        """
+        with tf.variable_scope("reduction_a"):
+            x_a = tf.layers.max_pooling3d(
+                inputs=x,
+                name="a_0_pooling_3x3x3",
+                pool_size=3,
+                strides=2
+            )
+
+            x_b = self._conv3d(
+                x=x,
+                name="b_0_conv_3x3x3",
+                filters=50,
+                kernel_size=3,
+                strides=2
+            )
+
+            x_c = self._conv3d(
+                x=x,
+                name="c_0_conv_1x1x1",
+                filters=30,
+                kernel_size=1,
+                padding="same"
+            )
+
+            x_c = self._conv3d(
+                x=x_c,
+                name="c_1_conv_3x3x3",
+                filters=30,
+                kernel_size=3,
+                padding="same"
+            )
+
+            x_c = self._conv3d(
+                x=x_c,
+                name="c_2_conv_3x3x3",
+                filters=30,
+                kernel_size=3,
+                strides=2
+            )
+
+            return tf.concat([x_a, x_b, x_c], axis=4)
+
+    def _res_block_b(self, x: tf.Tensor, activation_fn=tf.nn.relu) -> tf.Tensor:
+        """
+        :param x: Tensor with shape ``[batch, 15, 15, 15, 130]``
+        :return: Tensor with shape ``[batch, 15, 15, 15, 130]``
+        """
+
+        with tf.variable_scope(f"block_15_{self.residual_count_b}"):
+            self.residual_count_b += 1
+
+            x_a = self._conv3d(
+                x=x,
+                name="a_0_conv_1x1x1",
+                filters=50,
+                kernel_size=1,
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x,
+                name="b_0_conv_1x1x1",
+                filters=50,
+                kernel_size=1,
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x_b,
+                name="b_1_conv_1x1x7",
+                filters=50,
+                kernel_size=(1, 1, 7),
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x_b,
+                name="b_1_conv_1x7x1",
+                filters=50,
+                kernel_size=(1, 7, 1),
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x_b,
+                name="b_1_conv_7x1x1",
+                filters=50,
+                kernel_size=(7, 1, 1),
+                padding="same"
+            )
+
+            x_concat = tf.concat([x_a, x_b], axis=4)
+            x_conv = self._conv3d(
+                x=x_concat,
+                name="conv_1x1",
+                filters=x.get_shape()[-1],
+                kernel_size=1,
+                padding="same",
+                activation=None
+            )
+
+            x += x_conv
+            return activation_fn(x)
+
+    def _reduction_b(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        :param x: Tensor with shape ``[batch, 15, 15, 15, 130]``
+        :return: Tensor with shape ``[batch, 7, 7, 7, 350]``
+        """
+
+        with tf.variable_scope("reduction_b"):
+            x_a = self._conv3d(
+                x=x,
+                name="a_0_conv_3x3",
+                filters=100,
+                kernel_size=3,
+                strides=2
+            )
+
+            x_b = self._conv3d(
+                x=x,
+                name="b_0_conv_1x1",
+                filters=100,
+                kernel_size=1,
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x_b,
+                name="b_1_conv_3x3",
+                filters=100,
+                kernel_size=3,
+                strides=2
+            )
+
+            x_c = self._conv3d(
+                x=x,
+                name="c_0_conv_1x1",
+                filters=100,
+                kernel_size=1,
+                padding="same"
+            )
+
+            x_c = self._conv3d(
+                x=x_c,
+                name="c_1_conv_3x3",
+                filters=100,
+                kernel_size=3,
+                strides=2
+            )
+
+            x_d = self._conv3d(
+                x=x,
+                name="d_0_conv_1x1",
+                filters=50,
+                kernel_size=1,
+                padding="same"
+            )
+
+            x_d = self._conv3d(
+                x=x_d,
+                name="d_1_conv_3x3",
+                filters=50,
+                kernel_size=3,
+                padding="same"
+            )
+
+            x_d = self._conv3d(
+                x=x_d,
+                name="d_2_conv_3x3",
+                filters=50,
+                kernel_size=3,
+                strides=2
+            )
+
+            # Out [batch, 7, 7, 7, 100 + 100 + 100 + 50]
+            return tf.concat([x_a, x_b, x_c, x_d], axis=4)
 
 
 class ScalarOnlySiamese(BasicSiamese):

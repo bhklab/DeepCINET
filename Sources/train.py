@@ -63,10 +63,10 @@ def train_iterations(sess: tf.Session,
                     ],
                     feed_dict=model.feed_dict(batch)
                 )
-                summary_writer.add_summary(summary, final_iterations)
                 logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: "
                             f"{total_pairs:>6}, "
                             f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
+                summary_writer.add_summary(summary, final_iterations)
             else:
                 _, c_index_result, loss = sess.run(
                     [
@@ -163,6 +163,8 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         return models.ScalarOnlyDropoutSiamese(**kwargs)
     elif model_key == "ImageSiamese":
         return models.ImageSiamese(**kwargs)
+    elif model_key == "ResidualImageScalarSiamese":
+        return models.ResidualImageScalarSiamese(**kwargs)
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
     else:
@@ -208,7 +210,7 @@ def main(args: Dict[str, Any]):
                                  dropout=args['dropout'],
                                  learning_rate=args['learning_rate'])
 
-    conf = tf.ConfigProto()
+    conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
@@ -337,6 +339,7 @@ if __name__ == '__main__':
             'VolumeOnlySiamese',
             'ScalarOnlyDropoutSiamese',
             'ImageSiamese',
+            'ResidualImageScalarSiamese',
         ],
         type=str
     )
@@ -384,6 +387,13 @@ if __name__ == '__main__':
         help="Create pairs using only the comparisons in one direction",
         action="store_false",
         dest="bidirectional"
+    )
+
+    parser.add_argument(
+        "--log-device",
+        help="Log device placement when creating all the tensorflow tensors",
+        action="store_true",
+        default=False
     )
 
     # See if we are running in a SLURM task array
