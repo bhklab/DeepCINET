@@ -567,6 +567,39 @@ class ImageScalarSiamese(BasicImageSiamese):
         }
 
 
+    def _stem_block(self, x: tf.Tensor) -> tf.Tensor:
+        with tf.variable_scope("stem"):
+            # Out: [batch, 64, 64, 64, 25]
+            x = self._conv3d(
+                x=x,
+                name="conv_1x1",
+                filters=25,
+                kernel_size=1
+            )
+
+            # Out: [batch, 31, 31, 31, 50]
+            x_a = self._conv3d(
+                x=x,
+                name="conv_3x3",
+                filters=25,
+                kernel_size=3,
+                strides=2,
+            )
+
+            # Out: [batch, 31, 31, 31, 25]
+            x_b = tf.layers.max_pooling3d(
+                inputs=x,
+                name="pooling_3x3",
+                pool_size=3,
+                strides=2,
+            )
+
+            # Out: [batch, 31, 31, 31, 50]
+            x_concat: tf.Tensor = tf.concat([x_a, x_b])
+            assert x_concat.get_shape()[-1] == 50
+
+            return x_concat
+
     def _res_block_a(self, x: tf.Tensor, activation_fn=tf.nn.relu) -> tf.Tensor:
         """
         Residual block with size ``[batch, 31, 31, 31, 50]``
