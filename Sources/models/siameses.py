@@ -607,50 +607,45 @@ class ImageScalarSiamese(BasicImageSiamese):
         :return:
         """
 
-        with tf.variable_scope(f"block_31_{self.residual_count}"):
+        with tf.variable_scope(f"block_31_{self.residual_count_a}"):
             x_a = self._conv3d(
                 x=x,
-                name="conv_a_0_1x1",
+                name="a_0_conv_1x1",
                 filters=32,
                 kernel_size=1,
-                activation=None,
                 padding="same"
             )
 
             x_b = self._conv3d(
                 x=x,
-                name="conv_b_0_1x1",
+                name="b_0_conv_1x1",
                 filters=32,
                 kernel_size=1,
-                activation=None,
                 padding="same"
             )
 
             x_b = self._conv3d(
                 x=x_b,
-                name="conv_b_1_3x3",
+                name="b_1_conv_3x3",
                 filters=32,
                 kernel_size=3,
-                activation=None,
                 padding="same"
             )
 
             x_c = self._conv3d(
                 x=x,
-                name="conv_c_0_1x1",
+                name="c_0_conv_1x1",
                 filters=32,
                 kernel_size=1,
-                activation=None,
                 padding="same"
             )
 
             for i in range(1, 3):
                 x_c = self._conv3d(
                     x=x_c,
-                    name=f"conv_c_{i}_3x3",
+                    name=f"c_{i}_conv_3x3",
                     filters=32,
                     kernel_size=3,
-                    activation=None,
                     padding="same"
                 )
 
