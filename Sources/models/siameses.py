@@ -664,6 +664,50 @@ class ImageScalarSiamese(BasicImageSiamese):
             x = activation_fn(x)
 
         return x
+    def _reduction_a(self, x: tf.Tensor) -> tf.Tensor:
+        """
+        :param x: Tensor with shape ``[batch, 31, 31, 31, 50]``
+        :return: Tensor with shape ``[batch, 14, 14, 14, 50]``
+        """
+        with tf.variable_scope("reduction_a"):
+            x_a = tf.layers.max_pooling3d(
+                inputs=x,
+                name="a_0_pooling_3x3",
+                pool_size=3,
+                strides=2
+            )
+
+            x_b = self._conv3d(
+                x=x,
+                name="b_0_conv_3x3",
+                filters=50,
+                kernel_size=3,
+                strides=2
+            )
+
+            x_c = self._conv3d(
+                x=x,
+                name="c_0_conv_1x1",
+                filters=30,
+                kernel_size=1
+            )
+
+            x_c = self._conv3d(
+                x=x_c,
+                name="c_1_conv_3x3",
+                filters=50,
+                kernel_size=3,
+            )
+
+            x_c = self._conv3d(
+                x=x_c,
+                name="c_2_conv_3x3",
+                filters=50,
+                kernel_size=3,
+                strides=2
+            )
+
+            return tf.concat([x_a, x_b, x_c])
 
 
 
