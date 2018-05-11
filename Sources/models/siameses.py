@@ -53,7 +53,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 x,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -67,11 +67,11 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-            a2 = tf.layers.conv3d(
+            a1 = tf.layers.conv3d(
 
                 a1,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[4, 4, 4],
 
@@ -92,7 +92,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 x,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -106,13 +106,13 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-            b2 = tf.layers.conv3d(
+            b1 = tf.layers.conv3d(
 
                 b1,
 
-                filters=16,
+                filters=8,
 
-                kernel_size=[8, 8, 8],
+                kernel_size=[2, 2, 2],
 
                 strides=1,
 
@@ -141,11 +141,11 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-            c2 = tf.layers.conv3d(
+            c1 = tf.layers.conv3d(
 
                 c1,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -159,10 +159,10 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-        d1 = tf.concat([a2, b2], 0)
-        d1 = tf.concat([d1 , c2], 0)
+        d1 = tf.concat([a1, b1], 4)
+        d1 = tf.concat([d1, c1], 4)
 
-        d2 = tf.layers.conv3d(
+        d1 = tf.layers.conv3d(
 
             d1,
 
@@ -178,11 +178,11 @@ class ImageSiamese(BasicImageSiamese):
 
             name=conv_name_base + 'd'
         )
-        d2 = tf.contrib.layers.batch_norm(d2,
+        d1 = tf.contrib.layers.batch_norm(d1,
                                      center=True, scale=True,
                                      scope='bn')
-        tf.layers.BatchNormalization(d2)
-        return d2
+        tf.layers.BatchNormalization(d1)
+        return d1
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
         """
