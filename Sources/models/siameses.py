@@ -627,35 +627,39 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
         return x
 
     def _stem_block(self, x: tf.Tensor) -> tf.Tensor:
-        with tf.variable_scope("stem"):
-            # Out: [batch, 64, 64, 64, 25]
-            x = self._conv3d(
-                x=x,
-                name="conv_1x1x1",
-                filters=25,
-                kernel_size=1
-            )
+        with tf.variable_scope("stem_reduce"):
 
-            # Out: [batch, 31, 31, 31, 50]
+            # Out: [batch, 31, 31, 31, 25]
             x_a = self._conv3d(
                 x=x,
-                name="conv_3x3x3",
+                name="a_0_conv_3x3x3",
                 filters=25,
                 kernel_size=3,
                 strides=2,
             )
 
-            # Out: [batch, 31, 31, 31, 25]
+            # Out: [batch, 31, 31, 31, 1]
             x_b = tf.layers.max_pooling3d(
                 inputs=x,
-                name="pooling_3x3x3",
+                name="b_0_pool_3x3x3",
                 pool_size=3,
                 strides=2,
+            )
+
+            # Out: [batch, 31, 31, 31, 25]
+            x_b = self._conv3d(
+                x=x_b,
+                name="b_1_conv_1x1x1",
+                filters=25,
+                kernel_size=1,
+                padding="same"
             )
 
             # Out: [batch, 31, 31, 31, 50]
             x_concat: tf.Tensor = tf.concat([x_a, x_b], axis=4)
             assert x_concat.get_shape()[-1] == 50
+
+            self.logger.debug(x_concat.get_shape())
 
             return x_concat
 
