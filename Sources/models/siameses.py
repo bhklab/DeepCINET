@@ -567,6 +567,78 @@ class ImageScalarSiamese(BasicImageSiamese):
         }
 
 
+    def _res_block_a(self, x: tf.Tensor, activation_fn=tf.nn.relu) -> tf.Tensor:
+        """
+        Residual block with size ``[batch, 31, 31, 31, 50]``
+        :param x:
+        :return:
+        """
+
+        with tf.variable_scope(f"block_31_{self.residual_count}"):
+            x_a = self._conv3d(
+                x=x,
+                name="conv_a_0_1x1",
+                filters=32,
+                kernel_size=1,
+                activation=None,
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x,
+                name="conv_b_0_1x1",
+                filters=32,
+                kernel_size=1,
+                activation=None,
+                padding="same"
+            )
+
+            x_b = self._conv3d(
+                x=x_b,
+                name="conv_b_1_3x3",
+                filters=32,
+                kernel_size=3,
+                activation=None,
+                padding="same"
+            )
+
+            x_c = self._conv3d(
+                x=x,
+                name="conv_c_0_1x1",
+                filters=32,
+                kernel_size=1,
+                activation=None,
+                padding="same"
+            )
+
+            for i in range(1, 3):
+                x_c = self._conv3d(
+                    x=x_c,
+                    name=f"conv_c_{i}_3x3",
+                    filters=32,
+                    kernel_size=3,
+                    activation=None,
+                    padding="same"
+                )
+
+            x_conv = tf.concat([x_a, x_b, x_c])
+
+            x_conv = self._conv3d(
+                x=x_conv,
+                name="conv_concat_1x1",
+                filters=x.get_shape()[-1],
+                kernel_size=1,
+                activation=None,
+                padding="same"
+            )
+
+            x += x_conv
+            x = activation_fn(x)
+
+        return x
+
+
+
 class ScalarOnlySiamese(BasicSiamese):
     r"""
     Model that uses only radiomic features as input to train
