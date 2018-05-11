@@ -670,17 +670,15 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
 
             x_conv = self._conv3d(
                 x=x_conv,
-                name="conv_concat_1x1",
+                name="conv_1x1",
                 filters=x.get_shape()[-1],
                 kernel_size=1,
-                activation=None,
                 padding="same"
             )
 
             x += x_conv
-            x = activation_fn(x)
+            return activation_fn(x)
 
-        return x
     def _reduction_a(self, x: tf.Tensor) -> tf.Tensor:
         """
         :param x: Tensor with shape ``[batch, 31, 31, 31, 50]``
