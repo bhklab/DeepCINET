@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 
 import tensorflow as tf
 import numpy as np
@@ -522,16 +522,23 @@ class ImageScalarSiamese(BasicImageSiamese):
             )
         return x
 
-    def _conv3d(self, x: tf.Tensor, filters: int, kernel_size: int, name: str, strides: int = 1) -> tf.Tensor:
+    def _conv3d(self, x: tf.Tensor,
+                filters: int,
+                kernel_size: int,
+                name: str,
+                strides: int = 1,
+                activation: Any = tf.nn.relu,
+                padding="valid") -> tf.Tensor:
         return tf.layers.conv3d(
-            x,
+            name=name,
+            inputs=x,
             filters=filters,
             kernel_size=kernel_size,
             strides=strides,
-            activation=tf.nn.relu,
+            activation=activation,
             kernel_initializer=tf.contrib.layers.variance_scaling_initializer(),
             kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
-            name=name
+            padding=padding
         )
 
     def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.relu) -> tf.Tensor:
