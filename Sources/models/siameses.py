@@ -592,7 +592,8 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
         # Out: [batch, 2, 2, 2, 350]
         x = tf.layers.average_pooling3d(
             inputs=x,
-            pool_size=6
+            pool_size=6,
+            strides=1
         )
 
         return x
@@ -731,7 +732,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
     def _reduction_a(self, x: tf.Tensor) -> tf.Tensor:
         """
         :param x: Tensor with shape ``[batch, 31, 31, 31, 50]``
-        :return: Tensor with shape ``[batch, 14, 14, 14, 130]``
+        :return: Tensor with shape ``[batch, 15, 15, 15, 130]``
         """
         with tf.variable_scope("reduction_a"):
             x_a = tf.layers.max_pooling3d(
@@ -753,7 +754,8 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
                 x=x,
                 name="c_0_conv_1x1x1",
                 filters=30,
-                kernel_size=1
+                kernel_size=1,
+                padding="same"
             )
 
             x_c = self._conv3d(
@@ -761,6 +763,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
                 name="c_1_conv_3x3x3",
                 filters=30,
                 kernel_size=3,
+                padding="same"
             )
 
             x_c = self._conv3d(
