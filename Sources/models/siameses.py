@@ -603,7 +603,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
         x = tf.layers.flatten(x, name="flat")
 
         # Out: [batch, 2800 + 725]
-        x = tf.concat([x, self.x_scalar])
+        x = tf.concat([x, self.x_scalar], axis=1)
 
         x = self._dense(
             x=x,
@@ -654,7 +654,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
             )
 
             # Out: [batch, 31, 31, 31, 50]
-            x_concat: tf.Tensor = tf.concat([x_a, x_b])
+            x_concat: tf.Tensor = tf.concat([x_a, x_b], axis=4)
             assert x_concat.get_shape()[-1] == 50
 
             return x_concat
@@ -710,7 +710,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
                     padding="same"
                 )
 
-            x_conv = tf.concat([x_a, x_b, x_c])
+            x_conv = tf.concat([x_a, x_b, x_c], axis=4)
 
             x_conv = self._conv3d(
                 x=x_conv,
@@ -767,7 +767,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
                 strides=2
             )
 
-            return tf.concat([x_a, x_b, x_c])
+            return tf.concat([x_a, x_b, x_c], axis=4)
 
     def _res_block_b(self, x: tf.Tensor, activation_fn=tf.nn.relu) -> tf.Tensor:
         """
@@ -818,7 +818,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
                 padding="same"
             )
 
-            x_concat = tf.concat([x_a, x_b])
+            x_concat = tf.concat([x_a, x_b], axis=4)
             x_conv = self._conv3d(
                 x=x_concat,
                 name="conv_1x1",
@@ -903,7 +903,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
             )
 
             # Out [batch, 7, 7, 7, 100 + 100 + 100 + 50]
-            return tf.concat([x_a, x_b, x_c, x_d])
+            return tf.concat([x_a, x_b, x_c, x_d], axis=4)
 
 
 class ScalarOnlySiamese(BasicSiamese):
