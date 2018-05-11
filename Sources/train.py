@@ -63,10 +63,10 @@ def train_iterations(sess: tf.Session,
                     ],
                     feed_dict=model.feed_dict(batch)
                 )
-                summary_writer.add_summary(summary, final_iterations)
                 logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: "
                             f"{total_pairs:>6}, "
                             f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
+                summary_writer.add_summary(summary, final_iterations)
             else:
                 _, c_index_result, loss = sess.run(
                     [
