@@ -46,14 +46,14 @@ class ImageSiamese(BasicImageSiamese):
         # Retrieve Filters
         #F1, F2, F3 = filters
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
-        logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
 
             a1 = tf.layers.conv3d(
 
                 x,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -71,7 +71,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 a1,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[4, 4, 4],
 
@@ -85,14 +85,14 @@ class ImageSiamese(BasicImageSiamese):
 
             )
         device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
-        logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
 
             b1 = tf.layers.conv3d(
 
                 x,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -110,9 +110,9 @@ class ImageSiamese(BasicImageSiamese):
 
                 b1,
 
-                filters=16,
+                filters=8,
 
-                kernel_size=[8, 8, 8],
+                kernel_size=[2, 2, 2],
 
                 strides=1,
 
@@ -124,7 +124,7 @@ class ImageSiamese(BasicImageSiamese):
 
             )
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
             c1 = tf.nn.max_pool3d(
 
@@ -145,7 +145,7 @@ class ImageSiamese(BasicImageSiamese):
 
                 c1,
 
-                filters=16,
+                filters=8,
 
                 kernel_size=[1, 1, 1],
 
@@ -159,8 +159,8 @@ class ImageSiamese(BasicImageSiamese):
 
             )
 
-        d1 = tf.concat([a2, b2], 0)
-        d1 = tf.concat([d1 , c2], 0)
+        d1 = tf.concat([a2, b2], 4)
+        d1 = tf.concat([d1, c2], 4)
 
         d2 = tf.layers.conv3d(
 
@@ -205,7 +205,7 @@ class ImageSiamese(BasicImageSiamese):
         :return: Tensor with shape ``[batch, 1]``
         """
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        logger.debug(f"Using device: {device} for FC layers")
+        self.logger.debug(f"Using device: {device} for FC layers")
         with tf.device(device):
             # Out: [batch, 64*64*64*1]
             x = tf.layers.flatten(
