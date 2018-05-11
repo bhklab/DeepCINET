@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Union, Tuple
 
 import tensorflow as tf
 import numpy as np
@@ -524,9 +524,9 @@ class ImageScalarSiamese(BasicImageSiamese):
 
     def _conv3d(self, x: tf.Tensor,
                 filters: int,
-                kernel_size: int,
+                kernel_size: Union[int, Tuple],
                 name: str,
-                strides: int = 1,
+                strides: Union[int, Tuple] = 1,
                 activation: Any = tf.nn.relu,
                 padding="valid") -> tf.Tensor:
         return tf.layers.conv3d(
