@@ -597,6 +597,35 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
 
         return x
 
+    def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
+
+        # Out: [batch, 2*2*2*350] = [batch, 2800]
+        x = tf.layers.flatten(x, name="flat")
+
+        # Out: [batch, 2800 + 725]
+        x = tf.concat([x, self.x_scalar])
+
+        x = self._dense(
+            x=x,
+            units=800,
+            name="fc_0",
+        )
+
+        x = self._dense(
+            x=x,
+            units=100,
+            name="fc_1",
+        )
+
+        x = self._dense(
+            x=x,
+            units=10,
+            name="fc_2",
+            activation=tf.nn.relu
+        )
+
+        return x
+
     def _stem_block(self, x: tf.Tensor) -> tf.Tensor:
         with tf.variable_scope("stem"):
             # Out: [batch, 64, 64, 64, 25]
