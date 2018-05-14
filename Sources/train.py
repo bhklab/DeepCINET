@@ -212,20 +212,22 @@ def main(args: Dict[str, Any]):
             'train': {
                 'total': 0,
                 'correct': 0,
+                'c_index': []
             },
             'test': {
                 'total': 0,
-                'correct': 0
+                'correct': 0,
+                'c_index': []
             },
             'mixed': {
                 'total': 0,
-                'correct': 0
+                'correct': 0,
+                'c_index': []
             }
         }
 
         for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
             # Initialize all the variables
-            logger.info("\r ")
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
 
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
@@ -251,20 +253,30 @@ def main(args: Dict[str, Any]):
                                     pairs,
                                     args['batch_size'])
 
+                correct = int(correct)
+                c_index = correct/total
+
                 counts[name]['total'] += total
                 counts[name]['correct'] += correct
+                counts[name]['c_index'].append(c_index)
 
                 predictions[name] = results
 
-                logger.info(f"{name} set c-index: {correct/total}, correct: {correct}, total: {total}")
+                logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
+                            f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
 
             # Save each fold in a different directory
             results_save_path = os.path.join(args['results_path'], f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
             utils.save_results(sess, predictions, results_save_path)
+            logger.info("\r ")
 
         for key in counts:
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
+
+            with open(os.path.join(args['results_path'], f"final_{key}.csv"), "at") as file:
+                for line in counts[key]["c_index"]:
+                    file.write(f"{line}\n")
 
 
 if __name__ == '__main__':
@@ -275,8 +287,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--cv-folds",
-        help="Number of cross validation folds. If < 2 CV won't be used and the test set size "
-             "will be defined by --test-size",
+        help="Number of cross validation folds. If 0 < folds < 2 CV won't be used and the test set size "
+             "will be defined by --test-size. If folds < 0 Leave One Out Cross Validation will be used instead",
         default=1,
         type=int
     )

@@ -4,7 +4,7 @@ from typing import Iterator, Tuple, Generator, List, Dict
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
+from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
 from settings import \
@@ -97,6 +97,12 @@ class SplitPairs:
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
         return self._create_train_test(train_ids, test_ids, bidirectional)
+
+    @staticmethod
+    def _get_folds_generator(n_folds: int) -> BaseCrossValidator:
+        if n_folds < 0:
+            return LeaveOneOut()
+        return StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
 
     def _create_train_test(self,
                            train_ids: List[int],
