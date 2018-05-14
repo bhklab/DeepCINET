@@ -245,6 +245,8 @@ def main(args: Dict[str, Any]):
 
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                if len(pairs) <= 0:
+                    continue
                 logger.info(f"Computing {name} c-index")
                 correct, total, results = \
                     test_iterations(sess,
@@ -254,6 +256,7 @@ def main(args: Dict[str, Any]):
                                     args['batch_size'])
 
                 correct = int(correct)
+
                 c_index = correct/total
 
                 counts[name]['total'] += total
@@ -272,6 +275,8 @@ def main(args: Dict[str, Any]):
             logger.info("\r ")
 
         for key in counts:
+            if counts[key]['total'] <= 0:
+                continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
 
             with open(os.path.join(args['results_path'], f"final_{key}.csv"), "at") as file:

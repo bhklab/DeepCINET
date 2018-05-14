@@ -51,6 +51,7 @@ class SplitPairs:
         :return: Iterator with the fold number and its corresponding train and test sets
         """
         skf = self._get_folds_generator(n_folds)
+        n_folds = self.get_n_splits(n_folds)
         generator = skf.split(self.total_x, self.total_y)
 
         # Slurm configuration
@@ -146,6 +147,9 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         pairs = SplitPairs._get_inner_pairs(df, df, bidirectional)
+
+        if len(pairs) <= 0:
+            return pairs
         return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
