@@ -177,20 +177,12 @@ def get_sets_generator(cv_folds: int, test_size: int, bidirectional: bool) \
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
-    if cv_folds < 2:
+    if 0 < cv_folds < 2:
         generator = dataset.train_test_split(test_size, bidirectional=bidirectional)
         enum_generator = [(0, generator)]
+        logger.info("1 fold")
     else:
-        generator = dataset.folds(cv_folds, bidirectional=bidirectional)
-
-        # Slurm configuration
-        task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
-        if int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0)) == cv_folds:
-            task_id = int(task_id)
-            logger.info(f"Task number: {task_id}")
-            enum_generator = [(task_id, list(generator)[task_id])]
-        else:
-            enum_generator = enumerate(generator)
+        enum_generator = dataset.folds(cv_folds, bidirectional=bidirectional)
 
     logger.debug("Folds created")
 

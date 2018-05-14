@@ -31,11 +31,12 @@ class SplitPairs:
         self.logger = logging.getLogger(__name__)
 
     def folds(self, n_folds: int = 4, bidirectional: bool = False) \
-            -> Iterator[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
+            -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
         """
         Creates different folds of data for use with CV
 
-        :param n_folds: Number of folds to be created
+        :param n_folds: Number of folds to be created, if negative, the number of folds will be created using
+                        Leave One Out
         :param bidirectional: If :any:`True` instead of generating only one pair for every two ids, the two possible
                              pairs will be generated. For example if we have the ids: ``FHBO001`` and ``FHBO002``,
                              where ``FHBO001 > FHBO002`` and ``distance = 1`` the pairs generated will be:
@@ -47,12 +48,31 @@ class SplitPairs:
                              ``FHBO002``  ``FHBO001``  ``False``        -1
                              ===========  ===========  =========  ========
 
-        :return: Generator yielding a train/test pair
+        :return: Iterator with the fold number and its corresponding train and test sets
         """
-        skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
+        skf = self._get_folds_generator(n_folds)
+        generator = skf.split(self.total_x, self.total_y)
 
-        for train_ids, test_ids in skf.split(self.total_x, self.total_y):
-            yield self._create_train_test(train_ids, test_ids, bidirectional)
+        # Slurm configuration
+        task_id = int(os.getenv('SLURM_ARRAY_TASK_ID', 0))
+        task_count = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+        if task_count > 0:
+            array_length = n_folds//task_count
+            self.logger.info(f"Task number: {task_id} of {task_count}")
+
+            task_begin = task_id*array_length
+            task_end = n_folds if task_id == task_count else (task_id + 1)*array_length
+            self.logger.info(f"Tasks {task_begin} through {task_end}")
+
+            enum_generator = zip(range(task_begin, task_end), list(generator)[task_begin:task_end])
+        else:
+            enum_generator = enumerate(generator)
+
+        for i, (train_ids, test_ids) in enum_generator:
+            yield i, self._create_train_test(train_ids, test_ids, bidirectional)
+
+    def get_n_splits(self, n_folds: int = 4) -> int:
+        return self._get_folds_generator(n_folds).get_n_splits(self.total_y, self.total_y)
 
     def train_test_split(self, test_size: float = .25, bidirectional: bool = False) \
             -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
