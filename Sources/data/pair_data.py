@@ -56,7 +56,10 @@ class SplitPairs:
 
         # Slurm configuration
         task_id = int(os.getenv('SLURM_ARRAY_TASK_ID', 0))
-        task_count = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+        if "TASKS_COUNT" in os.environ:
+            task_count = os.getenv("TASK_COUNT")
+        else:
+            task_count = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
         if task_count > 0:
             array_length = n_folds//task_count
             self.logger.info(f"Task number: {task_id} of {task_count}")
