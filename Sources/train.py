@@ -261,7 +261,7 @@ def main(args: Dict[str, Any]):
 
                 counts[name]['total'] += total
                 counts[name]['correct'] += correct
-                counts[name]['c_index'].append(c_index)
+                counts[name]['c_index'].append((i, c_index))
 
                 predictions[name] = results
 
@@ -280,8 +280,8 @@ def main(args: Dict[str, Any]):
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
 
             with open(os.path.join(args['results_path'], f"final_{key}.csv"), "at") as file:
-                for line in counts[key]["c_index"]:
-                    file.write(f"{line}\n")
+                for line, value in counts[key]["c_index"]:
+                    file.write(f"{line},{value}\n")
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import os
 import logging
+import math
 from typing import Iterator, Tuple, Generator, List, Dict
 
 import numpy as np
@@ -54,6 +55,8 @@ class SplitPairs:
         n_folds = self.get_n_splits(n_folds)
         generator = skf.split(self.total_x, self.total_y)
 
+        self.logger.info(f"Folds: {n_folds}")
+
         # Slurm configuration
         task_id = int(os.getenv('SLURM_ARRAY_TASK_ID', 0))
         if "TASKS_COUNT" in os.environ:
@@ -61,12 +64,12 @@ class SplitPairs:
         else:
             task_count = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
         if task_count > 0:
-            array_length = n_folds//task_count
-            self.logger.info(f"Task number: {task_id} of {task_count}")
+            array_length = int(math.ceil(n_folds/task_count))
+            self.logger.info(f"Task number: {task_id + 1} of {task_count}")
 
             task_begin = task_id*array_length
-            task_end = n_folds if task_id == task_count else (task_id + 1)*array_length
-            self.logger.info(f"Tasks {task_begin} through {task_end}")
+            task_end = min(n_folds, (task_id + 1)*array_length)
+            self.logger.info(f"Tasks {task_begin} through {task_end - 1} of {n_folds}")
 
             enum_generator = zip(range(task_begin, task_end), list(generator)[task_begin:task_end])
         else:
