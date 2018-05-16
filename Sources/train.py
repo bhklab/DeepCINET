@@ -279,10 +279,6 @@ def main(args: Dict[str, Any]):
                 continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
 
-            with open(os.path.join(args['results_path'], f"final_{key}.csv"), "at") as file:
-                for line, value in counts[key]["c_index"]:
-                    file.write(f"{line},{value}\n")
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
