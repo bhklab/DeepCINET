@@ -59,17 +59,11 @@ class SplitPairs:
 
         # Slurm configuration
         task_id = int(os.getenv('SLURM_ARRAY_TASK_ID', 0))
-        if "TASKS_COUNT" in os.environ:
-            task_count = int(os.getenv("TASKS_COUNT"))
-        else:
-            task_count = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+        task_count = os.getenv('SLURM_ARRAY_TASK_COUNT', 0)
+        task_count = int(os.getenv('TASKS_COUNT'), task_count)
         if task_count > 0:
-            array_length = int(math.ceil(n_folds/task_count))
-            self.logger.info(f"Task number: {task_id + 1} of {task_count}")
-
-            task_begin = task_id*array_length
-            task_end = min(n_folds, (task_id + 1)*array_length)
-            self.logger.info(f"Tasks {task_begin} through {task_end - 1} of {n_folds}")
+            tasks_list = self._tasks_distribution(n_folds, task_count)
+            task_begin, task_end = tasks_list[task_id]
 
             enum_generator = zip(range(task_begin, task_end), list(generator)[task_begin:task_end])
         else:
@@ -141,6 +135,23 @@ class SplitPairs:
         test_mix_pairs = self._normalize(test_mix_pairs, train=False)
 
         return train_pairs, test_pairs, test_mix_pairs
+
+    def _tasks_distribution(self, total_tasks: int, workers: int) -> List[Tuple[int, int]]:
+        length = int(math.ceil(total_tasks / workers))
+        limit = total_tasks - (length - 1)*workers
+
+        self.logger.debug(f"Tasks: {total_tasks}, Workers: {workers}, Length: {length}, Limit: {limit}")
+
+        task_list = []
+        prev_end = 0
+        for i in range(workers):
+            task_begin = prev_end
+            task_end = task_begin + length - (0 if i < limit else 1)
+            task_end = prev_end = min(task_end, total_tasks)
+
+            task_list.append((task_begin, task_end))
+
+        return task_list
 
     @staticmethod
     def _get_pairs(df: pd.DataFrame, bidirectional: bool) -> pd.DataFrame:
