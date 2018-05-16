@@ -177,20 +177,12 @@ def get_sets_generator(cv_folds: int, test_size: int, bidirectional: bool) \
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
-    if cv_folds < 2:
+    if 0 < cv_folds < 2:
         generator = dataset.train_test_split(test_size, bidirectional=bidirectional)
         enum_generator = [(0, generator)]
+        logger.info("1 fold")
     else:
-        generator = dataset.folds(cv_folds, bidirectional=bidirectional)
-
-        # Slurm configuration
-        task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
-        if int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0)) == cv_folds:
-            task_id = int(task_id)
-            logger.info(f"Task number: {task_id}")
-            enum_generator = [(task_id, list(generator)[task_id])]
-        else:
-            enum_generator = enumerate(generator)
+        enum_generator = dataset.folds(cv_folds, bidirectional=bidirectional)
 
     logger.debug("Folds created")
 
@@ -220,20 +212,22 @@ def main(args: Dict[str, Any]):
             'train': {
                 'total': 0,
                 'correct': 0,
+                'c_index': []
             },
             'test': {
                 'total': 0,
-                'correct': 0
+                'correct': 0,
+                'c_index': []
             },
             'mixed': {
                 'total': 0,
-                'correct': 0
+                'correct': 0,
+                'c_index': []
             }
         }
 
         for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
             # Initialize all the variables
-            logger.info("\r ")
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
 
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
@@ -251,6 +245,8 @@ def main(args: Dict[str, Any]):
 
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                if len(pairs) <= 0:
+                    continue
                 logger.info(f"Computing {name} c-index")
                 correct, total, results = \
                     test_iterations(sess,
@@ -259,20 +255,33 @@ def main(args: Dict[str, Any]):
                                     pairs,
                                     args['batch_size'])
 
+                correct = int(correct)
+
+                c_index = correct/total
+
                 counts[name]['total'] += total
                 counts[name]['correct'] += correct
+                counts[name]['c_index'].append((i, c_index))
 
                 predictions[name] = results
 
-                logger.info(f"{name} set c-index: {correct/total}, correct: {correct}, total: {total}")
+                logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
+                            f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
 
             # Save each fold in a different directory
             results_save_path = os.path.join(args['results_path'], f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
             utils.save_results(sess, predictions, results_save_path)
+            logger.info("\r ")
 
         for key in counts:
+            if counts[key]['total'] <= 0:
+                continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
+
+            with open(os.path.join(args['results_path'], f"final_{key}.csv"), "at") as file:
+                for line, value in counts[key]["c_index"]:
+                    file.write(f"{line},{value}\n")
 
 
 if __name__ == '__main__':
@@ -283,8 +292,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--cv-folds",
-        help="Number of cross validation folds. If < 2 CV won't be used and the test set size "
-             "will be defined by --test-size",
+        help="Number of cross validation folds. If 0 < folds < 2 CV won't be used and the test set size "
+             "will be defined by --test-size. If folds < 0 Leave One Out Cross Validation will be used instead",
         default=1,
         type=int
     )

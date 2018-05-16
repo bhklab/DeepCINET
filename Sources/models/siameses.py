@@ -1088,9 +1088,13 @@ class VolumeOnlySiamese(BasicSiamese):
 
         :return: Greedy siamese applied
         """
-        w = tf.Variable(-1., name="weight")
-        b = tf.Variable(0., name="bias")
-        return w*self.x_volume + b
+
+        total = tf.Variable(0., name="bias")
+        for i in range(10):
+            w = tf.Variable(-1., name=f"weight_{i}")
+            total += w*(self.x_volume**(i + 1))
+
+        return total
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True):
 

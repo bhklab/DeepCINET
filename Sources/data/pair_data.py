@@ -1,10 +1,11 @@
 import os
 import logging
+import math
 from typing import Iterator, Tuple, Generator, List, Dict
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
+from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
 from settings import \
@@ -31,11 +32,12 @@ class SplitPairs:
         self.logger = logging.getLogger(__name__)
 
     def folds(self, n_folds: int = 4, bidirectional: bool = False) \
-            -> Iterator[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
+            -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
         """
         Creates different folds of data for use with CV
 
-        :param n_folds: Number of folds to be created
+        :param n_folds: Number of folds to be created, if negative, the number of folds will be created using
+                        Leave One Out
         :param bidirectional: If :any:`True` instead of generating only one pair for every two ids, the two possible
                              pairs will be generated. For example if we have the ids: ``FHBO001`` and ``FHBO002``,
                              where ``FHBO001 > FHBO002`` and ``distance = 1`` the pairs generated will be:
@@ -47,12 +49,31 @@ class SplitPairs:
                              ``FHBO002``  ``FHBO001``  ``False``        -1
                              ===========  ===========  =========  ========
 
-        :return: Generator yielding a train/test pair
+        :return: Iterator with the fold number and its corresponding train and test sets
         """
-        skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
+        skf = self._get_folds_generator(n_folds)
+        n_folds = self.get_n_splits(n_folds)
+        generator = skf.split(self.total_x, self.total_y)
 
-        for train_ids, test_ids in skf.split(self.total_x, self.total_y):
-            yield self._create_train_test(train_ids, test_ids, bidirectional)
+        self.logger.info(f"Folds: {n_folds}")
+
+        # Slurm configuration
+        task_id = int(os.getenv('SLURM_ARRAY_TASK_ID', 0))
+        task_count = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+        task_count = int(os.getenv('TASKS_COUNT', task_count))
+        if task_count > 0:
+            tasks_list = self._tasks_distribution(n_folds, task_count)
+            task_begin, task_end = tasks_list[task_id]
+
+            enum_generator = zip(range(task_begin, task_end), list(generator)[task_begin:task_end])
+        else:
+            enum_generator = enumerate(generator)
+
+        for i, (train_ids, test_ids) in enum_generator:
+            yield i, self._create_train_test(train_ids, test_ids, bidirectional)
+
+    def get_n_splits(self, n_folds: int = 4) -> int:
+        return self._get_folds_generator(n_folds).get_n_splits(self.total_y, self.total_y)
 
     def train_test_split(self, test_size: float = .25, bidirectional: bool = False) \
             -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -77,6 +98,12 @@ class SplitPairs:
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
         return self._create_train_test(train_ids, test_ids, bidirectional)
+
+    @staticmethod
+    def _get_folds_generator(n_folds: int) -> BaseCrossValidator:
+        if n_folds < 0:
+            return LeaveOneOut()
+        return StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
 
     def _create_train_test(self,
                            train_ids: List[int],
@@ -109,6 +136,23 @@ class SplitPairs:
 
         return train_pairs, test_pairs, test_mix_pairs
 
+    def _tasks_distribution(self, total_tasks: int, workers: int) -> List[Tuple[int, int]]:
+        length = int(math.ceil(total_tasks / workers))
+        limit = total_tasks - (length - 1)*workers
+
+        self.logger.debug(f"Tasks: {total_tasks}, Workers: {workers}, Length: {length}, Limit: {limit}")
+
+        task_list = []
+        prev_end = 0
+        for i in range(workers):
+            task_begin = prev_end
+            task_end = task_begin + length - (0 if i < limit else 1)
+            task_end = prev_end = min(task_end, total_tasks)
+
+            task_list.append((task_begin, task_end))
+
+        return task_list
+
     @staticmethod
     def _get_pairs(df: pd.DataFrame, bidirectional: bool) -> pd.DataFrame:
         """
@@ -120,6 +164,9 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         pairs = SplitPairs._get_inner_pairs(df, df, bidirectional)
+
+        if len(pairs) <= 0:
+            return pairs
         return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
