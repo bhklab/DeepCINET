@@ -208,23 +208,13 @@ def main(args: Dict[str, Any]):
     with tf.Session(config=conf) as sess:
         enum_generator = get_sets_generator(args['cv_folds'], args['test_size'], args['bidirectional'])
 
-        counts = {
-            'train': {
-                'total': 0,
-                'correct': 0,
-                'c_index': []
-            },
-            'test': {
-                'total': 0,
-                'correct': 0,
-                'c_index': []
-            },
-            'mixed': {
+        counts = {}
+        for key in ['train', 'test', 'mixed']:
+            counts[key] = {
                 'total': 0,
                 'correct': 0,
                 'c_index': []
             }
-        }
 
         for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
             # Initialize all the variables
