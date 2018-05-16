@@ -59,8 +59,8 @@ class SplitPairs:
 
         # Slurm configuration
         task_id = int(os.getenv('SLURM_ARRAY_TASK_ID', 0))
-        task_count = os.getenv('SLURM_ARRAY_TASK_COUNT', 0)
-        task_count = int(os.getenv('TASKS_COUNT'), task_count)
+        task_count = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
+        task_count = int(os.getenv('TASKS_COUNT', task_count))
         if task_count > 0:
             tasks_list = self._tasks_distribution(n_folds, task_count)
             task_begin, task_end = tasks_list[task_id]
