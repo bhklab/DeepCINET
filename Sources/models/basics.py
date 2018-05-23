@@ -247,8 +247,8 @@ class BasicSiamese(BasicModel):
                 self.gathered_a = tf.reduce_sum(self.gathered_a, 1, keepdims=True, name="reduce_b")
                 self.gathered_b = tf.reduce_sum(self.gathered_b, 1, keepdims=True, name="reduce_a")
 
-                sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
-                # sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")
+                # sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
+                sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")
                 return tf.sigmoid(10*sub, name="contrastive_sigmoid")
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
