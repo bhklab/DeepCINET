@@ -1090,7 +1090,7 @@ class VolumeOnlySiamese(BasicSiamese):
         """
 
         total = tf.Variable(0., name="bias")
-        for i in range(10):
+        for i in range(1):
             w = tf.Variable(-1., name=f"weight_{i}")
             total += w*(self.x_volume**(i + 1))
 
