@@ -15,9 +15,10 @@ from moviepy.editor import ImageSequenceClip
 import settings
 
 from .logger import init_logger
+from .results import all_results
 
 # Only export the functions that we need
-__all__ = ['init_logger', 'movie', 'save_results']
+__all__ = ['init_logger', 'movie', 'save_results', 'all_results']
 
 
 def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
