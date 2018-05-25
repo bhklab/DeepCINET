@@ -37,7 +37,7 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
     df_list = []
     elem_comparisons = {}
     for file in files:
-        df = pd.read_csv(file)
+        df = pd.read_csv(file, index_col=0)
 
         elem_right = len(df[df["labels"] == df["predictions"]])
         elem_count = len(df)
