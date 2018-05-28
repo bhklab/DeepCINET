@@ -9,5 +9,6 @@ from .siameses import \
     ScalarOnlyDropoutSiamese, \
     ImageSiamese, \
     ResidualImageScalarSiamese, \
+    ScalarOnlyDropoutSiameseDistance, \
     VolumeOnlySiamese
 from .basics import BasicModel, BasicSiamese, BasicImageSiamese

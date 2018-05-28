@@ -1058,6 +1058,23 @@ class ScalarOnlyDropoutSiamese(ScalarOnlySiamese):
         return x
 
 
+class ScalarOnlyDropoutSiameseDistance(ScalarOnlyDropoutSiamese):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, threshold=0.)
+
+    def _contrastive_math(self):
+        weight1 = tf.Variable(1., name="c_weight")
+        weight2 = tf.Variable(10., name="sub_weight")
+        sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")
+        return tf.tanh(weight2*sub, name="contrastive_tanh")*weight1
+
+    def _loss_function(self):
+        return tf.losses.mean_squared_error(self.y_dist, self.y_prob, scope="distance_loss")
+
+    def _y_bool(self):
+        return tf.greater_equal(self.y_dist, self.threshold)
+
+
 class VolumeOnlySiamese(BasicSiamese):
     r"""
     Model that only uses the volume radiomic feature

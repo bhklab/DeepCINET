@@ -165,6 +165,8 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         return models.ImageSiamese(**kwargs)
     elif model_key == "ResidualImageScalarSiamese":
         return models.ResidualImageScalarSiamese(**kwargs)
+    elif model_key == "ScalarOnlyDropoutSiameseDistance":
+        return models.ScalarOnlyDropoutSiameseDistance(**kwargs)
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
     else:
@@ -333,6 +335,7 @@ if __name__ == '__main__':
             'ScalarOnlySiamese',
             'VolumeOnlySiamese',
             'ScalarOnlyDropoutSiamese',
+            'ScalarOnlyDropoutSiameseDistance',
             'ImageSiamese',
             'ResidualImageScalarSiamese',
         ],
