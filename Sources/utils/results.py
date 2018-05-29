@@ -134,6 +134,7 @@ def _select_time_age(clinical_info: pd.DataFrame, results_df: pd.DataFrame) -> p
     merge = merge[['age_a', 'age', 'time_a', 'time', 'pA', 'pB', 'labels', 'predictions', 'probabilities',
                    'gather_a', 'gather_b']]
     merge = merge.rename(index=str, columns={'age': 'age_b', 'time': 'time_b'})
+    merge['real_dist'] = merge['time_b'] - merge['time_a']
     return merge
 
 
