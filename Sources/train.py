@@ -165,8 +165,6 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         return models.ImageSiamese(**kwargs)
     elif model_key == "ResidualImageScalarSiamese":
         return models.ResidualImageScalarSiamese(**kwargs)
-    elif model_key == "ScalarOnlyDropoutSiameseDistance":
-        return models.ScalarOnlyDropoutSiameseDistance(**kwargs)
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
     else:
@@ -202,7 +200,8 @@ def main(args: Dict[str, Any]):
                                  gpu_level=args['gpu_level'],
                                  regularization=args['regularization'],
                                  dropout=args['dropout'],
-                                 learning_rate=args['learning_rate'])
+                                 learning_rate=args['learning_rate'],
+                                 use_distance=args['use_distance'])
 
     conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
@@ -335,7 +334,6 @@ if __name__ == '__main__':
             'ScalarOnlySiamese',
             'VolumeOnlySiamese',
             'ScalarOnlyDropoutSiamese',
-            'ScalarOnlyDropoutSiameseDistance',
             'ImageSiamese',
             'ResidualImageScalarSiamese',
         ],
@@ -390,6 +388,13 @@ if __name__ == '__main__':
     parser.add_argument(
         "--log-device",
         help="Log device placement when creating all the tensorflow tensors",
+        action="store_true",
+        default=False
+    )
+
+    parser.add_argument(
+        "--use-distance",
+        help="Whether to use distance or the boolean value when creating the siamese model",
         action="store_true",
         default=False
     )

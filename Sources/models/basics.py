@@ -34,14 +34,16 @@ class BasicModel:
     :var BasicModel.total_loss: Total loss to be minimized with the optimizer
     :var BasicModel.good_predictions: Number of good predictions found on the current batch. Then to get the c-index
                                       it only needs to be divided by the batch size
-    :var BasicModel.threshold: Used to compute the CI. If ``value > threshold`` it will be considered a
-                               :any:`True` value.
     :var BasicModel.c_index: Concordance index for the current batch. It's obtained by diving the number of correct
                              comparisons between the total
 
                              .. math::
                                  \frac{\text{correct comparisons}}{\text{total comparisons}}
 
+    :var BasicModel._threshold: Used to compute the CI. If ``value > threshold`` it will be considered a
+                                :any:`True` value.
+    :var BasicModel._use_distance: Whether to use distance or the boolean values :any:`BasicModel.y` when computing
+                                   the cost function
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :vartype BasicModel.y: tf.Tensor
@@ -52,8 +54,9 @@ class BasicModel:
     :vartype BasicModel.regularization_loss: tf.Tensor
     :vartype BasicModel.total_loss: tf.Tensor
     :vartype BasicModel.good_predictions: tf.Tensor
-    :vartype BasicMode.threshold: float
     :vartype BasicModel.c_index: tf.Tensor
+    :vartype BasicModel._threshold: float
+    :vartype BasicModel._use_distance: bool
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     """
@@ -63,14 +66,18 @@ class BasicModel:
                  dropout: float = .2,
                  learning_rate: float = 0.001,
                  threshold: float = .5,
+                 use_distance: bool = False,
                  **ignored):
         self.logger = logging.getLogger(__name__)
 
         if len(ignored) > 0:
             self.logger.warning(f"There are unknown arguments {ignored}")
 
+        #: **Attribute**: Whether to use distance or the boolean values when computing the cost function
+        self._use_distance = use_distance
+
         #: **Attribute**: Used to compute the CI
-        self.threshold = threshold
+        self._threshold = 0. if self._use_distance else threshold
 
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
         self.y = tf.placeholder(tf.float32, [None, 1], name="Y")
@@ -92,7 +99,7 @@ class BasicModel:
 
         #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicModel.y_prob` and
         #: :any:`BasicModel.THRESHOLD`
-        self.y_estimate = tf.greater_equal(self.y_prob, self.threshold)
+        self.y_estimate = tf.greater_equal(self.y_prob, self._threshold)
 
         with tf.variable_scope("loss"):
             #: **Attribute**: Classification loss using the negative log loss function
@@ -174,7 +181,11 @@ class BasicModel:
 
         :return: Tensor with the loss function
         """
-        return tf.losses.log_loss(self.y, self.y_prob, scope="classification_loss")
+        scope = "classification_loss"
+        if self._use_distance:
+            return tf.losses.mean_squared_error(self.y_dist, self.y_prob, scope=scope)
+        else:
+            return tf.losses.log_loss(self.y, self.y_prob, scope=scope)
 
     def _y_bool(self) -> tf.Tensor:
         """
@@ -183,8 +194,10 @@ class BasicModel:
 
         :return: Tensor with boolean values that will be compared against the predicted ones to obtain the CI
         """
-
-        return tf.greater_equal(self.y, self.threshold)
+        if self._use_distance:
+            return tf.greater_equal(self.y_dist, self._threshold)
+        else:
+            return tf.greater_equal(self.y, self._threshold)
 
 
 class BasicSiamese(BasicModel):
@@ -217,7 +230,9 @@ class BasicSiamese(BasicModel):
     :vartype BasicSiamese._gpu_level: int
     """
 
-    def __init__(self, gpu_level: int = 0, **kwargs):
+    def __init__(self,
+                 gpu_level: int = 0,
+                 **kwargs):
         #: **Attribute**: Amount of GPU to be used with the model
         self._gpu_level = gpu_level
 
@@ -284,9 +299,17 @@ class BasicSiamese(BasicModel):
                 return self._contrastive_math()
 
     def _contrastive_math(self):
+        weight1 = tf.Variable(1., name="c_weight")
+        weight2 = tf.Variable(10., name="sub_weight")
+
         # sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
         sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")
-        return tf.sigmoid(10*sub, name="contrastive_sigmoid")
+        sub *= weight2
+
+        if self._use_distance:
+            return weight1*tf.tanh(sub, name="contrastive_tanh")
+        else:
+            return tf.sigmoid(sub, name="contrastive_sigmoid")
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         return {
