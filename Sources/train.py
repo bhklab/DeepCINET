@@ -172,17 +172,19 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         exit(1)
 
 
-def get_sets_generator(cv_folds: int, test_size: int, bidirectional: bool) \
-        -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+def get_sets_generator(cv_folds: int,
+                       test_size: int,
+                       bidirectional: bool,
+                       random: bool) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        generator = dataset.train_test_split(test_size, bidirectional=bidirectional)
+        generator = dataset.train_test_split(test_size, bidirectional=bidirectional, random=random)
         enum_generator = [(0, generator)]
         logger.info("1 fold")
     else:
-        enum_generator = dataset.folds(cv_folds, bidirectional=bidirectional)
+        enum_generator = dataset.folds(cv_folds, bidirectional=bidirectional, random=random)
 
     logger.debug("Folds created")
 
@@ -207,7 +209,10 @@ def main(args: Dict[str, Any]):
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'], args['bidirectional'])
+        enum_generator = get_sets_generator(args['cv_folds'],
+                                            args['test_size'],
+                                            args['bidirectional'],
+                                            args['random_labels'])
 
         counts = {}
         for key in ['train', 'test', 'mixed']:
@@ -395,6 +400,13 @@ if __name__ == '__main__':
     parser.add_argument(
         "--use-distance",
         help="Whether to use distance or the boolean value when creating the siamese model",
+        action="store_true",
+        default=False
+    )
+
+    parser.add_argument(
+        "--random-labels",
+        help="Whether to use or not random labels, use ONLY to validate a model",
         action="store_true",
         default=False
     )
