@@ -77,7 +77,6 @@ class SplitPairs:
         :param test_size: ``float`` between ``0`` and ``1`` with the test set size
         :param random: Whether to create random pairs, use this to verify the model, **Never** to train a real model
                        It changes the labels randomly
-
         :return: Tuple with the train set and the test set
         """
         rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_SEED)
