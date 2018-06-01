@@ -174,17 +174,16 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
 
 def get_sets_generator(cv_folds: int,
                        test_size: int,
-                       bidirectional: bool,
                        random: bool) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        generator = dataset.train_test_split(test_size, bidirectional=bidirectional, random=random)
+        generator = dataset.train_test_split(test_size, random=random)
         enum_generator = [(0, generator)]
         logger.info("1 fold")
     else:
-        enum_generator = dataset.folds(cv_folds, bidirectional=bidirectional, random=random)
+        enum_generator = dataset.folds(cv_folds, random=random)
 
     logger.debug("Folds created")
 
@@ -211,7 +210,6 @@ def main(args: Dict[str, Any]):
     with tf.Session(config=conf) as sess:
         enum_generator = get_sets_generator(args['cv_folds'],
                                             args['test_size'],
-                                            args['bidirectional'],
                                             args['random_labels'])
 
         counts = {}
@@ -372,22 +370,6 @@ if __name__ == '__main__':
         default=0.2,
         type=float,
         choices=[utils.ArgRange(0., 1.)]
-    )
-
-    parser.add_argument(
-        "--bidirectional-pairs",
-        help="When generating the pairs, for every two ids create the two possible pairs in the two possible "
-             "directions",
-        action="store_true",
-        dest="bidirectional",
-        default=True
-    )
-
-    parser.add_argument(
-        "--no-bidirectional-pairs",
-        help="Create pairs using only the comparisons in one direction",
-        action="store_false",
-        dest="bidirectional"
     )
 
     parser.add_argument(

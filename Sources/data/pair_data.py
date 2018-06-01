@@ -32,23 +32,12 @@ class SplitPairs:
         self.logger = logging.getLogger(__name__)
 
     def folds(self, n_folds: int = 4,
-              bidirectional: bool = False,
               random: bool = False) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
         """
         Creates different folds of data for use with CV
 
         :param n_folds: Number of folds to be created, if negative, the number of folds will be created using
                         Leave One Out
-        :param bidirectional: If :any:`True` instead of generating only one pair for every two ids, the two possible
-                             pairs will be generated. For example if we have the ids: ``FHBO001`` and ``FHBO002``,
-                             where ``FHBO001 > FHBO002`` and ``distance = 1`` the pairs generated will be:
-
-                             ===========  ===========  =========  ========
-                             pA           pB           comp       distance
-                             ===========  ===========  =========  ========
-                             ``FHBO001``  ``FHBO002``  ``True``          1
-                             ``FHBO002``  ``FHBO001``  ``False``        -1
-                             ===========  ===========  =========  ========
         :param random: Whether to create random pairs, use this to verify the model, **Never** to train a real model
                        It changes the labels randomly
 
@@ -74,29 +63,18 @@ class SplitPairs:
             enum_generator = enumerate(generator)
 
         for i, (train_ids, test_ids) in enum_generator:
-            yield i, self._create_train_test(train_ids, test_ids, bidirectional, random)
+            yield i, self._create_train_test(train_ids, test_ids, random)
 
     def get_n_splits(self, n_folds: int = 4) -> int:
         return self._get_folds_generator(n_folds).get_n_splits(self.total_y, self.total_y)
 
     def train_test_split(self,
                          test_size: float = .25,
-                         bidirectional: bool = False,
                          random: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Split data in train/test with the specified proportion
 
         :param test_size: ``float`` between ``0`` and ``1`` with the test set size
-        :param bidirectional: If :any:`True` instead of generating only one pair for every two ids, the two possible
-                             pairs will be generated. For example if we have the ids: ``FHBO001`` and ``FHBO002``,
-                             where ``FHBO001 > FHBO002`` and ``distance = 1`` the pairs generated will be:
-
-                             ===========  ===========  =========  ========
-                             pA           pB           comp       distance
-                             ===========  ===========  =========  ========
-                             ``FHBO001``  ``FHBO002``  ``True``          1
-                             ``FHBO002``  ``FHBO001``  ``False``        -1
-                             ===========  ===========  =========  ========
         :param random: Whether to create random pairs, use this to verify the model, **Never** to train a real model
                        It changes the labels randomly
 
@@ -105,7 +83,7 @@ class SplitPairs:
         rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_SEED)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
-        return self._create_train_test(train_ids, test_ids, bidirectional, random)
+        return self._create_train_test(train_ids, test_ids, random)
 
     @staticmethod
     def _get_folds_generator(n_folds: int) -> BaseCrossValidator:
@@ -116,7 +94,6 @@ class SplitPairs:
     def _create_train_test(self,
                            train_ids: List[int],
                            test_ids: List[int],
-                           bidirectional: bool,
                            random: bool) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
@@ -124,20 +101,19 @@ class SplitPairs:
 
         :param train_ids: Ids for the train set should be between ``0`` and ``len(self.total_x) - 1``
         :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
-        :param bidirectional: Generate all the possible pairs, in the two possible directions
         :return: List for the train set and list for the test set respectively
         """
         train_data = self.clinical_data.iloc[train_ids]
         test_data = self.clinical_data.iloc[test_ids]
 
         self.logger.debug("Generating train pairs")
-        train_pairs = self._get_pairs(train_data, bidirectional, random)
+        train_pairs = self._get_pairs(train_data, random)
 
         self.logger.debug("Generating test pairs")
-        test_pairs = self._get_pairs(test_data, bidirectional, random)
+        test_pairs = self._get_pairs(test_data, random)
 
         self.logger.debug("Generating mixed pairs")
-        test_mix_pairs = self._get_compare_train(train_data, test_data, bidirectional, random)
+        test_mix_pairs = self._get_compare_train(train_data, test_data, random)
 
         train_pairs = self._normalize(train_pairs)
         test_pairs = self._normalize(test_pairs, train=False)
@@ -163,16 +139,15 @@ class SplitPairs:
         return task_list
 
     @staticmethod
-    def _get_pairs(df: pd.DataFrame, bidirectional: bool, random: bool) -> pd.DataFrame:
+    def _get_pairs(df: pd.DataFrame, random: bool) -> pd.DataFrame:
         """
         Get all the possible pairs for a DataFrame containing the clinical data, keeping in mind the censored
         data
 
         :param df: DataFrame containing all the clinical data
-        :param bidirectional: Generate all the possible pairs, in the two possible directions
         :return: Iterator over PairComp with all the generated pairs
         """
-        pairs = SplitPairs._get_inner_pairs(df, df, bidirectional, random)
+        pairs = SplitPairs._get_inner_pairs(df, df, random)
 
         if len(pairs) <= 0:
             return pairs
@@ -181,67 +156,55 @@ class SplitPairs:
     @staticmethod
     def _get_compare_train(train_df: pd.DataFrame,
                            test_df: pd.DataFrame,
-                           bidirectional: bool,
                            random: bool) -> pd.DataFrame:
         """
         Create the pairs by having one member belonging to the train dataset and the other to the test dataset
 
         :param train_df: DataFrame containing the clinical data for the train data set
         :param test_df: DataFrame containing the clinical data for the test data set
-        :param bidirectional: Generate all the possible pairs, in the two possible directions
         :return: Iterator over PairComp with all the generated pairs
         """
         # Create the pairs where test_elem > train_elem
-        pairs_test = SplitPairs._get_inner_pairs(test_df, train_df, bidirectional, random)
-
-        # Create the pairs where train_elem > test_elem
-        pairs_train = SplitPairs._get_inner_pairs(train_df, test_df, bidirectional, random)
-
-        pairs = pd.concat([pairs_test, pairs_train])
+        pairs = SplitPairs._get_inner_pairs(test_df, train_df, random, censoring=False)
         return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
     def _get_inner_pairs(df: pd.DataFrame,
                          df_comp: pd.DataFrame,
-                         bidirectional: bool,
-                         random: bool) -> pd.DataFrame:
+                         random: bool,
+                         censoring: bool = True) -> pd.DataFrame:
         """
         Generate pairs where the survival time of ``df`` is bigger than the survival time of ``df_comp``
 
         :param df: :class:`DataFrame` that will be iterated
         :param df_comp: :class:`DataFrame` that will be compared against and if its values are smaller than the compared
-                    value a pair will be created
-        :param bidirectional: Generate all the possible pairs, in the two possible directions
+                        value a pair will be created
         :return: List with all the generated pairs. **Note**: The pairs are **not** in a random order
         """
         df_comp = df_comp[df_comp['event'] == 1]
 
         pairs = []
         for _, row in df.iterrows():
-            temp_df = df_comp.loc[(df_comp['time'] < row['time'])]
+            if not censoring or row['event'] == 1:
+                temp_df = df_comp.loc[df_comp['id'] != row['id'], ['id', 'time']]
+            else:
+                temp_df = df_comp.loc[(df_comp['time'] < row['time']), ['id', 'time']]
 
             row_pairs = pd.DataFrame()
             row_pairs['pA'] = temp_df['id']
             row_pairs['pB'] = row['id']
             row_pairs['distance'] = row['time'] - temp_df['time']
-            row_pairs['comp'] = True
+            row_pairs['comp'] = row['time'] > temp_df['time']
 
             pairs.append(row_pairs)
 
         pairs = pd.concat(pairs)
         pairs = pairs.reset_index(drop=True)
 
-        if bidirectional:
-            pairs_b = pairs.copy()
-        else:
-            pairs_b = pairs.sample(frac=.5)
-            pairs = pairs.drop(pairs_b.index, axis=0)
-
-        pairs_b.loc[:, ['pA', 'pB']] = pairs_b.loc[:, ['pB', 'pA']].values
-        pairs_b['distance'] *= -1
-        pairs_b['comp'] ^= True
-
-        pairs = pd.concat([pairs, pairs_b], ignore_index=True)
+        rand_bool = np.random.randint(2, size=len(pairs))
+        pairs.loc[rand_bool, ['pA', 'pB']] = pairs.loc[rand_bool, ['pB', 'pA']].values
+        pairs.loc[rand_bool, 'distance'] *= -1
+        pairs.loc[rand_bool, 'comp'] ^= True
 
         if random:
             # Hack to test some values
