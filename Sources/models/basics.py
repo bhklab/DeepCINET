@@ -67,6 +67,7 @@ class BasicModel:
                  learning_rate: float = 0.001,
                  threshold: float = .5,
                  use_distance: bool = False,
+                 full_summary: bool = False,
                  **ignored):
         self.logger = logging.getLogger(__name__)
 
@@ -134,9 +135,11 @@ class BasicModel:
             tf.summary.scalar("classification_loss", self.classification_loss)
             tf.summary.scalar("regularization_loss", self.regularization_loss)
 
-            for var in tf.trainable_variables():
-                # We have to replace `:` with `_` to avoid a warning that ends doing this replacement
-                tf.summary.histogram(str(var.name).replace(":", "_"), var)
+            if full_summary:
+                self.logger.info("Using full summary")
+                for var in tf.trainable_variables():
+                    # We have to replace `:` with `_` to avoid a warning that ends doing this replacement
+                    tf.summary.histogram(str(var.name).replace(":", "_"), var)
 
         self.summary = tf.summary.merge_all()
 

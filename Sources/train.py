@@ -202,7 +202,8 @@ def main(args: Dict[str, Any]):
                                  regularization=args['regularization'],
                                  dropout=args['dropout'],
                                  learning_rate=args['learning_rate'],
-                                 use_distance=args['use_distance'])
+                                 use_distance=args['use_distance'],
+                                 full_summary=args['full_summary'])
 
     conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
@@ -389,6 +390,13 @@ if __name__ == '__main__':
     parser.add_argument(
         "--random-labels",
         help="Whether to use or not random labels, use ONLY to validate a model",
+        action="store_true",
+        default=False
+    )
+
+    parser.add_argument(
+        "--full-summary",
+        help="Write a full summary for tensorboard, otherwise only the scalar variables will be logged",
         action="store_true",
         default=False
     )
