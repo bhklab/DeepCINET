@@ -40,6 +40,9 @@ class RawData:
         df_clinical = pd.read_csv(DATA_PATH_CLINICAL)
         self.clinical_ids = set(df_clinical.iloc[:, 0].tolist())
 
+        df_features = pd.read_csv(DATA_PATH_RADIOMIC)
+        self.radiomic_ids = set(df_features.loc[:, (df_features != 0).any(axis=0)].columns)
+
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
         self._valid_dirs = [PseudoDir(x.name, x.path, x.is_dir()) for x in valid_dirs]
         self._valid_ids = [str(x.name) for x in self._valid_dirs]
@@ -111,7 +114,7 @@ class RawData:
 
         # We are looking for directories, only the ones that we have the clinical info are valid
         name = str(test_dir.name)
-        if not test_dir.is_dir() or name not in self.clinical_ids:
+        if not test_dir.is_dir() or name not in self.clinical_ids or name not in self.radiomic_ids:
             return False
 
         # Check if it has two sub dirs that start with the same name
