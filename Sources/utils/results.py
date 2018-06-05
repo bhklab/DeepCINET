@@ -14,8 +14,7 @@ import tensorflow as tf
 
 import settings
 
-clinical = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED)
-print(clinical.columns)
+clinical = None
 
 
 # Get the mixed results
@@ -32,6 +31,10 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
                        most repeated key and the value is the pandas :class:`pandas.DataFrame` with the comparisons
     :return:
     """
+    global clinical
+
+    if clinical is None:
+        clinical = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED)
     logger = logging.getLogger(__name__)
 
     logger.debug(f"Searching on {path} {select_type}")

@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import pathlib
 from typing import Dict, Tuple, Any, Iterator
 
 import tensorflow as tf
@@ -408,14 +409,14 @@ if __name__ == '__main__':
     arguments = vars(arguments)
 
     arguments['results_path'] = os.path.abspath(arguments['results_path'])
+    results_path = pathlib.Path(arguments['results_path'])
+    results_path.mkdir(parents=True, exist_ok=True)
 
-    if not os.path.exists(arguments['results_path']):
-        os.makedirs(arguments['results_path'])
-
-    logger = utils.init_logger(f'train_{array_id}', arguments['results_path'])
+    logger = utils.init_logger(f'train_{array_id}', str(results_path))
 
     logger.debug("Script starts")
     logger.debug(arguments)
+    logger.info(f"Results path: {results_path}")
 
     if len(unknown) > 0:
         logger.warning(f"Warning: there are unknown arguments {unknown}")
