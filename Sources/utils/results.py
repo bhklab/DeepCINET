@@ -56,7 +56,8 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
             "id": [key],
             "right": [elem_right],
             "total": [elem_count],
-            "censored": [is_censored]
+            "censored": [is_censored],
+            "time": clinical.loc[clinical['id'] == key, 'time']
         }))
 
         if elem_folds or predictions:
