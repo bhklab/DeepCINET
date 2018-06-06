@@ -184,6 +184,8 @@ class SplitPairs:
 
         pairs = []
         for _, row in df.iterrows():
+            # For mixed pairs only compare against the uncensored elements to avoid problems when predicting
+            # Survival time
             if not censoring or row['event'] == 1:
                 temp_df = df_comp.loc[df_comp['id'] != row['id'], ['id', 'time']]
             else:
