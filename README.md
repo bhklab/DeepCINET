@@ -4,17 +4,19 @@ Create a Survival Prediction model using a Convolutional Neural Network.
 To do so a Siamese network will be used. Two individuals will be used as an input and the network
 should predict which one will live longer.
 
+This project uses **python3**
+
 More documentation can be found in the documentation page:
 [https://jmigual.github.io/CNNSurv](https://jmigual.github.io/CNNSurv)
 
 ## Installation
 
-To install all the requirements python virtual environment is recomendend. Python 3 is used 
+To install all the requirements python virtual environment is recommended. Python 3 is used 
 for this project. Once the project has been downloaded do:
 
 ```bash
 cd CNNSurv
-virtualenv venv
+virtualenv venv --python=`which python3`
 source venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -23,14 +25,15 @@ The dataset files are in the `Data` folder (which has to be created). The easies
 create a symbolic link to where the data is located, if using Mordor it would be:
 
 ```bash
+cd CNNSurv # Go to project's root directory
 ln -s /mnt/work1/users/bhklab/Data/HNK Data
 ```
 
-All the environment variables are defined in the .env file which should be located in the
+All the environment variables are defined in the `.env` file which should be located in the
 project's root dir. An example can be this one:
 
 ```bash
-ROOT_DIR=${HOME}/Documents/Projects/CNNSurv
+ROOT_DIR=${HOME}/Documents/Projects/CNNSurv # Change this to your root directory
 
 # Variables starting with DATA will have their path expanded
 DATA=${ROOT_DIR}/Data
