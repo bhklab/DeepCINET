@@ -46,12 +46,15 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
     for file in files:
         df = pd.read_csv(file, index_col=0)
 
-        elem_right = len(df[df["labels"] == df["predictions"]])
+        elem_right = len(df[df["labels"].astype(bool) == df["predictions"].astype(bool)])
         elem_count = len(df)
 
         ids = np.concatenate((df['pA'].values, df['pB'].values))
         ids = collections.Counter(ids)
         key, count = ids.most_common(1)[0]
+
+        gather = df.loc[df['pA'] == key, 'gather_a'].values
+        gather = np.append(gather, df.loc[df['pB'] == key, 'gather_b'].values)
 
         is_censored = not clinical.loc[clinical['id'] == key, 'event'].values[0]
 
@@ -60,7 +63,9 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
             "right": [elem_right],
             "total": [elem_count],
             "censored": [is_censored],
-            "time": clinical.loc[clinical['id'] == key, 'time']
+            "time": clinical.loc[clinical['id'] == key, 'time'],
+            "file": [file],
+            "gather": [gather.mean()]
         }))
 
         if elem_folds or predictions:
