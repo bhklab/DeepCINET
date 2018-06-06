@@ -20,7 +20,7 @@ help:
 docs:
 	rm -rf docs_source/api
 	SPHINX_APIDOC_OPTIONS=${APIDOC_OPTIONS} sphinx-apidoc -M -o docs_source/api/ Sources Sources/experimental.py
-	sed -i .bak 's/change-1:/exclude-members: $(EXCLUDE_PRIVATE)/' $(SOURCEDIR)/api/*.rst
+	sed -i.bak 's/change-1:/exclude-members: $(EXCLUDE_PRIVATE)/' $(SOURCEDIR)/api/*.rst
 	$(MAKE) html
 
 clean:
