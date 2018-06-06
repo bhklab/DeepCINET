@@ -36,8 +36,9 @@ class PairBatch(NamedTuple):
                              - ``label``: Same as ``comp`` but in float format where ``1.`` stands for :any:`True`
                              - ``distance``: Float with the distance in time between the two patient's normalized
 
-    :ivar PairBatch.elements: :class:`pandas.DataFrame` with the patient's information. It has the following columns:
+    :ivar PairBatch.patients: :class:`pandas.DataFrame` with the patient's information. It has the following columns:
 
+                                - ``ids``: Id identifying each one of the images and features
                                 - ``images``: :class:`numpy.ndarray` with shape ``[64, 64, 64, 1]`` containing the
                                   patient's scan
                                 - ``features``: :class:`numpy.ndarray` with shape ``[NUMBER_FEATURES, 1]``
@@ -47,5 +48,4 @@ class PairBatch(NamedTuple):
     """
     pairs: pd.DataFrame
     patients: pd.DataFrame
-
     ids_map: Dict[str, int]

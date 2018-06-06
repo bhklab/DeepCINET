@@ -99,7 +99,7 @@ class BasicModel:
         self.y_prob = self._model()  # This method is inherited and modified by its inheritors
 
         #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicModel.y_prob` and
-        #: :any:`BasicModel.THRESHOLD`
+        #: :any:`BasicModel._threshold`
         self.y_estimate = tf.greater_equal(self.y_prob, self._threshold)
 
         with tf.variable_scope("loss"):

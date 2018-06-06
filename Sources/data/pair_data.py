@@ -18,7 +18,13 @@ from settings import \
 
 class SplitPairs:
     """
-    Divides the data in training and testing. It can be divided to use with CV or only with one train/test set
+    Generates and divides the data into:
+
+      - Training pairs: pairs where both elements belong to the training set
+      - Testing pairs: paris where both elements belong to the test set
+      - Mixed pairs: pairs where one element belongs to the train set and the other to the test set
+
+    It can also be used to create the Cross Validation folds
     """
 
     def __init__(self):
