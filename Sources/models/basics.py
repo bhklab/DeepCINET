@@ -1,3 +1,16 @@
+"""
+Definitions of basic models that can be used to create different types of deep learning models.
+None of this models can be run by itself because they do not have the hidden layers implemented.
+
+  - The :class:`BasicModel` class defines the base for all the Neural Networks models
+  - The :class:`BasicSiamese` class defines the base for all the siamese models
+  - The :class:`BasicImageSiamese` class defines the base for all the siamese models that use images as an input
+
+
+.. inheritance-diagram:: models.basics
+   :parts: 1
+"""
+
 import abc
 import logging
 from typing import Dict
@@ -15,11 +28,17 @@ class BasicModel:
     :param regularization: Regularization factor
     :param dropout: Dropout probability
     :param learning_rate: Learning rate for the gradient descent optimization algorithm
+    :param threshold: Threshold in when to decide that a float number is a :any:`True` value and
+                      :any:`False` otherwise.
+    :param use_distance: If :any:`True` it will use a regression model instead of a classification model to
+                         fit the data and compute de Concordance Index
+    :param full_summary: If :any:`True`, when writing the summary to be used by ``Tensorboard``, write all
+                         the information, including a histogram for each trainable variable.
 
     **Attributes**:
 
-    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
-    :var BasicModel.y_dist: Batch of labels with the distance for all the pairs. It has shape ``[batch]``
+    :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch, 1]``
+    :var BasicModel.y_dist: Batch of labels with the distance for all the pairs. It has shape ``[batch, 1]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
     :var BasicModel.classification_loss: Classification loss using the negative log loss function
@@ -80,10 +99,10 @@ class BasicModel:
         #: **Attribute**: Used to compute the CI
         self._threshold = 0. if self._use_distance else threshold
 
-        #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
+        #: **Attribute**: Placeholder for the labels, it has shape ``[batch, 1]``
         self.y = tf.placeholder(tf.float32, [None, 1], name="Y")
 
-        #: **Attribute**: Placeholder for the distance between the pairs, it has shape ``[batch]``
+        #: **Attribute**: Placeholder for the distance between the pairs, it has shape ``[batch, 1]``
         self.y_dist = tf.placeholder(tf.float32, [None, 1], name="Y_distance")
 
         #: **Attribute**: Placeholder to tell the model if we are training (:any:`True`) or not (:any:`False`)
@@ -154,11 +173,11 @@ class BasicModel:
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         """
-        Get the ``feed_dict`` required by Tensorflow when calling ``sess.run(...)``. Classes that inherit
-        :class:`BasicModel` should reimplement this function
+        Create the ``feed_dict`` required by Tensorflow when calling ``sess.run(...)``. Classes that inherit
+        :class:`BasicModel` should reimplement this function if they add more elements to ``feed_dict``
 
         :param batch: Information about the batch, usually provided by :func:`BatchData.batches`
-        :param training: Whether we are training or not. Useful for training layers like dropout where we do not
+        :param training: Whether we are training or not. Useful for layers like dropout where we do not
                          want to apply dropout if we are not training
         :return: Dictionary that can be feed to the ``feed_dict`` parameter of ``sess.run(...)``.
         """
