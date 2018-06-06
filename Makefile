@@ -8,7 +8,7 @@ SPHINXPROJ    = CNNSurv
 SOURCEDIR     = docs_source
 BUILDDIR      = docs_build
 
-EXCLUDE_PRIVATE= "_source,_asdict,_fields,_field_defaults,_field_types,_replace,_make"
+EXCLUDE_PRIVATE= _source,_asdict,_fields,_field_defaults,_field_types,_replace,_make
 APIDOC_OPTIONS='members,private-members,undoc-members,show-inheritance,inherited-members,change-1'
 
 # Put it first so that "make" without argument is like "make help".
