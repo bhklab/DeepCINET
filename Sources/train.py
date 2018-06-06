@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import pathlib
 from typing import Dict, Tuple, Any, Iterator
 
 import tensorflow as tf
@@ -63,10 +64,10 @@ def train_iterations(sess: tf.Session,
                     ],
                     feed_dict=model.feed_dict(batch)
                 )
-                summary_writer.add_summary(summary, final_iterations)
                 logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: "
                             f"{total_pairs:>6}, "
                             f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
+                summary_writer.add_summary(summary, final_iterations)
             else:
                 _, c_index_result, loss = sess.run(
                     [
@@ -159,6 +160,12 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         return models.ImageScalarSiamese(**kwargs)
     elif model_key == "ScalarOnlySiamese":
         return models.ScalarOnlySiamese(**kwargs)
+    elif model_key == "ScalarOnlyDropoutSiamese":
+        return models.ScalarOnlyDropoutSiamese(**kwargs)
+    elif model_key == "ImageSiamese":
+        return models.ImageSiamese(**kwargs)
+    elif model_key == "ResidualImageScalarSiamese":
+        return models.ResidualImageScalarSiamese(**kwargs)
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
     else:
@@ -166,25 +173,18 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         exit(1)
 
 
-def get_sets_generator(cv_folds: int, test_size: int, bidirectional: bool) \
-        -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+def get_sets_generator(cv_folds: int,
+                       test_size: int,
+                       random: bool) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
-    if cv_folds < 2:
-        generator = dataset.train_test_split(test_size, bidirectional=bidirectional)
+    if 0 < cv_folds < 2:
+        generator = dataset.train_test_split(test_size, random=random)
         enum_generator = [(0, generator)]
+        logger.info("1 fold")
     else:
-        generator = dataset.folds(cv_folds, bidirectional=bidirectional)
-
-        # Slurm configuration
-        task_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
-        if int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0)) == cv_folds:
-            task_id = int(task_id)
-            logger.info(f"Task number: {task_id}")
-            enum_generator = [(task_id, list(generator)[task_id])]
-        else:
-            enum_generator = enumerate(generator)
+        enum_generator = dataset.folds(cv_folds, random=random)
 
     logger.debug("Folds created")
 
@@ -202,32 +202,28 @@ def main(args: Dict[str, Any]):
                                  gpu_level=args['gpu_level'],
                                  regularization=args['regularization'],
                                  dropout=args['dropout'],
-                                 learning_rate=args['learning_rate'])
+                                 learning_rate=args['learning_rate'],
+                                 use_distance=args['use_distance'],
+                                 full_summary=args['full_summary'])
 
-    conf = tf.ConfigProto()
+    conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(args['cv_folds'], args['test_size'], args['bidirectional'])
+        enum_generator = get_sets_generator(args['cv_folds'],
+                                            args['test_size'],
+                                            args['random_labels'])
 
-        counts = {
-            'train': {
+        counts = {}
+        for key in ['train', 'test', 'mixed']:
+            counts[key] = {
                 'total': 0,
                 'correct': 0,
-            },
-            'test': {
-                'total': 0,
-                'correct': 0
-            },
-            'mixed': {
-                'total': 0,
-                'correct': 0
+                'c_index': []
             }
-        }
 
         for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
             # Initialize all the variables
-            logger.info("\r ")
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
 
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
@@ -245,6 +241,8 @@ def main(args: Dict[str, Any]):
 
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                if len(pairs) <= 0:
+                    continue
                 logger.info(f"Computing {name} c-index")
                 correct, total, results = \
                     test_iterations(sess,
@@ -253,19 +251,28 @@ def main(args: Dict[str, Any]):
                                     pairs,
                                     args['batch_size'])
 
+                correct = int(correct)
+
+                c_index = correct/total
+
                 counts[name]['total'] += total
                 counts[name]['correct'] += correct
+                counts[name]['c_index'].append((i, c_index))
 
                 predictions[name] = results
 
-                logger.info(f"{name} set c-index: {correct/total}, correct: {correct}, total: {total}")
+                logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
+                            f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
 
             # Save each fold in a different directory
             results_save_path = os.path.join(args['results_path'], f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
             utils.save_results(sess, predictions, results_save_path)
+            logger.info("\r ")
 
         for key in counts:
+            if counts[key]['total'] <= 0:
+                continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
 
 
@@ -277,8 +284,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--cv-folds",
-        help="Number of cross validation folds. If < 2 CV won't be used and the test set size "
-             "will be defined by --test-size",
+        help="Number of cross validation folds. If 0 < folds < 2 CV won't be used and the test set size "
+             "will be defined by --test-size. If folds < 0 Leave One Out Cross Validation will be used instead",
         default=1,
         type=int
     )
@@ -325,8 +332,16 @@ if __name__ == '__main__':
     parser.add_argument(
         "--model",
         help="Choose the model that you want to use for training",
-        default="SimpleImageSiamese",
-        choices=['SimpleImageSiamese', 'ImageScalarSiamese', 'ScalarOnlySiamese', 'VolumeOnlySiamese'],
+        default="ImageSiamese",
+        choices=[
+            'SimpleImageSiamese',
+            'ImageScalarSiamese',
+            'ScalarOnlySiamese',
+            'VolumeOnlySiamese',
+            'ScalarOnlyDropoutSiamese',
+            'ImageSiamese',
+            'ResidualImageScalarSiamese',
+        ],
         type=str
     )
 
@@ -360,19 +375,31 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--bidirectional-pairs",
-        help="When generating the pairs, for every two ids create the two possible pairs in the two possible "
-             "directions",
+        "--log-device",
+        help="Log device placement when creating all the tensorflow tensors",
         action="store_true",
-        dest="bidirectional",
-        default=True
+        default=False
     )
 
     parser.add_argument(
-        "--no-bidirectional-pairs",
-        help="Create pairs using only the comparisons in one direction",
-        action="store_false",
-        dest="bidirectional"
+        "--use-distance",
+        help="Whether to use distance or the boolean value when creating the siamese model",
+        action="store_true",
+        default=False
+    )
+
+    parser.add_argument(
+        "--random-labels",
+        help="Whether to use or not random labels, use ONLY to validate a model",
+        action="store_true",
+        default=False
+    )
+
+    parser.add_argument(
+        "--full-summary",
+        help="Write a full summary for tensorboard, otherwise only the scalar variables will be logged",
+        action="store_true",
+        default=False
     )
 
     # See if we are running in a SLURM task array
@@ -382,14 +409,14 @@ if __name__ == '__main__':
     arguments = vars(arguments)
 
     arguments['results_path'] = os.path.abspath(arguments['results_path'])
+    results_path = pathlib.Path(arguments['results_path'])
+    results_path.mkdir(parents=True, exist_ok=True)
 
-    if not os.path.exists(arguments['results_path']):
-        os.makedirs(arguments['results_path'])
-
-    logger = utils.init_logger(f'train_{array_id}', arguments['results_path'])
+    logger = utils.init_logger(f'train_{array_id}', str(results_path))
 
     logger.debug("Script starts")
     logger.debug(arguments)
+    logger.info(f"Results path: {results_path}")
 
     if len(unknown) > 0:
         logger.warning(f"Warning: there are unknown arguments {unknown}")

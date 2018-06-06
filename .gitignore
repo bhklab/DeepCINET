@@ -18,3 +18,5 @@ Data
 # Documentation
 docs_build/
 docs_source/api/
+
+.DS_Store

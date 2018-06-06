@@ -19,6 +19,7 @@ class BasicModel:
     **Attributes**:
 
     :var BasicModel.y: Batch of labels for all the pairs with shape ``[batch]``
+    :var BasicModel.y_dist: Batch of labels with the distance for all the pairs. It has shape ``[batch]``
     :var BasicModel.y_prob: Tensor with the probabilities of single class classification
     :var BasicModel.y_estimate: Tensor with the classification, derived from :any:`BasicModel.y_prob`
     :var BasicModel.classification_loss: Classification loss using the negative log loss function
@@ -39,9 +40,14 @@ class BasicModel:
                              .. math::
                                  \frac{\text{correct comparisons}}{\text{total comparisons}}
 
+    :var BasicModel._threshold: Used to compute the CI. If ``value > threshold`` it will be considered a
+                                :any:`True` value.
+    :var BasicModel._use_distance: Whether to use distance or the boolean values :any:`BasicModel.y` when computing
+                                   the cost function
     :var BasicModel._regularization: Regularization factor
     :var BasicModel._dropout: Dropout probability
     :vartype BasicModel.y: tf.Tensor
+    :vartype BasicModel.y_dist: tf.Tensor
     :vartype BasicModel.y_prob: tf.Tensor
     :vartype BasicModel.y_estimate: tf.Tensor
     :vartype BasicModel.classification_loss: tf.Tensor
@@ -49,20 +55,36 @@ class BasicModel:
     :vartype BasicModel.total_loss: tf.Tensor
     :vartype BasicModel.good_predictions: tf.Tensor
     :vartype BasicModel.c_index: tf.Tensor
+    :vartype BasicModel._threshold: float
+    :vartype BasicModel._use_distance: bool
     :vartype BasicModel._regularization: float
     :vartype BasicModel._dropout: float
     """
-    #: Threshold to cast a float number between ``0`` and ``1`` to a :any:`True` value for classification
-    THRESHOLD = .5
 
-    def __init__(self, regularization: float = .001, dropout: float = .2, learning_rate: float = 0.001, **ignored):
+    def __init__(self,
+                 regularization: float = .001,
+                 dropout: float = .2,
+                 learning_rate: float = 0.001,
+                 threshold: float = .5,
+                 use_distance: bool = False,
+                 full_summary: bool = False,
+                 **ignored):
         self.logger = logging.getLogger(__name__)
 
         if len(ignored) > 0:
             self.logger.warning(f"There are unknown arguments {ignored}")
 
+        #: **Attribute**: Whether to use distance or the boolean values when computing the cost function
+        self._use_distance = use_distance
+
+        #: **Attribute**: Used to compute the CI
+        self._threshold = 0. if self._use_distance else threshold
+
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch]``
         self.y = tf.placeholder(tf.float32, [None, 1], name="Y")
+
+        #: **Attribute**: Placeholder for the distance between the pairs, it has shape ``[batch]``
+        self.y_dist = tf.placeholder(tf.float32, [None, 1], name="Y_distance")
 
         #: **Attribute**: Placeholder to tell the model if we are training (:any:`True`) or not (:any:`False`)
         self.training = tf.placeholder(tf.bool, shape=(), name="Training")
@@ -78,11 +100,11 @@ class BasicModel:
 
         #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicModel.y_prob` and
         #: :any:`BasicModel.THRESHOLD`
-        self.y_estimate = tf.greater_equal(self.y_prob, self.THRESHOLD)
+        self.y_estimate = tf.greater_equal(self.y_prob, self._threshold)
 
         with tf.variable_scope("loss"):
             #: **Attribute**: Classification loss using the negative log loss function
-            self.classification_loss = tf.losses.log_loss(self.y, self.y_prob, scope="classification_loss")
+            self.classification_loss = self._loss_function()
 
             #: **Attribute**: L2 norm of the weights to add to the loss function to regularize
             self.regularization_loss = tf.losses.get_regularization_loss()
@@ -91,7 +113,7 @@ class BasicModel:
             self.total_loss = tf.add(self.classification_loss, self.regularization_loss, name="final_loss")
 
         with tf.variable_scope("c-index"):
-            y_bool = tf.greater_equal(self.y, self.THRESHOLD)
+            y_bool = self._y_bool()
             equals = tf.equal(y_bool, self.y_estimate)
 
             #: **Attribute**: Number of good predictions found on the current batch
@@ -107,15 +129,17 @@ class BasicModel:
         self.minimizer = optimizer.minimize(self.total_loss)
 
         # Create summaries
-        with tf.name_scope("summaries"):
+        with tf.variable_scope("summaries"):
             tf.summary.scalar("loss", self.total_loss)
             tf.summary.scalar("c-index", self.c_index)
             tf.summary.scalar("classification_loss", self.classification_loss)
             tf.summary.scalar("regularization_loss", self.regularization_loss)
 
-            for var in tf.trainable_variables():
-                # We have to replace `:` with `_` to avoid a warning that ends doing this replacement
-                tf.summary.histogram(str(var.name).replace(":", "_"), var)
+            if full_summary:
+                self.logger.info("Using full summary")
+                for var in tf.trainable_variables():
+                    # We have to replace `:` with `_` to avoid a warning that ends doing this replacement
+                    tf.summary.histogram(str(var.name).replace(":", "_"), var)
 
         self.summary = tf.summary.merge_all()
 
@@ -140,6 +164,7 @@ class BasicModel:
         """
         return {
             self.y: batch.pairs["labels"].values.reshape(-1, 1),
+            self.y_dist: batch.pairs["distance"].values.reshape(-1, 1),
             self.training: training
         }
 
@@ -151,6 +176,31 @@ class BasicModel:
 
         :return: :any:`True` if the model needs images to work, otherwise returns :any:`False`
         """
+
+    def _loss_function(self) -> tf.Tensor:
+        """
+        Reimplement this method if you want to change the loss function. For example if you want to use
+        a regression loss instead of classification you should use then the ``self.y_distance`` attribute.
+
+        :return: Tensor with the loss function
+        """
+        scope = "classification_loss"
+        if self._use_distance:
+            return tf.losses.mean_squared_error(self.y_dist, self.y_prob, scope=scope)
+        else:
+            return tf.losses.log_loss(self.y, self.y_prob, scope=scope)
+
+    def _y_bool(self) -> tf.Tensor:
+        """
+        Return the current ``y`` values as a boolean to be able to obtain the CI. Reimplement this part
+        if you want to use the model as a regression problem
+
+        :return: Tensor with boolean values that will be compared against the predicted ones to obtain the CI
+        """
+        if self._use_distance:
+            return tf.greater_equal(self.y_dist, self._threshold)
+        else:
+            return tf.greater_equal(self.y, self._threshold)
 
 
 class BasicSiamese(BasicModel):
@@ -183,7 +233,9 @@ class BasicSiamese(BasicModel):
     :vartype BasicSiamese._gpu_level: int
     """
 
-    def __init__(self, gpu_level: int = 0, **kwargs):
+    def __init__(self,
+                 gpu_level: int = 0,
+                 **kwargs):
         #: **Attribute**: Amount of GPU to be used with the model
         self._gpu_level = gpu_level
 
@@ -247,8 +299,20 @@ class BasicSiamese(BasicModel):
                 self.gathered_a = tf.reduce_sum(self.gathered_a, 1, keepdims=True, name="reduce_b")
                 self.gathered_b = tf.reduce_sum(self.gathered_b, 1, keepdims=True, name="reduce_a")
 
-                sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
-                return tf.sigmoid(10*sub, name="contrastive_sigmoid")
+                return self._contrastive_math()
+
+    def _contrastive_math(self):
+        weight1 = tf.Variable(1., name="c_weight")
+        weight2 = tf.Variable(10., name="sub_weight")
+
+        # sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
+        sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")
+        sub *= weight2
+
+        if self._use_distance:
+            return weight1*tf.tanh(sub, name="contrastive_tanh")
+        else:
+            return tf.sigmoid(sub, name="contrastive_sigmoid")
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
         return {

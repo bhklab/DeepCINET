@@ -40,6 +40,9 @@ class RawData:
         df_clinical = pd.read_csv(DATA_PATH_CLINICAL)
         self.clinical_ids = set(df_clinical.iloc[:, 0].tolist())
 
+        df_features = pd.read_csv(DATA_PATH_RADIOMIC)
+        self.radiomic_ids = set(df_features.loc[:, (df_features != 0).any(axis=0)].columns)
+
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
         self._valid_dirs = [PseudoDir(x.name, x.path, x.is_dir()) for x in valid_dirs]
         self._valid_ids = [str(x.name) for x in self._valid_dirs]
@@ -111,7 +114,7 @@ class RawData:
 
         # We are looking for directories, only the ones that we have the clinical info are valid
         name = str(test_dir.name)
-        if not test_dir.is_dir() or name not in self.clinical_ids:
+        if not test_dir.is_dir() or name not in self.clinical_ids or name not in self.radiomic_ids:
             return False
 
         # Check if it has two sub dirs that start with the same name
@@ -261,13 +264,13 @@ class PreProcessedData:
         jobs = int(os.getenv("NSLOTS", -1))
         self.logger.debug(f"Jobs: {jobs}")
 
-        generator = (delayed(self._process_individual)(idx, main_stack, mask_stack, i + 1, len(to_create))
-                     for i, (idx, main_stack, mask_stack) in enumerate(self._raw_data.elements(to_create)))
-        Parallel(n_jobs=jobs, backend="multiprocessing")(generator)
+        # generator = (delayed(self._process_individual)(idx, main_stack, mask_stack, i + 1, len(to_create))
+        #              for i, (idx, main_stack, mask_stack) in enumerate(self._raw_data.elements(to_create)))
+        # Parallel(n_jobs=jobs, backend="multiprocessing")(generator)
 
         # For debugging purposes
-        # for i, (image_dir, main_stack, mask_stack) in enumerate(self.raw_data.elements()):
-        #     self._process_individual(image_dir, main_stack, mask_stack, i + 1)
+        for i, (key, main_stack, mask_stack) in enumerate(self._raw_data.elements(to_create)):
+            self._process_individual(key, main_stack, mask_stack, i + 1, len(to_create))
 
         self._write_clinical_filtered()
 
@@ -295,7 +298,7 @@ class PreProcessedData:
         os.makedirs(temp_dir)
 
         # Get slice and normalize image
-        sliced_norm = self._normalize_image(main_stack, mask_stack)
+        sliced_norm = self._normalize_image(main_stack, mask_stack, temp_dir)
 
         # Rotate the image across the 3 axis for data augmentation
         rotations = self._get_rotations(sliced_norm)
@@ -304,7 +307,7 @@ class PreProcessedData:
         # Rename after finishing to be able to stop in the middle
         os.rename(temp_dir, save_dir)
 
-    def _normalize_image(self, main_stack: np.ndarray, mask_stack: np.ndarray) -> np.ndarray:
+    def _normalize_image(self, main_stack: np.ndarray, mask_stack: np.ndarray, temp_dir="") -> np.ndarray:
         """
         Slices the tumour using the mask and then
         normalizes the image (variance = 1 and mean = 0)
@@ -314,28 +317,50 @@ class PreProcessedData:
         :return: Slice of the tumour normalized
         """
 
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_1.png"), mask_stack[:, :, 138])
+
         # Smooth mask
         mask_stack = scipy.ndimage.gaussian_filter(mask_stack.astype(np.float64), 1)
         mask_stack[mask_stack > 0] = 1
+
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_0.png"), main_stack[:, :, 138])
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_2_0.png"), mask_stack[:, :, 138])
 
         # Get sliced image
         x_min, x_max, y_min, y_max, z_min, z_max = self._get_bounding_box(mask_stack)
         sliced = main_stack[x_min:x_max, y_min:y_max, z_min:z_max]
 
+        # ones_temp = np.zeros((*mask_stack[:, :, 138].shape, 3))
+        # ones_temp[x_min:x_max, y_min:y_max, 0] = 1
+        # img_color = np.repeat(mask_stack[:, :, 138, np.newaxis], 3, axis=2) + ones_temp
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_2_1.png"),
+        #                   np.clip(img_color, 0, 1))
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_3.png"), sliced[:, :, 138 - z_min])
+
         # Convert the image to a range from 0 to 1
         sliced = np.clip(sliced, self.MIN_BOUND, self.MAX_BOUND)
         sliced = (sliced - self.MIN_BOUND)/(self.MAX_BOUND - self.MIN_BOUND)
+
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_4.png"), sliced[:, :, 138 - z_min])
 
         # Apply mask
         sliced *= mask_stack[x_min:x_max, y_min:y_max, z_min:z_max]
         original_volume = sliced.shape
 
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_5.png"), mask_stack[x_min:x_max, y_min:y_max, 138])
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_6.png"), sliced[:, :, 138 - z_min])
+
         # Resize the normalized data
         sliced = skt.resize(sliced, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
+
+        # new_slice = int((138 - z_min)/(z_max - z_min)*64)
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_7.png"), sliced[:, :, new_slice])
 
         # Normalize the sliced part (var = 1, mean = 0)
         sliced -= sliced.mean()
         sliced /= sliced.std()
+
+        # scipy.misc.imsave(os.path.join(temp_dir, "process_8.png"), sliced[:, :, new_slice])
 
         self.logger.debug(f"Volume: {original_volume}")
         return sliced
