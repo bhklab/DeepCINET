@@ -42,7 +42,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.imgmath',
     'sphinx_autodoc_typehints',
-    # 'sphinx.ext.viewcode',
+    'sphinx.ext.viewcode',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
     'sphinx.ext.inheritance_diagram'
@@ -100,6 +100,23 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_show_sourcelink = True
+
+html_theme_options = {
+    # 'canonical_url': '',
+    # 'analytics_id': '',
+    # 'logo_only': False,
+    # 'display_version': True,
+    # 'prev_next_buttons_location': 'bottom',
+    # 'style_external_links': False,
+    # 'vcs_pageview_mode': '',
+    # Toc options
+    # 'collapse_navigation': True,
+    # 'sticky_navigation': True,
+    # 'navigation_depth': 4,
+    # 'includehidden': True,
+    # 'titles_only': False
+}
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
