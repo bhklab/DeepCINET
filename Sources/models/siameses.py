@@ -1,3 +1,25 @@
+"""
+Definitions of siamese models. Each model uses a siamese network to convert the survival problem into a
+classification problem.
+
+  - The :class:`ImageSiamese` class creates a model that uses only the images as input and uses some blocks
+  - The :class:`SimpleImageSiamese` class creates a basic model that only uses images as input
+  - The :class:`ImageScalarSiamese` class creates a model that combines the image input with the scalar input
+    of the radiomic features, extracted with PyRadiomics.
+  - The :class:`ResidualImageScalarSiamese` class creates a model that combines the image input with the scalar input
+    but it also uses a residual network to fit the images. It also uses multiple blocks, similar to the
+    inception idea
+  - The :class:`ScalarOnlySiamese` class creates a siamese model that only uses the radiomic features as an input.
+  - The :class:`ScalarOnlyDropoutSiamese` class creates a siamese model that only uses the radiomic features as an
+    input but adds multiple dropout layers to improve the results.
+  - The :class:`VolumeOnlySiamese` class creates a siamese model that only uses the volume feature to fit the model.
+
+
+.. inheritance-diagram:: models.siameses
+   :parts: 1
+
+"""
+
 from typing import Dict, Any, Union, Tuple
 
 import tensorflow as tf
