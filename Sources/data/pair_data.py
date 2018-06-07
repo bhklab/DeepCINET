@@ -313,8 +313,10 @@ class BatchData:
         while len(pairs) > 0:
             ids = set()
             for row in pairs.itertuples():
+                # A set removes the duplicates when adding ids so we only end up with different ids
                 ids |= {row.pA, row.pB}
 
+                # Take ids until the number of different ids is greater or equal to the batch_size
                 if len(ids) >= batch_size:
                     break
 
