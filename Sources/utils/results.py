@@ -43,6 +43,7 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
 
     df_list = []
     elem_comparisons = {}
+    unique_ids = clinical['id'].unique()
     for file in files:
         df = pd.read_csv(file, index_col=0)
 
@@ -53,17 +54,26 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
         ids = collections.Counter(ids)
         key, count = ids.most_common(1)[0]
 
-        gather = df.loc[df['pA'] == key, 'gather_a'].values
-        gather = np.append(gather, df.loc[df['pB'] == key, 'gather_b'].values)
+        # No LOOCV
+        if len(files) < len(clinical):
+            gather = np.array([0, 0])
+            is_censored = False
+            time = 0
+        else:
+            if key not in unique_ids:
+                continue
+            gather = df.loc[df['pA'] == key, 'gather_a'].values
+            gather = np.append(gather, df.loc[df['pB'] == key, 'gather_b'].values)
 
-        is_censored = not clinical.loc[clinical['id'] == key, 'event'].values[0]
+            is_censored = not clinical.loc[clinical['id'] == key, 'event'].values[0]
+            time = clinical.loc[clinical['id'] == key, 'time'],
 
         df_list.append(pd.DataFrame({
             "id": [key],
             "right": [elem_right],
             "total": [elem_count],
             "censored": [is_censored],
-            "time": clinical.loc[clinical['id'] == key, 'time'],
+            "time": [time],
             "file": [file],
             "gather": [gather.mean()]
         }))
