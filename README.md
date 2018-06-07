@@ -155,3 +155,11 @@ so if `IMAGE_ROTATIONS=1,1,4` it means:
 - 1 rotation on the x axis
 - 1 rotation on the y axis
 - 4 rotations on the z axis
+
+## Documentation
+
+The project's documentation can be found at 
+[https://jmigual.github.io/CNNSurv](https://jmigual.github.io/CNNSurv)
+
+To build the documentation install all the `requirements.txt` packages are needed plus graphviz and make. 
+Once you have all the requirements just type: `make docs` to build it. The documentation will be on `docs_build/`.
