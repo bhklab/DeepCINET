@@ -243,16 +243,30 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
 
 def get_sets_generator(cv_folds: int,
                        test_size: int,
-                       random: bool) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+                       random_labels: bool) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+    """
+    Get the generator that creates the train/test sets and the folds if Cross Validation is used
+
+    :param cv_folds: Number of Cross Validation folds
+    :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
+                      whole set
+    :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
+    :return: The sets generator then it can be used in a ``for`` loop to get the sets
+
+                >>> folds = get_sets_generator(...)
+                >>> for fold, (train_pairs, test_pairs, mixed_pairs) in folds:
+                        # Insert your code
+                        pass
+    """
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        generator = dataset.train_test_split(test_size, random=random)
+        generator = dataset.train_test_split(test_size, random=random_labels)
         enum_generator = [(0, generator)]
         logger.info("1 fold")
     else:
-        enum_generator = dataset.folds(cv_folds, random=random)
+        enum_generator = dataset.folds(cv_folds, random=random_labels)
 
     logger.debug("Folds created")
 
@@ -262,7 +276,11 @@ def get_sets_generator(cv_folds: int,
 ################
 #     MAIN     #
 ################
-def main(args: Dict[str, Any]):
+def main(args: Dict[str, Any]) -> None:
+    """
+    Main function
+    :param args: Command Line Arguments
+    """
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
 
