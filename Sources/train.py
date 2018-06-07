@@ -64,6 +64,7 @@ optional named arguments:
                         validate a model (default: False)
   --full-summary        Write a full summary for tensorboard, otherwise only
                         the scalar variables will be logged (default: False)
+  --save-model          Save the model to the location specified at the results path
 
 
 """
@@ -353,7 +354,7 @@ def main(args: Dict[str, Any]) -> None:
             # Save each fold in a different directory
             results_save_path = os.path.join(args['results_path'], f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
-            utils.save_results(sess, predictions, results_save_path)
+            utils.save_results(sess, predictions, results_save_path, args['save_model'])
             logger.info("\r ")
 
         for key in counts:
@@ -475,6 +476,12 @@ if __name__ == '__main__':
     optional.add_argument(
         "--full-summary",
         help="Write a full summary for tensorboard, otherwise only the scalar variables will be logged",
+        action="store_true",
+        default=False
+    )
+    optional.add_argument(
+        "--save-model",
+        help="Save the model to the location specified at the results path",
         action="store_true",
         default=False
     )

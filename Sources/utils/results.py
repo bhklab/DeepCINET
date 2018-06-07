@@ -86,7 +86,7 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
     return (results_df, no_cens_results), predictions_df, elem_comparisons
 
 
-def save_results(sess: tf.Session, results: Dict[str, pd.DataFrame], path: str):
+def save_results(sess: tf.Session, results: Dict[str, pd.DataFrame], path: str, save_model: bool):
     """
     Save the current results to disk. It creates a CSV file with the pairs and its values. Keeping in
     mind that the results are pairs it uses the suffixes ``_a`` and ``_b`` to denote each member of the pair
@@ -113,6 +113,7 @@ def save_results(sess: tf.Session, results: Dict[str, pd.DataFrame], path: str):
                     the :class:`pandas.DataFrame` should contain at least the columns
                     ``pairs_a``, ``pairs_b``, ``labels`` and ``predictions``.
     :param path: Directory path where all the results should be saved
+    :param save_model: If :any:`True` save the model to disk
     """
     weights_dir = os.path.join(path, 'weights')
 
@@ -122,8 +123,9 @@ def save_results(sess: tf.Session, results: Dict[str, pd.DataFrame], path: str):
     os.makedirs(path)
     os.makedirs(weights_dir)
 
-    saver = tf.train.Saver()
-    saver.save(sess, os.path.join(weights_dir, 'weights.ckpt'))
+    if save_model:
+        saver = tf.train.Saver()
+        saver.save(sess, os.path.join(weights_dir, 'weights.ckpt'))
 
     # Load clinical info
     clinical_info = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
