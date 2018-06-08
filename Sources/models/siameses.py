@@ -598,25 +598,29 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
         super().__init__(**kwargs)
 
     def _conv_layers(self, x: tf.Tensor) -> tf.Tensor:
-        x = self._stem_block(x)
+        device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
+        with tf.device(device):
+            x = self._stem_block(x)
 
-        for i in range(2):
-            x = self._res_block_a(x)
+            for i in range(2):
+                x = self._res_block_a(x)
 
-        x = self._reduction_a(x)
+        device = '/gpu:1' if self._gpu_level >= 1 else '/cpu:0'
+        with tf.device(device):
+            x = self._reduction_a(x)
 
-        for i in range(2):
-            x = self._res_block_b(x)
+            for i in range(2):
+                x = self._res_block_b(x)
 
-        # Out: [batch, 7, 7, 7, 350]
-        x = self._reduction_b(x)
+            # Out: [batch, 7, 7, 7, 350]
+            x = self._reduction_b(x)
 
-        # Out: [batch, 2, 2, 2, 350]
-        x = tf.layers.average_pooling3d(
-            inputs=x,
-            pool_size=6,
-            strides=1
-        )
+            # Out: [batch, 2, 2, 2, 350]
+            x = tf.layers.average_pooling3d(
+                inputs=x,
+                pool_size=6,
+                strides=1
+            )
 
         return x
 
