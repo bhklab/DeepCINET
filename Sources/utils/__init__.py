@@ -12,7 +12,7 @@ from .logger import init_logger
 from .results import all_results, save_results
 
 # Only export the functions that we need
-__all__ = ['init_logger', 'movie', 'save_results', 'all_results']
+__all__ = ['init_logger', 'movie', 'save_results', 'all_results', 'ArgRange']
 
 
 def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
@@ -47,6 +47,9 @@ def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
 
 
 class ArgRange(float):
+    """
+    Class to add a range of float values as a choice when creating arguments with :any:`argparse.ArgumentParser`
+    """
     def __new__(cls, start: float, end: float):
         return float.__new__(cls)
 
@@ -64,3 +67,6 @@ class ArgRange(float):
 
     def __repr__(self) -> str:
         return f"{self.start} - {self.end}"
+
+    def __str__(self) -> str:
+        return self.__repr__()

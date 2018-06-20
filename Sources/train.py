@@ -1,4 +1,73 @@
 #!/usr/bin/env python3
+"""
+The train module is a script that trains a deep learning model from medical imaging data.
+
+usage: train.py --model MODEL
+                [-h] [--cv-folds CV_FOLDS]
+                [--test-size TEST_SIZE] [--gpu-level GPU_LEVEL]
+                [--gpu-allow-growth] [-n NUM_EPOCHS] [--batch-size BATCH_SIZE]
+                [--results-path RESULTS_PATH] [--learning-rate LEARNING_RATE]
+                [--regularization REGULARIZATION] [--dropout {0.0 - 1.0}]
+                [--log-device] [--use-distance] [--random-labels]
+                [--full-summary]
+
+Fit the data with a Tensorflow model
+
+required named arguments:
+  --model MODEL         Choose the model that you want to use for training.
+                        The models that can be used are the following ones:
+
+                          - :any:`SimpleImageSiamese`
+                          - :any:`ImageScalarSiamese`
+                          - :any:`ScalarOnlySiamese`
+                          - :any:`ScalarOnlyDropoutSiamese`
+                          - :any:`ImageSiamese`
+                          - :any:`ResidualImageScalarSiamese`
+                          - :any:`VolumeOnlySiamese`
+
+optional named arguments:
+  -h, --help            Show this help
+  --cv-folds CV_FOLDS   Number of cross validation folds. If 0 < folds < 2 CV
+                        won't be used and the test set size will be defined by
+                        --test-size. If folds < 0 Leave One Out Cross
+                        Validation will be used instead (default: 1)
+  --test-size TEST_SIZE
+                        Size of the test set as a float between 0 and 1
+                        (default: 0.25)
+  --gpu-level GPU_LEVEL
+                        Amount of GPU resources used when fitting the model.
+                        0: no GPU usage, 1: only second conv layers, 2: all
+                        conv layers, 3: all layers and parameters are on the
+                        GPU (default: 0)
+  --gpu-allow-growth    Allow Tensorflow to use dynamic allocations with GPU
+                        memory (default: False)
+  -n NUM_EPOCHS, --num-epochs NUM_EPOCHS
+                        Number of epochs to use when training. Times passed
+                        through the entire dataset (default: 1)
+  --batch-size BATCH_SIZE
+                        Batch size for each train iteration (default: 20)
+  --results-path RESULTS_PATH
+                        Path where the results and the model should be saved
+                        (default: ``${SESSION_SAVE_PATH}``)
+  --learning-rate LEARNING_RATE
+                        Optimizer (adam) learning rate (default: 0.001)
+  --regularization REGULARIZATION
+                        Regularization factor to apply (default: 0.01)
+  --dropout
+                        Dropout probability to use, the value must be between
+                        0.0 and 1.0 (default: 0.2)
+  --log-device          Log device placement when creating all the tensorflow
+                        tensors (default: False)
+  --use-distance        Whether to use distance or the boolean value when
+                        creating the siamese model (default: False)
+  --random-labels       Whether to use or not random labels, use ONLY to
+                        validate a model (default: False)
+  --full-summary        Write a full summary for tensorboard, otherwise only
+                        the scalar variables will be logged (default: False)
+  --save-model          Save the model to the location specified at the results path
+
+
+"""
 
 import argparse
 import os
@@ -175,16 +244,30 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
 
 def get_sets_generator(cv_folds: int,
                        test_size: int,
-                       random: bool) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+                       random_labels: bool) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+    """
+    Get the generator that creates the train/test sets and the folds if Cross Validation is used
+
+    :param cv_folds: Number of Cross Validation folds
+    :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
+                      whole set
+    :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
+    :return: The sets generator then it can be used in a ``for`` loop to get the sets
+
+                >>> folds = get_sets_generator(...)
+                >>> for fold, (train_pairs, test_pairs, mixed_pairs) in folds:
+                        # Insert your code
+                        pass
+    """
     dataset = data.pair_data.SplitPairs()
 
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        generator = dataset.train_test_split(test_size, random=random)
+        generator = dataset.train_test_split(test_size, random=random_labels)
         enum_generator = [(0, generator)]
         logger.info("1 fold")
     else:
-        enum_generator = dataset.folds(cv_folds, random=random)
+        enum_generator = dataset.folds(cv_folds, random=random_labels)
 
     logger.debug("Folds created")
 
@@ -194,7 +277,11 @@ def get_sets_generator(cv_folds: int,
 ################
 #     MAIN     #
 ################
-def main(args: Dict[str, Any]):
+def main(args: Dict[str, Any]) -> None:
+    """
+    Main function
+    :param args: Command Line Arguments
+    """
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
 
@@ -267,7 +354,7 @@ def main(args: Dict[str, Any]):
             # Save each fold in a different directory
             results_save_path = os.path.join(args['results_path'], f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
-            utils.save_results(sess, predictions, results_save_path)
+            utils.save_results(sess, predictions, results_save_path, args['save_model'])
             logger.info("\r ")
 
         for key in counts:
@@ -279,25 +366,43 @@ def main(args: Dict[str, Any]):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Fit the data with a Tensorflow model",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        add_help=False
+    )
+    # parser._action_groups.pop()
+
+    required = parser.add_argument_group('required named arguments')
+    optional = parser.add_argument_group('optional named arguments')
+
+    # Required arguments
+    required.add_argument(
+        "--model",
+        help="Choose the model that you want to use for training",
+        type=str,
+        required=True
     )
 
-    parser.add_argument(
+    # Optional arguments
+    optional.add_argument(
+        "-h", "--help",
+        help="Show this help",
+        action="help"
+    )
+
+    optional.add_argument(
         "--cv-folds",
         help="Number of cross validation folds. If 0 < folds < 2 CV won't be used and the test set size "
              "will be defined by --test-size. If folds < 0 Leave One Out Cross Validation will be used instead",
         default=1,
         type=int
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--test-size",
         help="Size of the test set as a float between 0 and 1",
         default=.25,
         type=float
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--gpu-level",
         help="Amount of GPU resources used when fitting the model. 0: no GPU usage, "
              "1: only second conv layers, 2: all conv layers, "
@@ -305,15 +410,13 @@ if __name__ == '__main__':
         default=0,
         type=int
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--gpu-allow-growth",
         help="Allow Tensorflow to use dynamic allocations with GPU memory",
         default=False,
         action="store_true",
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "-n", "--num-epochs",
         help="Number of epochs to use when training. Times passed through the entire dataset",
         metavar="NUM_EPOCHS",
@@ -321,83 +424,64 @@ if __name__ == '__main__':
         default=1,
         type=int
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--batch-size",
         help="Batch size for each train iteration",
         default=20,
         type=int
     )
-
-    parser.add_argument(
-        "--model",
-        help="Choose the model that you want to use for training",
-        default="ImageSiamese",
-        choices=[
-            'SimpleImageSiamese',
-            'ImageScalarSiamese',
-            'ScalarOnlySiamese',
-            'VolumeOnlySiamese',
-            'ScalarOnlyDropoutSiamese',
-            'ImageSiamese',
-            'ResidualImageScalarSiamese',
-        ],
-        type=str
-    )
-
-    parser.add_argument(
+    optional.add_argument(
         "--results-path",
         help="Path where the results and the model should be saved",
         default=settings.SESSION_SAVE_PATH,
         type=str
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--learning-rate",
         help="Optimizer (adam) learning rate",
         default=0.001,
         type=float
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--regularization",
         help="Regularization factor to apply",
         default=0.01,
         type=float
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--dropout",
-        help="Dropout probability to use",
+        help="Dropout probability to use, the value must be between 0.0 and 1.0",
         default=0.2,
         type=float,
         choices=[utils.ArgRange(0., 1.)]
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--log-device",
         help="Log device placement when creating all the tensorflow tensors",
         action="store_true",
         default=False
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--use-distance",
         help="Whether to use distance or the boolean value when creating the siamese model",
         action="store_true",
         default=False
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--random-labels",
         help="Whether to use or not random labels, use ONLY to validate a model",
         action="store_true",
         default=False
     )
-
-    parser.add_argument(
+    optional.add_argument(
         "--full-summary",
         help="Write a full summary for tensorboard, otherwise only the scalar variables will be logged",
+        action="store_true",
+        default=False
+    )
+    optional.add_argument(
+        "--save-model",
+        help="Save the model to the location specified at the results path",
         action="store_true",
         default=False
     )

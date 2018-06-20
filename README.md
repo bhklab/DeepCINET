@@ -4,17 +4,19 @@ Create a Survival Prediction model using a Convolutional Neural Network.
 To do so a Siamese network will be used. Two individuals will be used as an input and the network
 should predict which one will live longer.
 
+This project uses **python3**
+
 More documentation can be found in the documentation page:
 [https://jmigual.github.io/CNNSurv](https://jmigual.github.io/CNNSurv)
 
 ## Installation
 
-To install all the requirements python virtual environment is recomendend. Python 3 is used 
+To install all the requirements python virtual environment is recommended. Python 3 is used 
 for this project. Once the project has been downloaded do:
 
 ```bash
 cd CNNSurv
-virtualenv venv
+virtualenv venv --python=`which python3`
 source venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -23,50 +25,26 @@ The dataset files are in the `Data` folder (which has to be created). The easies
 create a symbolic link to where the data is located, if using Mordor it would be:
 
 ```bash
+cd CNNSurv # Go to project's root directory
 ln -s /mnt/work1/users/bhklab/Data/HNK Data
 ```
 
-All the environment variables are defined in the .env file which should be located in the
-project's root dir. An example can be this one:
+All the environment variables are defined in the `.env` file which should be located in the
+project's root dir. An example can be found under `Sources/env_default.txt` you can just
+copy it to the root directory:
 
 ```bash
-ROOT_DIR=${HOME}/Documents/Projects/CNNSurv
-
-# Variables starting with DATA will have their path expanded
-DATA=${ROOT_DIR}/Data
-DATA_RAW=${DATA}/HNK_raw
-DATA_CLINICAL=${DATA}/HNK_raw/clinical_info.csv
-DATA_CACHE=${DATA}/.cache
-DATA_PROCESSED=${DATA}/HNK_processed
-DATA_CLINICAL_PROCESSED=${DATA_PROCESSED}/clinical_info.csv
-
-# Rotations for X, Y and Z axes
-# At least there should be a rotation for each axis
-IMAGE_ROTATIONS=1,1,4
-
-LOG_DIR=${DATA}/logs
-
-# Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
-LOG_LEVEL_CONSOLE=10
-LOG_LEVEL_FILE=10
-
-# 0: No
-# 1: Half -> Small value to not fill memory
-# 2: Half-full -> Use many operations in the GPU
-# 3: Full -> Use almost all the operations in the GPU
-USE_GPU=0
-NUM_GPU=1
-
-DATA_BATCH_SIZE=7
-
-SESSION_SAVE_PATH=${DATA}/model.ckpt
-SUMMARIES_DIR=${DATA}/Summaries
-
-NUM_EPOCHS=1
-
-# If seed < 0 system seed is used
-RANDOM_SEED=0
+cp Sources/env_default.txt .env
 ```
+
+## Running the scripts
+
+There are two scripts that are prepared to be run:
+
+- `Sources/preprocess.py` This script pre-processes all the data as long as all the `.env` variables are properly
+defined
+- `Sources/train.py` This script trains a model. All the options that can be used to train a model can be found
+by passing the `--help` flag.
 
 ## Data directories
 
@@ -170,5 +148,18 @@ the fields: `id`, `age`, `time` and `event`.
 
 ## Data augmentation
 
-For now the only data augmentation technique that we are using is rotating the image in 1 axis,
-this means that we have `4` rotations for each image. All this rotations are saved into disk.
+For now the used data augmentation method is rotating the images among their axes. To define the rotations
+there is the `IMAGE_ROTATIONS` variable defined in the `.env` file. Each value represents an axis (x, y, z)
+so if `IMAGE_ROTATIONS=1,1,4` it means:
+
+- 1 rotation on the x axis
+- 1 rotation on the y axis
+- 4 rotations on the z axis
+
+## Documentation
+
+The project's documentation can be found at 
+[https://jmigual.github.io/CNNSurv](https://jmigual.github.io/CNNSurv)
+
+To build the documentation install all the `requirements.txt` packages are needed plus graphviz and make. 
+Once you have all the requirements just type: `make docs` to build it. The documentation will be on `docs_build/`.
