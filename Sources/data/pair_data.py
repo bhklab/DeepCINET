@@ -74,9 +74,39 @@ class SplitPairs:
     def get_n_splits(self, n_folds: int = 4) -> int:
         return self._get_folds_generator(n_folds).get_n_splits(self.total_y, self.total_y)
 
+    def survival_categorizing(self, models, threshold, category : int = 4):
+        """
+         Designed for define the way of splitting data based on the survival distribution or based on the
+         categorizing data by considering threshold. Setting classification to use in splitting data
+
+         :param models: int values can be  ``0``,``1`` or 2 in 0 is pure model and categorical data is event
+         1 is the model based on the survival distribution
+         2 is the model based on the threshould
+         :param threshold: the threshold that is used in the second model for spliting data
+         :param number of bins that is used for distribution
+         """
+        self.clinical_data['category'] = self.clinical_data['event']
+        if models == 1:
+            clinic_time = self.clinical_data['time'].copy()
+            clinic_time.sort_values(inplace=True)
+            clinic_time = clinic_time.reset_index(drop=True)
+            block = int(clinic_time.size/category)
+            for i in range(0, category):
+                self.clinical_data.loc[self.clinical_data['time'] > clinic_time[i* block], 'category'] = i  #+(self.clinical_data['event']) * category
+            self.total_y = self.clinical_data['category'].values
+        if models == 2:
+            clinic_time = self.clinical_data['time'].copy()
+            self.clinical_data.loc[self.clinical_data['time'] > threshold, 'category'] = 1
+            self.clinical_data.loc[self.clinical_data['time'] <= threshold, 'category'] = 0
+            self.total_y = self.clinical_data['category'].values
+
+
     def train_test_split(self,
                          test_size: float = .25,
-                         random: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+                         random: bool = False,
+                         models: int= 0,
+                         threshold: float= 2,
+                         category: int=4) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Split data in train/test with the specified proportion
 
@@ -85,6 +115,7 @@ class SplitPairs:
                        It changes the labels randomly
         :return: Tuple with the train set and the test set
         """
+        self.survival_categorizing(models, threshold, category)
         rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_SEED)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
@@ -125,6 +156,8 @@ class SplitPairs:
         test_mix_pairs = self._normalize(test_mix_pairs, train=False)
 
         return train_pairs, test_pairs, test_mix_pairs
+
+
 
     def _tasks_distribution(self, total_tasks: int, workers: int) -> List[Tuple[int, int]]:
         length = int(math.ceil(total_tasks / workers))
@@ -295,7 +328,7 @@ class BatchData:
                       pairs: pd.DataFrame,
                       features: pd.DataFrame,
                       batch_size: int,
-                      load_images: bool = True) -> Generator[PairBatch, None, None]:
+                      load_images: bool = False) -> Generator[PairBatch, None, None]:
         """
         Create batch of pairs by setting the number of different ids = ``batch_size``
 
@@ -324,13 +357,14 @@ class BatchData:
             pairs = pairs.drop(batch_pairs.index)
 
             assert len(batch_pairs)*2 >= len(ids)
+
             yield self._create_pair_batch(batch_pairs, features, load_images)
 
     def _batch_by_pairs(self,
                         pairs: pd.DataFrame,
                         features: pd.DataFrame,
                         batch_size: int,
-                        load_images=True) -> Generator[PairBatch, None, None]:
+                        load_images=False) -> Generator[PairBatch, None, None]:
         """
         Create batch of pairs by setting the ``batch_size == len(selected_pairs)``
 
@@ -350,7 +384,7 @@ class BatchData:
     def _create_pair_batch(self,
                            pairs: pd.DataFrame,
                            features: pd.DataFrame,
-                           load_images: bool = True) -> PairBatch:
+                           load_images: bool = False) -> PairBatch:
         """
         Given all the ids and the pairs load the npz file for all the ids and create a PairBatch with the loaded
         npz files and the pairs
@@ -390,7 +424,7 @@ class BatchData:
                        ids_list: List[str],
                        features: pd.DataFrame,
                        total_rotations: int,
-                       load_images: bool = True) -> Tuple[Dict[str, int], pd.DataFrame]:
+                       load_images: bool = False) -> Tuple[Dict[str, int], pd.DataFrame]:
         """
         Load the patients information for the batch of ids, such as the image CT scan and the radiomic features
         
@@ -409,7 +443,7 @@ class BatchData:
             file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
 
             # Check if the file exists, so the data has been preprocessed
-            if not os.path.exists(file_path):
+            if load_images and not os.path.exists(file_path):
                 self.logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
                 raise FileNotFoundError(f"The file {file_path} could not be found. Have you pre-processed the data?")
 

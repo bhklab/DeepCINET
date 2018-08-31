@@ -244,7 +244,10 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
 
 def get_sets_generator(cv_folds: int,
                        test_size: int,
-                       random_labels: bool) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+                       random_labels: bool,
+                       model:int,
+                       threshold:float
+                        ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     """
     Get the generator that creates the train/test sets and the folds if Cross Validation is used
 
@@ -263,7 +266,7 @@ def get_sets_generator(cv_folds: int,
 
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        generator = dataset.train_test_split(test_size, random=random_labels)
+        generator = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold )
         enum_generator = [(0, generator)]
         logger.info("1 fold")
     else:
@@ -299,7 +302,9 @@ def main(args: Dict[str, Any]) -> None:
     with tf.Session(config=conf) as sess:
         enum_generator = get_sets_generator(args['cv_folds'],
                                             args['test_size'],
-                                            args['random_labels'])
+                                            args['random_labels'],
+                                            args['splitting_model'],
+                                            args['threshold'])
 
         counts = {}
         for key in ['train', 'test', 'mixed']:
@@ -447,6 +452,27 @@ if __name__ == '__main__':
         help="Regularization factor to apply",
         default=0.01,
         type=float
+    )
+    optional.add_argument(
+        "--splitting-model",
+        help="The model of splitting data to train and test. "
+             "0: split based on event censored data, "
+             "1: split based on (same distribution of survival for train and test), "
+             "2: split based on the threshold",
+        default=0,
+        type=int
+    )
+    optional.add_argument(
+        "--threshold",
+        help="The threshold for splitting ",
+        default=2,
+        type=float
+    )
+    optional.add_argument(
+        "--bin-number",
+        help="The number of bins for splitting based on the distribution",
+        default=4,
+        type=int
     )
     optional.add_argument(
         "--dropout",
