@@ -102,7 +102,7 @@ class BasicModel:
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch, 1]``
         self.y = tf.placeholder(tf.float32, [None, 1], name="Y")
 
-        #: **Attribute**: Placeholder for the distance between the pairs, it has shape ``[batch, 1]``
+        #: **Attribute**: Paceholder for the distance between the pairs, it has shape ``[batch, 1]``
         self.y_dist = tf.placeholder(tf.float32, [None, 1], name="Y_distance")
 
         #: **Attribute**: Placeholder to tell the model if we are training (:any:`True`) or not (:any:`False`)
@@ -322,7 +322,7 @@ class BasicSiamese(BasicModel):
 
     def _contrastive_math(self):
         weight1 = tf.Variable(1., name="c_weight")
-        weight2 = tf.Variable(10., name="sub_weight")
+        weight2 = tf.Variable(100., name="sub_weight")
 
         # sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
         sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")

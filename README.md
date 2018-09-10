@@ -1,4 +1,4 @@
-# CNNSurv
+DeepCINET# CNNSurv
 Create a Survival Prediction model using a Convolutional Neural Network.
 
 To do so a Siamese network will be used. Two individuals will be used as an input and the network

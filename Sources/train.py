@@ -59,7 +59,7 @@ optional named arguments:
   --log-device          Log device placement when creating all the tensorflow
                         tensors (default: False)
   --use-distance        Whether to use distance or the boolean value when
-                        creating the siamese model (default: False)
+                       pip  creating the siamese model (default: False)
   --random-labels       Whether to use or not random labels, use ONLY to
                         validate a model (default: False)
   --full-summary        Write a full summary for tensorboard, otherwise only
@@ -82,7 +82,7 @@ import models
 import models.basics
 import settings
 import utils
-
+logger = utils.init_logger("start")
 
 def train_iterations(sess: tf.Session,
                      model: models.basics.BasicSiamese,
@@ -317,7 +317,6 @@ def main(args: Dict[str, Any]) -> None:
         for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
-
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
             batch_data = data.BatchData()
@@ -366,6 +365,132 @@ def main(args: Dict[str, Any]) -> None:
             if counts[key]['total'] <= 0:
                 continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
+
+def deepCinet(model: str, 
+              cv_folds: int= 1,
+              test_size: float = .25,
+              gpu_level : int = 0  ,
+              gpu_allow_growth = False,
+              num_epochs:int = 1,
+              batch_size:int = 20,
+              results_path: str = settings.SESSION_SAVE_PATH,
+              learning_rate: int = 0.001,
+              regularization: float = 0.01,
+              splitting_model: int = 0,
+              threshold: float = 3,
+              bin_number: int = 4,
+              dropout: float = 0.2,
+              log_device = False,
+              use_distance = False,
+              random_labels = False,
+              full_summary = False,
+              save_model = False):
+    """
+    deepCient
+    :param args: Command Line Arguments
+    """
+    results_path = pathlib.Path(results_path)
+    results_path.mkdir(parents=True, exist_ok=True)
+
+    logger = utils.init_logger(f'train_{0}', str(results_path))
+
+    logger.debug("Script starts")
+    logger.info(f"Results path: {results_path}")
+    results_path.mkdir(parents=True, exist_ok=True)
+
+    logger = utils.init_logger(f'train_{0}', str(results_path))
+
+    logger.debug("Script starts")
+
+    logger.info(f"Results path: {results_path}")
+
+    logger.info("Script to train a siamese neural network model")
+    logger.info(f"Using batch size: {batch_size}")
+
+    siamese_model = select_model(model,
+                                 gpu_level=gpu_level,
+                                 regularization=regularization,
+                                 dropout=dropout,
+                                 learning_rate=learning_rate,
+                                 use_distance=use_distance,
+                                 full_summary=full_summary)
+
+    conf = tf.ConfigProto(log_device_placement=log_device)
+    conf.gpu_options.allow_growth = gpu_allow_growth
+
+    with tf.Session(config=conf) as sess:
+        enum_generator = get_sets_generator(cv_folds,
+                                            test_size,
+                                            random_labels,
+                                            splitting_model,
+                                            threshold)
+
+        counts = {}
+        for key in ['train', 'test', 'mixed']:
+            counts[key] = {
+                'total': 0,
+                'correct': 0,
+                'c_index': []
+            }
+
+        for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
+            # Initialize all the variables
+            logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+            summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
+            train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
+            batch_data = data.BatchData()
+
+            # Epoch iterations
+            train_iterations(sess,
+                             siamese_model,
+                             batch_data,
+                             train_pairs,
+                             train_summary,
+                             batch_size,
+                             num_epochs)
+
+            predictions = {}
+            for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                if len(pairs) <= 0:
+                    continue
+                logger.info(f"Computing {name} c-index")
+                correct, total, results = \
+                    test_iterations(sess,
+                                    siamese_model,
+                                    batch_data,
+                                    pairs,
+                                    batch_size)
+
+                correct = int(correct)
+
+                c_index = correct/total
+
+                counts[name]['total'] += total
+                counts[name]['correct'] += correct
+                counts[name]['c_index'].append((i, c_index))
+
+                predictions[name] = results
+
+                logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
+                            f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
+
+            # Save each fold in a different directory
+            results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
+            logger.info(f"Saving results at: {results_save_path}")
+            utils.save_results(sess, predictions, results_save_path, save_model)
+            logger.info("\r ")
+
+        for key in counts:
+            if counts[key]['total'] <= 0:
+                continue
+            logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
+        return counts,predictions
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -465,7 +590,7 @@ if __name__ == '__main__':
     optional.add_argument(
         "--threshold",
         help="The threshold for splitting ",
-        default=2,
+        default=3,
         type=float
     )
     optional.add_argument(

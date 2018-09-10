@@ -159,3 +159,24 @@ def _select_time_age(clinical_info: pd.DataFrame, results_df: pd.DataFrame) -> p
     return merge
 
 
+def df_results(results: Dict[str, pd.DataFrame])-> Dict:
+    """
+    Return the current results as dataframes. It creates a CSV file with the pairs and its values. Keeping in
+    mind that the results are pairs it uses the suffixes ``_a`` and ``_b`` to denote each member of the pair
+
+        - ``age_a``: Age of pair's member A
+        - ``age_b``: Age of pair's member B
+        - ``time_a``: Survival time of pair's member A
+        - ``time_b``: Survival time of pair's member B
+        - ``pairs_a``: Key of pair's member A
+        - ``pairs_b``: Key of pair's member B
+        - ``labels``: Labels that are true if :math:`T(p_a) < T(p_b)`
+        - ``predictions``: Predictions made by the current model
+    :
+    """
+    # Load clinical info
+    clinical_info = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
+    merged = {}
+    for name, result in results.items():
+        merged[name] = _select_time_age(clinical_info, result)
+    return merged

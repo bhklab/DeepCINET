@@ -9,7 +9,7 @@ import numpy as np
 from moviepy.editor import ImageSequenceClip
 
 from .logger import init_logger
-from .results import all_results, save_results
+from .results import all_results, save_results, df_results
 
 # Only export the functions that we need
 __all__ = ['init_logger', 'movie', 'save_results', 'all_results', 'ArgRange']

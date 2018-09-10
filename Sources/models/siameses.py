@@ -974,8 +974,20 @@ class ScalarOnlySiamese(BasicSiamese):
         # Out: [batch, 200]
         x = self._dense(
             x,
-            200,
+            400,
             "fc2"
+        )
+        # Out: [batch, 200]
+        x = self._dense(
+            x,
+            200,
+            "fc22"
+        )
+        # Out: [batch, 200]
+        x = self._dense(
+            x,
+            100,
+            "fc23"
         )
 
         x = tf.layers.dropout(

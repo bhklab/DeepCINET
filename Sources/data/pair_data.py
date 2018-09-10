@@ -19,11 +19,9 @@ from settings import \
 class SplitPairs:
     """
     Generates and divides the data into:
-
       - Training pairs: pairs where both elements belong to the training set
       - Testing pairs: paris where both elements belong to the test set
       - Mixed pairs: pairs where one element belongs to the train set and the other to the test set
-
     It can also be used to create the Cross Validation folds
     """
 
@@ -41,13 +39,10 @@ class SplitPairs:
               random: bool = False) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
         """
         Creates different folds of data for use with CV
-
         :param n_folds: Number of folds to be created, if negative, the number of folds will be created using
                         Leave One Out
         :param random: Whether to create random pairs, use this to verify the model, **Never** to train a real model
                        It changes the labels randomly
-
-
         :return: Iterator with the fold number and its corresponding train and test sets
         """
         skf = self._get_folds_generator(n_folds)
@@ -92,12 +87,11 @@ class SplitPairs:
             clinic_time = clinic_time.reset_index(drop=True)
             block = int(clinic_time.size/category)
             for i in range(0, category):
-                self.clinical_data.loc[self.clinical_data['time'] > clinic_time[i* block], 'category'] = i  #+(self.clinical_data['event']) * category
+                self.clinical_data.loc[self.clinical_data['time'] > clinic_time[i * block], 'category'] = i #+(self.clinical_data['event']) * category
             self.total_y = self.clinical_data['category'].values
         if models == 2:
-            clinic_time = self.clinical_data['time'].copy()
-            self.clinical_data.loc[self.clinical_data['time'] > threshold, 'category'] = 1
-            self.clinical_data.loc[self.clinical_data['time'] <= threshold, 'category'] = 0
+            self.clinical_data.loc[self.clinical_data['time'] > threshold, 'category'] = 2 + self.clinical_data['event']
+            self.clinical_data.loc[self.clinical_data['time'] <= threshold, 'category'] = 0 + self.clinical_data['event']
             self.total_y = self.clinical_data['category'].values
 
 
