@@ -366,7 +366,7 @@ def main(args: Dict[str, Any]) -> None:
                 continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
 
-def deepCinet(model: str, 
+def deepCinet(model: str,
               cv_folds: int= 1,
               test_size: float = .25,
               gpu_level : int = 0  ,
@@ -389,6 +389,7 @@ def deepCinet(model: str,
     deepCient
     :param args: Command Line Arguments
     """
+    tf.reset_default_graph()
     results_path = pathlib.Path(results_path)
     results_path.mkdir(parents=True, exist_ok=True)
 
