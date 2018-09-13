@@ -384,7 +384,8 @@ def deepCinet(model: str,
               use_distance = False,
               random_labels = False,
               full_summary = False,
-              save_model = False):
+              save_model = False,
+              split = 1):
     """
     deepCient
     :param args: Command Line Arguments
@@ -475,8 +476,12 @@ def deepCinet(model: str,
                 logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
                             f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
 
+
+
             # Save each fold in a different directory
+
             results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
+            results_save_path = os.path.join(results_save_path, f"split_{split:0>2}" )
             logger.info(f"Saving results at: {results_save_path}")
             utils.save_results(sess, predictions, results_save_path, save_model)
             logger.info("\r ")

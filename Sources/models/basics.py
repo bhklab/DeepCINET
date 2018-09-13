@@ -270,6 +270,9 @@ class BasicSiamese(BasicModel):
         #: **Attribute**: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
         self.gathered_b = None
 
+        self.basic = tf.placeholder(tf.int32, [None], name="basic")
+        self.gathered_base = None
+
         super().__init__(**kwargs)
 
     def _model(self) -> tf.Tensor:
@@ -334,10 +337,12 @@ class BasicSiamese(BasicModel):
             return tf.sigmoid(sub, name="contrastive_sigmoid")
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True) -> Dict:
+
         return {
             **super().feed_dict(batch, training),
-            self.pairs_a: batch.pairs["pA_id"].values,
-            self.pairs_b: batch.pairs["pB_id"].values,
+            self.pairs_a: batch.pairs["pA_id"]pairs["pA_id"].values,
+            self.pairs_b:batch.pairs["pB_id"].values
+
         }
 
 
