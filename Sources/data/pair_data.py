@@ -110,7 +110,7 @@ class SplitPairs:
         :return: Tuple with the train set and the test set
         """
         self.survival_categorizing(models, threshold, category)
-        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_SEED)
+        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size) # random_state=RANDOM_SEED)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
         return self._create_train_test(train_ids, test_ids, random)
