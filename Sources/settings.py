@@ -38,7 +38,7 @@ DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
 DATA_PATH_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
 DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
 DATA_PATH_RADIOMIC_PROCESSED = os.path.abspath(os.getenv('DATA_RADIOMIC_PROCESSED'))
-
+DATA_PATH_SPLIT = os.path.abspath(os.getenv('DATA_PATH_SPLIT'))
 # Log dir, fallback to current directory
 LOG_DIR = os.path.abspath(os.getenv('LOG_DIR', './'))
 LOG_LEVEL_CONSOLE = int(os.getenv('LOG_LEVEL_CONSOLE', 20))

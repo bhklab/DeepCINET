@@ -13,7 +13,8 @@ from settings import \
     DATA_PATH_PROCESSED, \
     DATA_PATH_RADIOMIC_PROCESSED, \
     TOTAL_ROTATIONS, \
-    RANDOM_SEED
+    RANDOM_SEED,\
+    DATA_PATH_SPLIT
 
 
 class SplitPairs:
@@ -28,7 +29,7 @@ class SplitPairs:
     def __init__(self):
         # To divide into test and validation sets we only need the clinical data
         self.clinical_data = pd.read_csv(DATA_PATH_CLINICAL_PROCESSED, index_col=0)
-
+        self.test = pd.DataFrame()
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
         self.mean = 0
@@ -136,6 +137,8 @@ class SplitPairs:
         """
         train_data = self.clinical_data.iloc[train_ids]
         test_data = self.clinical_data.iloc[test_ids]
+        test_data.to_csv(DATA_PATH_SPLIT)
+
 
         self.logger.debug("Generating train pairs")
         train_pairs = self._get_pairs(train_data, random)

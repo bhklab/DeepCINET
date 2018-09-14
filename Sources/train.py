@@ -83,6 +83,7 @@ import models.basics
 import settings
 import utils
 logger = utils.init_logger("start")
+test = pd.DataFrame()
 
 def train_iterations(sess: tf.Session,
                      model: models.basics.BasicSiamese,

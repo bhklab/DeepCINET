@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import yaml
 import utils
+import settings
 
 from joblib import Parallel, delayed
 import multiprocessing
@@ -64,7 +65,7 @@ mixed_c_index, train_c_index, test_c_index = [], [], []
 
 for i in range(10):
 
-    counts,predictions = train.deepCinet('ScalarOnlySiamese', num_epochs = 1, batch_size = 10, splitting_model = 2, threshold = 1, split = i, save_model = True, split_seed = 1, initial_seed = 1)
+    counts,predictions = train.deepCinet('VolumeOnlySiamese', num_epochs = 1, batch_size = 10, splitting_model = 2, threshold = 1, split = i, save_model = True, split_seed = 1, initial_seed = 1)
     counts['train']['c_index'] = sum([v[1] for v in  counts['train']['c_index']]) / float(len( counts['train']['c_index']))
     counts['test']['c_index'] = sum([v[1] for v in  counts['test']['c_index']]) / float(len( counts['test']['c_index']))
     counts['mixed']['c_index'] = sum([v[1] for v in  counts['mixed']['c_index']]) / float(len( counts['mixed']['c_index']))
@@ -86,6 +87,8 @@ for i in range(10):
 
     if(i%2 == 0):
         results.to_csv(cfg['mixed_result_path'])
+    split = pd.read_csv(settings.DATA_PATH_SPLIT)
+    split.to_csv(cfg['result_path']+"Split"+str(i)+".csv")
 
 
 
