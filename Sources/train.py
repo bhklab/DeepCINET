@@ -246,8 +246,8 @@ def get_sets_generator(cv_folds: int,
                        test_size: int,
                        random_labels: bool,
                        model:int,
-                       threshold:float
-                        ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+                       threshold:float,
+                       random_seed: int ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     """
     Get the generator that creates the train/test sets and the folds if Cross Validation is used
 
@@ -266,7 +266,7 @@ def get_sets_generator(cv_folds: int,
 
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        generator = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold )
+        generator = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold , random_seed=random_seed)
         enum_generator = [(0, generator)]
         logger.info("1 fold")
     else:
@@ -385,7 +385,9 @@ def deepCinet(model: str,
               random_labels = False,
               full_summary = False,
               save_model = False,
-              split = 1):
+              split = 1,
+              split_seed= None,
+              initial_seed = None):
     """
     deepCient
     :param args: Command Line Arguments
@@ -415,7 +417,8 @@ def deepCinet(model: str,
                                  dropout=dropout,
                                  learning_rate=learning_rate,
                                  use_distance=use_distance,
-                                 full_summary=full_summary)
+                                 full_summary=full_summary,
+                                 seed=initial_seed)
 
     conf = tf.ConfigProto(log_device_placement=log_device)
     conf.gpu_options.allow_growth = gpu_allow_growth
@@ -425,7 +428,8 @@ def deepCinet(model: str,
                                             test_size,
                                             random_labels,
                                             splitting_model,
-                                            threshold)
+                                            threshold,
+                                            split_seed)
 
         counts = {}
         for key in ['train', 'test', 'mixed']:

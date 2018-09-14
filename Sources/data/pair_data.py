@@ -100,7 +100,8 @@ class SplitPairs:
                          random: bool = False,
                          models: int= 0,
                          threshold: float= 2,
-                         category: int=4) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+                         category: int=4,
+                         random_seed: int = RANDOM_SEED) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Split data in train/test with the specified proportion
 
@@ -110,7 +111,7 @@ class SplitPairs:
         :return: Tuple with the train set and the test set
         """
         self.survival_categorizing(models, threshold, category)
-        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size) # random_state=RANDOM_SEED)
+        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state = random_seed) # random_state=)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
         return self._create_train_test(train_ids, test_ids, random)
