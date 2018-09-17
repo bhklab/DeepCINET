@@ -330,11 +330,11 @@ class BasicSiamese(BasicModel):
 
     def _contrastive_math(self):
         weight1 = tf.Variable(1., name="c_weight")
-        weight2 = tf.Variable(100., name="sub_weight")
+        weight2 = tf.Variable(10., name="sub_weight")
 
         # sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
         sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")
-        #sub *= weight2
+        sub *= weight2
 
         if self._use_distance:
             return weight1*tf.tanh(sub, name="contrastive_tanh")
