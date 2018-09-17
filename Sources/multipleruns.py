@@ -6,6 +6,7 @@ import train
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+from random import shuffle
 import yaml
 import utils
 import settings
@@ -61,11 +62,12 @@ with open("modelConf.yml", 'r') as cfg_file:
 
 results = pd.DataFrame(columns=['c_index','correct','total', 'accuracy', 'balanced'])
 mixed_c_index, train_c_index, test_c_index = [], [], []
-
+running_times = 100
+random_states = shuffle(np.arange(running_times))
 
 for i in range(10):
 
-    counts,predictions = train.deepCinet('VolumeOnlySiamese', num_epochs = 1, batch_size = 10, splitting_model = 2, threshold = 1, split = i, save_model = True, split_seed = 1, initial_seed = 1)
+    counts,predictions = train.deepCinet('ScalarOnlySiamese', num_epochs = 1, batch_size = 10, splitting_model = 2, threshold = 1, split = i, save_model = True, split_seed = i, initial_seed = i)
     counts['train']['c_index'] = sum([v[1] for v in  counts['train']['c_index']]) / float(len( counts['train']['c_index']))
     counts['test']['c_index'] = sum([v[1] for v in  counts['test']['c_index']]) / float(len( counts['test']['c_index']))
     counts['mixed']['c_index'] = sum([v[1] for v in  counts['mixed']['c_index']]) / float(len( counts['mixed']['c_index']))
@@ -84,6 +86,7 @@ for i in range(10):
         accuracy, balance = (1,2)
         results.loc[name +"_"+ str(i), 'accuracy'] = accuracy
         results.loc[name +"_"+  str(i), 'balanced'] = balance
+
 
     if(i%2 == 0):
         results.to_csv(cfg['mixed_result_path'])

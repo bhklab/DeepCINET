@@ -13,8 +13,7 @@ from settings import \
     DATA_PATH_PROCESSED, \
     DATA_PATH_RADIOMIC_PROCESSED, \
     TOTAL_ROTATIONS, \
-    RANDOM_SEED,\
-    DATA_PATH_SPLIT
+    RANDOM_SEED
 
 
 class SplitPairs:
@@ -29,7 +28,7 @@ class SplitPairs:
     def __init__(self):
         # To divide into test and validation sets we only need the clinical data
         self.clinical_data = pd.read_csv(DATA_PATH_CLINICAL_PROCESSED, index_col=0)
-        self.test = pd.DataFrame()
+
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
         self.mean = 0
@@ -70,7 +69,7 @@ class SplitPairs:
     def get_n_splits(self, n_folds: int = 4) -> int:
         return self._get_folds_generator(n_folds).get_n_splits(self.total_y, self.total_y)
 
-    def survival_categorizing(self, models, threshold, category : int = 4):
+    def survival_categorizing(self, models, threshold, category : int = 8):
         """
          Designed for define the way of splitting data based on the survival distribution or based on the
          categorizing data by considering threshold. Setting classification to use in splitting data
@@ -137,8 +136,6 @@ class SplitPairs:
         """
         train_data = self.clinical_data.iloc[train_ids]
         test_data = self.clinical_data.iloc[test_ids]
-        test_data.to_csv(DATA_PATH_SPLIT)
-
 
         self.logger.debug("Generating train pairs")
         train_pairs = self._get_pairs(train_data, random)
@@ -239,10 +236,12 @@ class SplitPairs:
         pairs = pd.concat(pairs)
         pairs = pairs.reset_index(drop=True)
 
-        rand_bool = np.random.randint(2, size=len(pairs))
-        pairs.loc[rand_bool, ['pA', 'pB']] = pairs.loc[rand_bool, ['pB', 'pA']].values
-        pairs.loc[rand_bool, 'distance'] *= -1
-        pairs.loc[rand_bool, 'comp'] ^= True
+        rand_pairs = pairs.sample(frac=.5)
+
+        rand_pairs[['pA', 'pB']] = rand_pairs[['pB', 'pA']]
+        rand_pairs['distance'] *= -1
+        rand_pairs['comp'] ^= True
+        pairs.update(rand_pairs)
 
         if random:
             # Hack to test some values

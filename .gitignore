@@ -20,3 +20,5 @@ docs_build/
 docs_source/api/
 
 .DS_Store
+
+.Sources/settings.py
