@@ -69,7 +69,7 @@ class SplitPairs:
     def get_n_splits(self, n_folds: int = 4) -> int:
         return self._get_folds_generator(n_folds).get_n_splits(self.total_y, self.total_y)
 
-    def survival_categorizing(self, models, threshold, category : int = 4):
+    def survival_categorizing(self, models, threshold, category : int = 8):
         """
          Designed for define the way of splitting data based on the survival distribution or based on the
          categorizing data by considering threshold. Setting classification to use in splitting data
@@ -236,10 +236,12 @@ class SplitPairs:
         pairs = pd.concat(pairs)
         pairs = pairs.reset_index(drop=True)
 
-        rand_bool = np.random.randint(2, size=len(pairs))
-        pairs.loc[rand_bool, ['pA', 'pB']] = pairs.loc[rand_bool, ['pB', 'pA']].values
-        pairs.loc[rand_bool, 'distance'] *= -1
-        pairs.loc[rand_bool, 'comp'] ^= True
+        rand_pairs = pairs.sample(frac=.5)
+
+        rand_pairs[['pA', 'pB']] = rand_pairs[['pB', 'pA']]
+        rand_pairs['distance'] *= -1
+        rand_pairs['comp'] ^= True
+        pairs.update(rand_pairs)
 
         if random:
             # Hack to test some values
