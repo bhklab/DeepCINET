@@ -24,7 +24,6 @@ from typing import Dict, Any, Union, Tuple
 
 import tensorflow as tf
 import numpy as np
-
 import data
 import settings
 from .basics import BasicImageSiamese, BasicSiamese
@@ -940,7 +939,6 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
 
 
 class ScalarOnlySiamese(BasicSiamese):
-
     r"""
     Model that uses only radiomic features as input to train
 
@@ -968,35 +966,34 @@ class ScalarOnlySiamese(BasicSiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            500,
+            40,
             "fc1"
         )
 
-        # Out: [batch, 200]
         x = self._dense(
             x,
-            200,
+            30,
             "fc2"
         )
 
-        x = tf.layers.dropout(
-            x,
-            rate=self._dropout,
-            training=self.training
-        )
 
-        # Out: [batch, 50]
         x = self._dense(
             x,
-            50,
+            20,
             "fc3"
+        )
+
+        x = self._dense(
+            x,
+            10,
+            "fc4"
         )
 
         # Out: [batch, 1]
         x = self._dense(
-            x,
-            10,
-            "fc4",
+            x ,
+            5,
+            "fc5",
             activation=tf.nn.relu
         )
 
@@ -1038,7 +1035,7 @@ class ScalarOnlyDropoutSiamese(ScalarOnlySiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            500,
+            100,
             "fc1"
         )
 
@@ -1051,7 +1048,7 @@ class ScalarOnlyDropoutSiamese(ScalarOnlySiamese):
         # Out: [batch, 200]
         x = self._dense(
             x,
-            200,
+            50,
             "fc2"
         )
 
@@ -1064,7 +1061,7 @@ class ScalarOnlyDropoutSiamese(ScalarOnlySiamese):
         # Out: [batch, 50]
         x = self._dense(
             x,
-            50,
+            20,
             "fc3"
         )
 

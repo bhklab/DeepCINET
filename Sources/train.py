@@ -247,7 +247,7 @@ def get_sets_generator(cv_folds: int,
                        random_labels: bool,
                        model:int,
                        threshold:float,
-                       random_seed: int ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+                       random_seed: int = None ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     """
     Get the generator that creates the train/test sets and the folds if Cross Validation is used
 
@@ -255,6 +255,9 @@ def get_sets_generator(cv_folds: int,
     :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
                       whole set
     :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
+    :param model: This parameter use for selecting the model for spliting data 0 censored, 1 target distribution, 2 based on threshold
+    :param threshold: this is a threshold which is used in the model spliting
+    :param random_seed that is used for model spliting
     :return: The sets generator then it can be used in a ``for`` loop to get the sets
 
                 >>> folds = get_sets_generator(...)
@@ -383,8 +386,8 @@ def deepCinet(model: str,
               log_device = False,
               use_distance = False,
               random_labels = False,
-              full_summary = False,
-              save_model = False,
+              full_summary = True,
+              save_model = True,
               split = 1,
               split_seed= None,
               initial_seed = None):
@@ -443,7 +446,11 @@ def deepCinet(model: str,
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
             summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
+            summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}" )
+            logger.info(f"Saving results at: {summaries_dir}")
+
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
+ #           train_summary.add_graph(sess.graph)
             batch_data = data.BatchData()
 
             # Epoch iterations
