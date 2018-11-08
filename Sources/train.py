@@ -307,7 +307,8 @@ def main(args: Dict[str, Any]) -> None:
                                             args['test_size'],
                                             args['random_labels'],
                                             args['splitting_model'],
-                                            args['threshold'])
+                                            args['threshold'],
+                                            None)
 
         counts = {}
         for key in ['train', 'test', 'mixed']:
