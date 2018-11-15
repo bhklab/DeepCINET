@@ -447,8 +447,8 @@ class BatchData:
                 assert len(loaded_npz.files) == total_rotations
                 for item in loaded_npz:
                     loaded_array = loaded_npz[item]
-                    assert loaded_array.shape == (64, 64, 64)
-                    images.append(loaded_array.reshape(64, 64, 64, 1))
+                    assert loaded_array.shape == (256, 256, 256)
+                    images.append(loaded_array.reshape(256, 256, 256, 1))
                 loaded_npz.close()
             else:
                 images += [np.array([])]*total_rotations
