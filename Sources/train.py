@@ -82,6 +82,7 @@ import models
 import models.basics
 import settings
 import utils
+from tensorflow.core.protobuf import config_pb2
 logger = utils.init_logger("start")
 
 def train_iterations(sess: tf.Session,
@@ -112,7 +113,8 @@ def train_iterations(sess: tf.Session,
 
     # Train iterations
     final_iterations = 0
-    sess.run(tf.global_variables_initializer())
+    sess.run(tf.global_variables_initializer(), options=config_pb2.RunOptions(
+        report_tensor_allocations_upon_oom=True))
     for epoch in range(epochs):
         total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
         for i, batch in enumerate(batch_data.batches(pairs,
