@@ -316,6 +316,7 @@ class SimpleImageSiamese(BasicImageSiamese):
                 name="conv1"
             )
 
+
             # Out: [batch, 63, 63, 63, 40]
             x = tf.layers.conv3d(
                 x,
@@ -325,11 +326,13 @@ class SimpleImageSiamese(BasicImageSiamese):
                 activation=tf.nn.relu,
                 name="conv2"
             )
+
             x=tf.layers.max_pooling3d(
                 x,
-                pool_size=3
-
+                pool_size=3,
+                name = "pool2"
             )
+
 
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
         self.logger.debug(f"Using device: {device} for second conv layers")
@@ -351,6 +354,7 @@ class SimpleImageSiamese(BasicImageSiamese):
                 activation=tf.nn.relu,
                 name="conv4"
             )
+
         return x
 
     def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
