@@ -329,6 +329,7 @@ class SimpleImageSiamese(BasicImageSiamese):
 
             x=tf.layers.max_pooling3d(
                 x,
+                strides=1,
                 pool_size=3,
                 name = "pool2"
             )
