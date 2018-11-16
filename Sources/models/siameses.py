@@ -333,7 +333,7 @@ class SimpleImageSiamese(BasicImageSiamese):
             )
             x = tf.layers.max_pooling3d(
                 x,
-                pool_size=[4, 4, 4],
+                pool_size=[2, 2, 2],
                 strides=2,
                 name="pool2"
             )
@@ -346,7 +346,7 @@ class SimpleImageSiamese(BasicImageSiamese):
             x = tf.layers.conv3d(
                 x,
                 filters=40,
-                kernel_size=5,
+                kernel_size=3,
                 activation=tf.nn.relu,
                 name="conv3"
             )
