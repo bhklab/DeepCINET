@@ -310,20 +310,34 @@ class SimpleImageSiamese(BasicImageSiamese):
             x = tf.layers.conv3d(
                 x,
                 filters=30,
-                kernel_size=3,
+                kernel_size=5,
                 strides=2,
                 activation=tf.nn.relu,
                 name="conv1"
+            )
+            x = tf.layers.max_pooling3d(
+                x,
+                pool_size=[4, 4, 4],
+                strides=2,
+                name="pool1"
             )
 
             # Out: [batch, 29, 29, 29, 40]
             x = tf.layers.conv3d(
                 x,
                 filters=40,
-                kernel_size=3,
+                kernel_size=5,
+                strides=2,
                 activation=tf.nn.relu,
                 name="conv2"
             )
+            x = tf.layers.max_pooling3d(
+                x,
+                pool_size=[4, 4, 4],
+                strides=2,
+                name="pool2"
+            )
+
 
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
         self.logger.debug(f"Using device: {device} for second conv layers")
@@ -332,19 +346,40 @@ class SimpleImageSiamese(BasicImageSiamese):
             x = tf.layers.conv3d(
                 x,
                 filters=40,
-                kernel_size=3,
+                kernel_size=5,
                 activation=tf.nn.relu,
                 name="conv3"
             )
+            x = tf.layers.max_pooling3d(
+                x,
+                pool_size=[4, 4, 4],
+                strides=2,
+                name="pool3"
+            )
+
 
             # Out: [batch, 25, 25, 25, 50]
             x = tf.layers.conv3d(
                 x,
                 filters=50,
-                kernel_size=3,
+                kernel_size=5,
                 activation=tf.nn.relu,
                 name="conv4"
             )
+            x = tf.layers.max_pooling3d(
+                x,
+                pool_size=[8, 8, 8],
+                strides=2,
+                name="pool4"
+            )
+            x = tf.layers.conv3d(
+                x,
+                filters=50,
+                kernel_size=8,
+                activation=tf.nn.relu,
+                name="conv4"
+            )
+
         return x
 
     def _fc_layers(self, x: tf.Tensor) -> tf.Tensor:
