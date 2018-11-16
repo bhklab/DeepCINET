@@ -301,34 +301,40 @@ class SimpleImageSiamese(BasicImageSiamese):
         :param x: Network's input images with shape ``[batch, 64, 64, 64, 1]``
         :return: Filtered image with the convolutions applied
         """
-        # In: [batch, 64, 64, 64, 1]
+        # In: [batch, 256, 256, 256, 1]
 
         device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
         self.logger.debug(f"Using device: {device} for first conv layers")
         with tf.device(device):
-            # Out: [batch, 31, 31, 31, 30]
+            # Out: [batch, 127, 127, 127, 30]
             x = tf.layers.conv3d(
                 x,
-                filters=30,
+                filters=20,
                 kernel_size=3,
                 strides=2,
                 activation=tf.nn.relu,
                 name="conv1"
             )
 
-            # Out: [batch, 29, 29, 29, 40]
+            # Out: [batch, 63, 63, 63, 40]
             x = tf.layers.conv3d(
                 x,
-                filters=40,
-                kernel_size=3,
+                filters=20,
+                kernel_size=2,
+                strides=2,
                 activation=tf.nn.relu,
                 name="conv2"
+            )
+            x=tf.layers.max_pooling3d(
+                x,
+                pool_size=3
+
             )
 
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
         self.logger.debug(f"Using device: {device} for second conv layers")
         with tf.device(device):
-            # Out: [batch, 27, 27, 27, 40]
+            # Out: [batch, 19, 19, 19, 40]
             x = tf.layers.conv3d(
                 x,
                 filters=40,
@@ -337,11 +343,11 @@ class SimpleImageSiamese(BasicImageSiamese):
                 name="conv3"
             )
 
-            # Out: [batch, 25, 25, 25, 50]
+            # Out: [batch, 18, 18, 18, 50]
             x = tf.layers.conv3d(
                 x,
                 filters=50,
-                kernel_size=3,
+                kernel_size=2,
                 activation=tf.nn.relu,
                 name="conv4"
             )
