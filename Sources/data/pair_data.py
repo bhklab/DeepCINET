@@ -5,6 +5,8 @@ from typing import Iterator, Tuple, Generator, List, Dict
 
 import numpy as np
 import pandas as pd
+from data.mrmrpy import mrmrpy
+
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
@@ -28,6 +30,7 @@ class SplitPairs:
     def __init__(self):
         # To divide into test and validation sets we only need the clinical data
         self.clinical_data = pd.read_csv(DATA_PATH_CLINICAL_PROCESSED, index_col=0)
+
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
         self.mean = 0
@@ -110,7 +113,7 @@ class SplitPairs:
         :return: Tuple with the train set and the test set
         """
         self.survival_categorizing(models, threshold, category)
-        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state = random_seed)
+        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state = random_seed) # random_state=)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
         return self._create_train_test(train_ids, test_ids, random)
@@ -133,8 +136,12 @@ class SplitPairs:
         :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
         :return: List for the train set and list for the test set respectively
         """
+
         train_data = self.clinical_data.iloc[train_ids]
         test_data = self.clinical_data.iloc[test_ids]
+
+
+
 
         self.logger.debug("Generating train pairs")
         train_pairs = self._get_pairs(train_data, random)
@@ -236,6 +243,7 @@ class SplitPairs:
         pairs = pairs.reset_index(drop=True)
 
         rand_pairs = pairs.sample(frac=.5)
+
         rand_pairs[['pA', 'pB']] = rand_pairs[['pB', 'pA']]
         rand_pairs['distance'] *= -1
         rand_pairs['comp'] ^= True
@@ -274,11 +282,20 @@ class BatchData:
     Useful methods for working with batch data
     """
 
-    def __init__(self):
+    def __init__(self, mrmr=False):
         self.radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
         self.logger = logging.getLogger(__name__)
         self.norm_mean = 0.
         self.norm_std = 1.
+        self.mrmr = False
+
+        # For using mrmr method, need to include clinical info dataset
+        if mrmr:
+            self.mrmr = True
+            self.mrmrpy = mrmrpy()
+            self.clinical_df: pd.DataFrame = pd.read_csv(DATA_PATH_CLINICAL_PROCESSED)
+            self.mrmr_list = []
+
 
     def batches(self, pairs: pd.DataFrame,
                 batch_size: int = 64,
@@ -310,6 +327,15 @@ class BatchData:
         if train:
             self.norm_mean = features.mean(axis=1)
             self.norm_std = features.std(axis=1)
+
+            # If the mRMRe method is used, the self.mrmr_list will be used to select features
+            # no matter the training or testing dataset
+            if self.mrmr:
+                clinicals: pd.DataFrame = self.clinical_df[self.clinical_df['id'].isin(total_ids)]
+                features_mrmr = self.mrmrpy.mrmr_data(features=features, clinical_info=clinicals)
+                self.mrmr_list = list(self.mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=10, feature_count=50))
+                print('------------------ The features selected are listed below -------------------')
+                print(self.mrmr_list)
 
         features = features.sub(self.norm_mean, axis=0)
         features = features.div(self.norm_std, axis=0)
@@ -447,8 +473,8 @@ class BatchData:
                 assert len(loaded_npz.files) == total_rotations
                 for item in loaded_npz:
                     loaded_array = loaded_npz[item]
-                    assert loaded_array.shape == (256, 256, 256)
-                    images.append(loaded_array.reshape(256, 256, 256, 1))
+                    assert loaded_array.shape == (64, 64, 64)
+                    images.append(loaded_array.reshape(64, 64, 64, 1))
                 loaded_npz.close()
             else:
                 images += [np.array([])]*total_rotations
