@@ -333,9 +333,18 @@ class BatchData:
             if self.mrmr:
                 clinicals: pd.DataFrame = self.clinical_df[self.clinical_df['id'].isin(total_ids)]
                 features_mrmr = self.mrmrpy.mrmr_data(features=features, clinical_info=clinicals)
-                self.mrmr_list = list(self.mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=10, feature_count=50))
+                self.mrmr_list = list(self.mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=1, feature_count=30))
+
+                # Substract every index value by 2, since the first column is target (survival time)
+                # And the numeric object returned from R is starting from 1, not 0
+                self.mrmr_list = list(map(lambda x : x - 2, self.mrmr_list))
+
                 print('------------------ The features selected are listed below -------------------')
                 print(self.mrmr_list)
+
+                # Apply the selected features on original features dataframe
+                features = features.iloc[self.mrmr_list]
+                print(features)
 
         features = features.sub(self.norm_mean, axis=0)
         features = features.div(self.norm_std, axis=0)
