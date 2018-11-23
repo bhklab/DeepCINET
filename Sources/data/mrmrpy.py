@@ -18,9 +18,9 @@ print(base._libPaths())
 print(robjects.r('R.home()'))
 print(base._libPaths())
 '''
+import logging
 
-
-class mrmrpy:
+class Mrmrpy:
 
     def __init__(self):
 
@@ -29,6 +29,7 @@ class mrmrpy:
         self.survival = importr('survival')
         self.igraph = importr('igraph')
         self.mrmre = importr('mRMRe')
+        self.logger = logging.getLogger(__name__)
 
         # Launch the mRMRe
         #robjects.r('ShowClass("mRMRe.Filter")')
@@ -45,15 +46,17 @@ class mrmrpy:
         :param clinical_info : The clinical info dataset (only the 'time' field is needed in this function)
         :return: The mRMR.data object of new feature dataframe
         '''
-
+        #self.logger.info(features)
         # Merge the features and labels (the survival time, which is the 'time' field of clinical information)
         features = features.T
         samples = clinical_info['id']
+        self.logger.info(clinical_info)
         features = features.loc[samples]
 
         # Concatenate the survival time to the features dataset
         features = features.reset_index(drop=True)
         clinical_info = clinical_info.reset_index(drop=True)
+
         features = features.join(pd.DataFrame(clinical_info['time']))
 
         # Make the survial time (label) as the first column in the dataframe
@@ -82,7 +85,7 @@ class mrmrpy:
         feature_selected = self.mrmre.mRMR_ensemble(solution_count=solution_count,
                                                     feature_count=feature_count,
                                                     data=data,
-                                                    target_indices=1,
+                                                    target_indices=list(range(2,700)),
                                                     method=method)
 
         return self.mrmre.solutions(feature_selected)[0]

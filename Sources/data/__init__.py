@@ -41,3 +41,4 @@ Relations between different modules and classes:
 from data.image_data import RawData, PreProcessedData
 from data.pair_data import SplitPairs, BatchData
 from data.data_structures import PseudoDir, PairBatch
+from data.mrmrpy import Mrmrpy
