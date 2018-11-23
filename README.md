@@ -1,8 +1,8 @@
-# CNNSurv
-Create a Survival Prediction model using a Convolutional Neural Network.
+DeepCINET# CNNSurv
+Create a drug response Prediction model using  Neural Network.
 
-To do so a Siamese network will be used. Two individuals will be used as an input and the network
-should predict which one will live longer.
+To do so a Siamese network will be used. Two cells will be used as an input and the network
+should predict which one will be more sensitive to the compound.
 
 This project uses **python3**
 

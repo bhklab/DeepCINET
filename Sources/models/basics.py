@@ -87,6 +87,7 @@ class BasicModel:
                  threshold: float = .5,
                  use_distance: bool = False,
                  full_summary: bool = False,
+                 seed: int = None,
                  **ignored):
         self.logger = logging.getLogger(__name__)
 
@@ -102,7 +103,7 @@ class BasicModel:
         #: **Attribute**: Placeholder for the labels, it has shape ``[batch, 1]``
         self.y = tf.placeholder(tf.float32, [None, 1], name="Y")
 
-        #: **Attribute**: Placeholder for the distance between the pairs, it has shape ``[batch, 1]``
+        #: **Attribute**: Paceholder for the distance between the pairs, it has shape ``[batch, 1]``
         self.y_dist = tf.placeholder(tf.float32, [None, 1], name="Y_distance")
 
         #: **Attribute**: Placeholder to tell the model if we are training (:any:`True`) or not (:any:`False`)
@@ -120,6 +121,9 @@ class BasicModel:
         #: **Attribute**: Estimation of :math:`\hat{y}` by using :any:`BasicModel.y_prob` and
         #: :any:`BasicModel._threshold`
         self.y_estimate = tf.greater_equal(self.y_prob, self._threshold)
+
+
+
 
         with tf.variable_scope("loss"):
             #: **Attribute**: Classification loss using the negative log loss function
@@ -254,6 +258,7 @@ class BasicSiamese(BasicModel):
 
     def __init__(self,
                  gpu_level: int = 0,
+                 seed: int = None,
                  **kwargs):
         #: **Attribute**: Amount of GPU to be used with the model
         self._gpu_level = gpu_level
@@ -269,6 +274,9 @@ class BasicSiamese(BasicModel):
 
         #: **Attribute**: Output results for pairs members' B. It has shape ``[pairs_batch, last_layer_units]``
         self.gathered_b = None
+
+        #: **Attribute**: Random Seed for model initialization
+        self.seed = seed
 
         super().__init__(**kwargs)
 

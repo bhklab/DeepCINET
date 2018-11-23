@@ -568,7 +568,7 @@ class ImageScalarSiamese(BasicImageSiamese):
             x,
             units=units,
             activation=activation,
-            kernel_initializer=tf.contrib.layers.xavier_initializer(),
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
             kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
             name=name
         )
@@ -940,6 +940,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
 
 
 class ScalarOnlySiamese(BasicSiamese):
+
     r"""
     Model that uses only radiomic features as input to train
 
@@ -1006,7 +1007,7 @@ class ScalarOnlySiamese(BasicSiamese):
             x,
             units=units,
             activation=activation,
-            kernel_initializer=tf.contrib.layers.xavier_initializer(),
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
             kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
             name=name
         )
