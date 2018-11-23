@@ -82,6 +82,7 @@ import models
 import models.basics
 import settings
 import utils
+
 from tensorflow.core.protobuf import config_pb2
 logger = utils.init_logger("start")
 
@@ -244,12 +245,45 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         exit(1)
 
 
-def get_sets_generator(cv_folds: int,
+def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, train_ids):
+    """
+      select the mrmr features
+
+      :param dataframe_features: DataFrame of the features
+      :param mrmr_size: The number of features which should be selected with mrmr
+      :param train_ids: List of the train_ids that should be considered in mrmr
+      :return: DataFrame that contain selected features
+    """
+
+    clinical_df= pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED)
+    mrmrpy = data.Mrmrpy()
+    logger.info(clinical_df)
+
+    clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
+    #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
+
+    features: pd.DataFrame = dataframe_features
+    features_mrmr = mrmrpy.mrmr_data(features=features, clinical_info=clinicals)
+    mrmr_list = list(mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=1, feature_count=mrmr_size))
+    # Substract every index value by 2, since the first column is target (survival time)
+    # And the numeric object returned from R is starting from 1, not 0
+    mrmr_list = list(map(lambda x: x - 2, mrmr_list))
+    logger.info('------------------ The features selected are listed below -------------------')
+    logger.info(mrmr_list)
+    # Apply the selected features on original features dataframe
+    features = features.iloc[mrmr_list]
+    return features
+
+
+
+def get_sets_generator(dataset: data.pair_data.SplitPairs,
+                       cv_folds: int,
                        test_size: int,
                        random_labels: bool,
                        model:int,
                        threshold:float,
-                       random_seed: int = None ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+                       random_seed: int = None
+                       ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     """
     Get the generator that creates the train/test sets and the folds if Cross Validation is used
 
@@ -267,16 +301,15 @@ def get_sets_generator(cv_folds: int,
                         # Insert your code
                         pass
     """
-    dataset = data.pair_data.SplitPairs()
+
 
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        generator = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold , random_seed=random_seed)
-        enum_generator = [(0, generator)]
+        train_ids, test_ids = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold , random_seed=random_seed)
+        enum_generator = [(0, (train_ids, test_ids))]
         logger.info("1 fold")
     else:
         enum_generator = dataset.folds(cv_folds, random=random_labels)
-
     logger.debug("Folds created")
 
     return enum_generator
@@ -292,7 +325,8 @@ def main(args: Dict[str, Any]) -> None:
     """
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
-
+    mrmr_size = args['mrmr_size']
+    random_labels = args['random_labels']
     siamese_model = select_model(args['model'],
                                  gpu_level=args['gpu_level'],
                                  regularization=args['regularization'],
@@ -304,13 +338,19 @@ def main(args: Dict[str, Any]) -> None:
     conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
+    features = pd.DataFrame = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED)
+    logger.info("read Feature DataFrame")
+
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(args['cv_folds'],
+        dataset = data.pair_data.SplitPairs()
+        enum_generator = get_sets_generator(dataset,
+                                            args['cv_folds'],
                                             args['test_size'],
                                             args['random_labels'],
                                             args['splitting_model'],
                                             args['threshold'],
-                                            None)
+                                            None
+                                            )
 
         counts = {}
         for key in ['train', 'test', 'mixed']:
@@ -320,12 +360,17 @@ def main(args: Dict[str, Any]) -> None:
                 'c_index': []
             }
 
-        for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
+        for i, (train_ids, test_ids) in enum_generator:
+            if mrmr_size > 0:
+
+                logger.info(type(train_ids))
+                features = select_mrmr_features(features, mrmr_size, train_ids)
+            train_pairs, test_pairs, test_mix_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
-            batch_data = data.BatchData()
+            batch_data = data.BatchData(features)
 
             # Epoch iterations
             train_iterations(sess,
@@ -393,7 +438,8 @@ def deepCinet(model: str,
               save_model = True,
               split = 1,
               split_seed= None,
-              initial_seed = None):
+              initial_seed = None,
+              mrmr_size = 0):
     """
     deepCient
     :param args: Command Line Arguments
@@ -454,7 +500,7 @@ def deepCinet(model: str,
 
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
  #           train_summary.add_graph(sess.graph)
-            batch_data = data.BatchData()
+            batch_data = data.BatchData(mrmr_size)
 
             # Epoch iterations
             train_iterations(sess,
@@ -656,6 +702,15 @@ if __name__ == '__main__':
         action="store_true",
         default=False
     )
+
+    optional.add_argument(
+        "--mrmr-size",
+        help="The number of features that should be selected with Mrmr- 0 means Mrmr shouldn't apply",
+        default=0,
+        type=int
+    )
+
+
 
     # See if we are running in a SLURM task array
     array_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)

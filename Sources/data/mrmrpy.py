@@ -50,13 +50,13 @@ class Mrmrpy:
         # Merge the features and labels (the survival time, which is the 'time' field of clinical information)
         features = features.T
         samples = clinical_info['id']
-        self.logger.info(clinical_info)
+
         features = features.loc[samples]
 
         # Concatenate the survival time to the features dataset
         features = features.reset_index(drop=True)
         clinical_info = clinical_info.reset_index(drop=True)
-
+        self.logger.info(features)
         features = features.join(pd.DataFrame(clinical_info['time']))
 
         # Make the survial time (label) as the first column in the dataframe

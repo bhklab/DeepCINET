@@ -5,8 +5,6 @@ from typing import Iterator, Tuple, Generator, List, Dict
 
 import numpy as np
 import pandas as pd
-from data.mrmrpy import mrmrpy
-
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
@@ -64,9 +62,8 @@ class SplitPairs:
             enum_generator = zip(range(task_begin, task_end), list(generator)[task_begin:task_end])
         else:
             enum_generator = enumerate(generator)
+        return enum_generator
 
-        for i, (train_ids, test_ids) in enum_generator:
-            yield i, self._create_train_test(train_ids, test_ids, random)
 
     def get_n_splits(self, n_folds: int = 4) -> int:
         return self._get_folds_generator(n_folds).get_n_splits(self.total_y, self.total_y)
@@ -103,7 +100,7 @@ class SplitPairs:
                          models: int= 0,
                          threshold: float= 2,
                          category: int=4,
-                         random_seed: int = RANDOM_SEED) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+                         random_seed: int = RANDOM_SEED) -> Tuple[ List[int],  List[int]]:
         """
         Split data in train/test with the specified proportion
 
@@ -116,7 +113,7 @@ class SplitPairs:
         rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state = random_seed) # random_state=)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
-        return self._create_train_test(train_ids, test_ids, random)
+        return train_ids, test_ids #self._create_train_test(train_ids, test_ids, random)
 
     @staticmethod
     def _get_folds_generator(n_folds: int) -> BaseCrossValidator:
@@ -124,7 +121,7 @@ class SplitPairs:
             return LeaveOneOut()
         return StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
 
-    def _create_train_test(self,
+    def create_train_test(self,
                            train_ids: List[int],
                            test_ids: List[int],
                            random: bool) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -243,7 +240,6 @@ class SplitPairs:
         pairs = pairs.reset_index(drop=True)
 
         rand_pairs = pairs.sample(frac=.5)
-
         rand_pairs[['pA', 'pB']] = rand_pairs[['pB', 'pA']]
         rand_pairs['distance'] *= -1
         rand_pairs['comp'] ^= True
@@ -282,20 +278,11 @@ class BatchData:
     Useful methods for working with batch data
     """
 
-    def __init__(self, mrmr=False):
-        self.radiomic_df: pd.DataFrame = pd.read_csv(DATA_PATH_RADIOMIC_PROCESSED)
+    def __init__(self, radiomic_df):
+        self.radiomic_df: radiomic_df
         self.logger = logging.getLogger(__name__)
         self.norm_mean = 0.
         self.norm_std = 1.
-        self.mrmr = False
-
-        # For using mrmr method, need to include clinical info dataset
-        if mrmr:
-            self.mrmr = True
-            self.mrmrpy = mrmrpy()
-            self.clinical_df: pd.DataFrame = pd.read_csv(DATA_PATH_CLINICAL_PROCESSED)
-            self.mrmr_list = []
-
 
     def batches(self, pairs: pd.DataFrame,
                 batch_size: int = 64,
@@ -327,24 +314,6 @@ class BatchData:
         if train:
             self.norm_mean = features.mean(axis=1)
             self.norm_std = features.std(axis=1)
-
-            # If the mRMRe method is used, the self.mrmr_list will be used to select features
-            # no matter the training or testing dataset
-            if self.mrmr:
-                clinicals: pd.DataFrame = self.clinical_df[self.clinical_df['id'].isin(total_ids)]
-                features_mrmr = self.mrmrpy.mrmr_data(features=features, clinical_info=clinicals)
-                self.mrmr_list = list(self.mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=1, feature_count=30))
-
-                # Substract every index value by 2, since the first column is target (survival time)
-                # And the numeric object returned from R is starting from 1, not 0
-                self.mrmr_list = list(map(lambda x : x - 2, self.mrmr_list))
-
-                print('------------------ The features selected are listed below -------------------')
-                print(self.mrmr_list)
-
-                # Apply the selected features on original features dataframe
-                features = features.iloc[self.mrmr_list]
-                print(features)
 
         features = features.sub(self.norm_mean, axis=0)
         features = features.div(self.norm_std, axis=0)
