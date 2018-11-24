@@ -264,7 +264,7 @@ def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, tra
 
     features = dataframe_features
     features_mrmr = mrmrpy.mrmr_data(features=features, clinical_info=clinicals)
-    mrmr_list = list(mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=1, feature_count=mrmr_size))
+    mrmr_list = list(mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=mrmr_size, feature_count=724))
     # Substract every index value by 2, since the first column is target (survival time)
     # And the numeric object returned from R is starting from 1, not 0
     mrmr_list = list(map(lambda x: x - 2, mrmr_list))

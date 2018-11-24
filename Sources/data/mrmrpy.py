@@ -57,7 +57,7 @@ class Mrmrpy:
         features = features.reset_index(drop=True)
         clinical_info = clinical_info.reset_index(drop=True)
 
-        features = features.join(pd.DataFrame(clinical_info['time']))
+        features = features.join(pd.DataFrame(clinical_info["event", "time"]))
 
         # Make the survial time (label) as the first column in the dataframe
         cols = features.columns.tolist()
@@ -66,12 +66,12 @@ class Mrmrpy:
 
         # Convert the features dataframe into the mRMRe.data object
 
-        return self.mrmre.mRMR_data(data=features)
+        return self.mrmre.mRMR_data(feature_types = "Surv", data=features)
 
     def mrmr_ensemble(self,
                       data,
-                      solution_count : int = 1,
-                      feature_count : int = 1,
+                      solution_count : int = 20,
+                      feature_count : int = 724,
                       method : str = 'exhaustive'):
         '''
         This function call the ensemble method of mRMR, and return the selected features
