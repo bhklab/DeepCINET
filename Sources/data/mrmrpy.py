@@ -36,8 +36,8 @@ class Mrmrpy:
         robjects.r('set.thread.count(2)')
 
     def mrmr_data(self,
-                  features : pd.DataFrame = None,
-                  clinical_info : pd.DataFrame = None):
+                  features : pd.DataFrame ,
+                  clinical_info : pd.DataFrame ):
         '''
         This function "merges" the features dataset and clinical info, to create a new features dataframe which meets
         the criteria of mRMRe package, and convert the dataframe into mRMRe.data object
@@ -56,7 +56,7 @@ class Mrmrpy:
         # Concatenate the survival time to the features dataset
         features = features.reset_index(drop=True)
         clinical_info = clinical_info.reset_index(drop=True)
-        self.logger.info(features)
+
         features = features.join(pd.DataFrame(clinical_info['time']))
 
         # Make the survial time (label) as the first column in the dataframe

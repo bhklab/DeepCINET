@@ -121,6 +121,7 @@ class SplitPairs:
             return LeaveOneOut()
         return StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
 
+
     def create_train_test(self,
                            train_ids: List[int],
                            test_ids: List[int],
@@ -227,7 +228,6 @@ class SplitPairs:
                 temp_df = df_comp.loc[df_comp['id'] != row['id'], ['id', 'time']]
             else:
                 temp_df = df_comp.loc[(df_comp['time'] < row['time']), ['id', 'time']]
-
             row_pairs = pd.DataFrame()
             row_pairs['pA'] = temp_df['id']
             row_pairs['pB'] = row['id']
@@ -244,6 +244,7 @@ class SplitPairs:
         rand_pairs['distance'] *= -1
         rand_pairs['comp'] ^= True
         pairs.update(rand_pairs)
+
 
         if random:
             # Hack to test some values
@@ -279,10 +280,11 @@ class BatchData:
     """
 
     def __init__(self, radiomic_df):
-        self.radiomic_df: radiomic_df
+        self.radiomic_df= radiomic_df
         self.logger = logging.getLogger(__name__)
         self.norm_mean = 0.
         self.norm_std = 1.
+
 
     def batches(self, pairs: pd.DataFrame,
                 batch_size: int = 64,

@@ -84,6 +84,8 @@ import settings
 import utils
 
 from tensorflow.core.protobuf import config_pb2
+from typing import Iterator, Tuple, Generator, List, Dict
+
 logger = utils.init_logger("start")
 
 def train_iterations(sess: tf.Session,
@@ -245,7 +247,7 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
         exit(1)
 
 
-def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, train_ids):
+def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, train_ids: List):
     """
       select the mrmr features
 
@@ -257,19 +259,17 @@ def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, tra
 
     clinical_df= pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED)
     mrmrpy = data.Mrmrpy()
-    logger.info(clinical_df)
-
     clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
     #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
 
-    features: pd.DataFrame = dataframe_features
+    features = dataframe_features
     features_mrmr = mrmrpy.mrmr_data(features=features, clinical_info=clinicals)
     mrmr_list = list(mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=1, feature_count=mrmr_size))
     # Substract every index value by 2, since the first column is target (survival time)
     # And the numeric object returned from R is starting from 1, not 0
     mrmr_list = list(map(lambda x: x - 2, mrmr_list))
     logger.info('------------------ The features selected are listed below -------------------')
-    logger.info(mrmr_list)
+
     # Apply the selected features on original features dataframe
     features = features.iloc[mrmr_list]
     return features
@@ -338,7 +338,7 @@ def main(args: Dict[str, Any]) -> None:
     conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
-    features = pd.DataFrame = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED)
+    features: pd.DataFrame = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED)
     logger.info("read Feature DataFrame")
 
     with tf.Session(config=conf) as sess:
@@ -365,7 +365,7 @@ def main(args: Dict[str, Any]) -> None:
 
                 logger.info(type(train_ids))
                 features = select_mrmr_features(features, mrmr_size, train_ids)
-            train_pairs, test_pairs, test_mix_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
+            train_pairs, test_pairs, mixed_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
