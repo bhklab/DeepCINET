@@ -256,22 +256,13 @@ def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, tra
       :param train_ids: List of the train_ids that should be considered in mrmr
       :return: DataFrame that contain selected features
     """
-
     clinical_df= pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED)
-    mrmrpy = data.Mrmrpy()
     clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
     #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
-
-    features = dataframe_features
-    features_mrmr = mrmrpy.mrmr_data(features=features, clinical_info=clinicals)
-    mrmr_list = list(mrmrpy.mrmr_ensemble(data=features_mrmr, solution_count=mrmr_size, feature_count=724))
-    # Substract every index value by 2, since the first column is target (survival time)
-    # And the numeric object returned from R is starting from 1, not 0
-    mrmr_list = list(map(lambda x: x - 2, mrmr_list))
-    logger.info('------------------ The features selected are listed below -------------------')
-
-    # Apply the selected features on original features dataframe
-    features = features.iloc[mrmr_list]
+    mrmr_list= data.mrmr_selection(features=dataframe_features, clinical_info=clinicals, solution_count=1, feature_count=mrmr_size)
+    logger.info(mrmr_list)
+    #print(dataframe_features)
+    features = dataframe_features.loc[mrmr_list]
     return features
 
 
@@ -362,14 +353,15 @@ def main(args: Dict[str, Any]) -> None:
 
         for i, (train_ids, test_ids) in enum_generator:
             if mrmr_size > 0:
-
                 logger.info(type(train_ids))
                 features = select_mrmr_features(features, mrmr_size, train_ids)
+                print(features)
             train_pairs, test_pairs, mixed_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
+            print(features)
             batch_data = data.BatchData(features)
 
             # Epoch iterations

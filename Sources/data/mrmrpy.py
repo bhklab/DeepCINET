@@ -11,82 +11,53 @@ from rpy2.robjects import pandas2ri
 
 pandas2ri.activate()
 
-'''
-print(robjects.r("version"))
-base = importr('base')
-print(base._libPaths())
-print(robjects.r('R.home()'))
-print(base._libPaths())
-'''
 import logging
+matrix = importr('Matrix')
+survival = importr('survival')
+igraph = importr('igraph')
+mrmre = importr('mRMRe')
 
-class Mrmrpy:
+def mrmr_selection(features : pd.DataFrame,
+                    clinical_info : pd.DataFrame,
+                    solution_count: int,
+                   feature_count: int):
+    '''
+     This function use mrmr feature selection to select specific number of features
 
-    def __init__(self):
+     :param features      : The radiomics features or clinical info dataset
+     :param clinical_info : The clinical info dataset (only the 'time' and 'event' field is needed in this function)
+     :param solution_count: The number of solution which is used in ensamble function [Currently we only use 1 solution]
+     :param feature_count : The number of features which should be chosen
+     :return: New feature dataframe
+     '''
 
-        # Import the necessary r libraries needed for mRMRe
-        self.matrix = importr('Matrix')
-        self.survival = importr('survival')
-        self.igraph = importr('igraph')
-        self.mrmre = importr('mRMRe')
-        self.logger = logging.getLogger(__name__)
 
-        # Launch the mRMRe
-        #robjects.r('ShowClass("mRMRe.Filter")')
-        robjects.r('set.thread.count(2)')
+    #Call the r wrapper to use mrmre for selecting features
+    #This function use mRMR.ensemble to return max relevant min redundant features
+    robjects.r('''
+                # create a function `mrmrSelection`
+                mrmrSelection <- function(df_all, feature_count= feature_count, solution_count = solution_count) {
+                    df_all$event <- as.numeric(df_all$event)
+                    df_all$surv <- with(df_all, Surv(time, event))
+                    df_all <- subset(df_all, select = -c(time,event) )
+                    df_all <- df_all[,colSums(is.na(df_all))<nrow(df_all)]
+                    surv_index = grep("surv", colnames(df_all)) 
+                    feature_data <- mRMR.data(df_all)
+                    feature_selected <- mRMR.ensemble(data = feature_data, target_indices = surv_index,feature_count= feature_count, solution_count = solution_count)
+                    result <-  as.data.frame(solutions(feature_selected)[1])
 
-    def mrmr_data(self,
-                  features : pd.DataFrame ,
-                  clinical_info : pd.DataFrame ):
-        '''
-        This function "merges" the features dataset and clinical info, to create a new features dataframe which meets
-        the criteria of mRMRe package, and convert the dataframe into mRMRe.data object
-
-        :param features      : The radiomics features or clinical info dataset
-        :param clinical_info : The clinical info dataset (only the 'time' field is needed in this function)
-        :return: The mRMR.data object of new feature dataframe
-        '''
-        #self.logger.info(features)
-        # Merge the features and labels (the survival time, which is the 'time' field of clinical information)
-        features = features.T
-        samples = clinical_info['id']
-
-        features = features.loc[samples]
-
-        # Concatenate the survival time to the features dataset
-        features = features.reset_index(drop=True)
-        clinical_info = clinical_info.reset_index(drop=True)
-
-        features = features.join(pd.DataFrame(clinical_info["event", "time"]))
-
-        # Make the survial time (label) as the first column in the dataframe
-        cols = features.columns.tolist()
-        cols = cols[-1:] + cols[:-1]
-        features = features[cols]
-
-        # Convert the features dataframe into the mRMRe.data object
-
-        return self.mrmre.mRMR_data(feature_types = "Surv", data=features)
-
-    def mrmr_ensemble(self,
-                      data,
-                      solution_count : int = 20,
-                      feature_count : int = 724,
-                      method : str = 'exhaustive'):
-        '''
-        This function call the ensemble method of mRMR, and return the selected features
-        :param data          : The input mRMRe.Data object (features)
-        :param solution_count: The number of solutions wanted
-        :param feature_count : The number of target features wanted in one solution
-        :param method        : The mRMR ensemble method, could be "bootstrap" and "exhaustive"
-        :return: The index list of features selected
-        '''
-
-        feature_selected = self.mrmre.mRMR_ensemble(solution_count=solution_count,
-                                                    feature_count=feature_count,
-                                                    data=data,
-                                                    target_indices=list(range(2,700)),
-                                                    method=method)
-
-        return self.mrmre.solutions(feature_selected)[0]
+                }
+                ''')
+    r_mrmrSelection = robjects.r['mrmrSelection']
+    # Merge the features and labels (the survival time, which are the 'time' and 'event'  field of clinical information)
+    features = features.T
+    samples = clinical_info['id']
+    features = features.loc[samples]
+    clinical_info.set_index('id', inplace=True)
+    features[['time', 'event']] = clinical_info[['time', 'event']]
+    all_features = r_mrmrSelection(features, feature_count= feature_count, solution_count = solution_count)
+    selected_features = pandas2ri.ri2py_dataframe(all_features)
+    #the dataframe index is diffrent in R and python
+    selected_features = selected_features.sub(1)
+    return selected_features.iloc[:,0]
 

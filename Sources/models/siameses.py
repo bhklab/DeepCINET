@@ -977,33 +977,38 @@ class ScalarOnlySiamese(BasicSiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            40,
+            400,
             "fc1"
+        )
+        y = self._dense(
+            x,
+            20,
+            "fcY"
         )
 
         x = self._dense(
             x,
-            30,
+            100,
             "fc2"
         )
 
 
         x = self._dense(
             x,
-            20,
+            50,
             "fc3"
         )
 
         x = self._dense(
             x,
-            10,
+            20,
             "fc4"
         )
 
         # Out: [batch, 1]
         x = self._dense(
-            x ,
-            5,
+            x + 0.5 * y,
+            10,
             "fc5",
             activation=tf.nn.relu
         )
