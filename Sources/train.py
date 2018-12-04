@@ -256,14 +256,15 @@ def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, tra
       :param train_ids: List of the train_ids that should be considered in mrmr
       :return: DataFrame that contain selected features
     """
-    clinical_df= pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED)
+    clinical_df= pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
     clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
+
     #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
     mrmr_list= data.mrmr_selection(features=dataframe_features, clinical_info=clinicals, solution_count=1, feature_count=mrmr_size)
     logger.info(mrmr_list)
-    #print(dataframe_features)
-    features = dataframe_features.loc[mrmr_list]
+    features = dataframe_features.iloc[mrmr_list] # todo check iloc is better or loc should check
     return features
+
 
 
 
@@ -329,7 +330,7 @@ def main(args: Dict[str, Any]) -> None:
     conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
 
-    features: pd.DataFrame = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED)
+    features: pd.DataFrame = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
     logger.info("read Feature DataFrame")
 
     with tf.Session(config=conf) as sess:
@@ -354,15 +355,13 @@ def main(args: Dict[str, Any]) -> None:
         for i, (train_ids, test_ids) in enum_generator:
             if mrmr_size > 0:
                 logger.info(type(train_ids))
-                features = select_mrmr_features(features, mrmr_size, train_ids)
-                print(features)
+                df_features = select_mrmr_features(features, mrmr_size, train_ids).copy()
             train_pairs, test_pairs, mixed_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
             summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
-            print(features)
-            batch_data = data.BatchData(features)
+            batch_data = data.BatchData(df_features)
 
             # Epoch iterations
             train_iterations(sess,
