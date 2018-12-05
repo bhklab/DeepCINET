@@ -977,7 +977,7 @@ class ScalarOnlySiamese(BasicSiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            400,
+            300,
             "fc1"
         )
         y = self._dense(
@@ -1007,12 +1007,19 @@ class ScalarOnlySiamese(BasicSiamese):
 
         # Out: [batch, 1]
         x = self._dense(
-            x + 0.5 * y,
+            #tf.concat([x , y],1),
+            x,
             10,
             "fc5",
             activation=tf.nn.relu
         )
 
+        x = self._dense(
+            x ,
+            20,
+            "fc6",
+            activation=tf.nn.relu
+        )
         return x
 
     def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:

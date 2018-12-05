@@ -261,7 +261,6 @@ def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, tra
 
     #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
     mrmr_list= data.mrmr_selection(features=dataframe_features, clinical_info=clinicals, solution_count=1, feature_count=mrmr_size)
-    logger.info(mrmr_list)
     features = dataframe_features.iloc[mrmr_list] # todo check iloc is better or loc should check
     return features
 
@@ -354,7 +353,6 @@ def main(args: Dict[str, Any]) -> None:
 
         for i, (train_ids, test_ids) in enum_generator:
             if mrmr_size > 0:
-                logger.info(type(train_ids))
                 df_features = select_mrmr_features(features, mrmr_size, train_ids).copy()
             train_pairs, test_pairs, mixed_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
             # Initialize all the variables
@@ -427,7 +425,7 @@ def deepCinet(model: str,
               random_labels = False,
               full_summary = True,
               save_model = True,
-              split = 1,
+              split = 1, # todo check if required to add split_seed and initial_seed to the argument
               split_seed= None,
               initial_seed = None,
               mrmr_size = 0):
@@ -454,6 +452,9 @@ def deepCinet(model: str,
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {batch_size}")
 
+    features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
+    logger.info("read Feature DataFrame")
+
     siamese_model = select_model(model,
                                  gpu_level=gpu_level,
                                  regularization=regularization,
@@ -467,7 +468,9 @@ def deepCinet(model: str,
     conf.gpu_options.allow_growth = gpu_allow_growth
 
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(cv_folds,
+        dataset = data.pair_data.SplitPairs()
+        enum_generator = get_sets_generator(dataset,
+                                            cv_folds,
                                             test_size,
                                             random_labels,
                                             splitting_model,
@@ -481,17 +484,20 @@ def deepCinet(model: str,
                 'correct': 0,
                 'c_index': []
             }
-
-        for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
+        for i, (train_ids, test_ids) in enum_generator:
+            if mrmr_size > 0:
+                 df_features = select_mrmr_features(features, mrmr_size, train_ids).copy()
+            else:
+                df_features = features.copy()
+            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_ids, test_ids, random=random_labels)
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
             summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
-            summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}" )
+            summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
             logger.info(f"Saving results at: {summaries_dir}")
-
             train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
- #           train_summary.add_graph(sess.graph)
-            batch_data = data.BatchData(mrmr_size)
+            batch_data = data.BatchData(df_features)
+            train_summary.add_graph(sess.graph)
 
             # Epoch iterations
             train_iterations(sess,
