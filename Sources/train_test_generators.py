@@ -3,14 +3,13 @@ import os
 import pathlib
 from typing import Dict, Tuple, Any, Iterator
 import pandas as pd
-
 import utils
-import data
+from data import pair_data,mrmrpy
 import yaml
 import random
 import shutil
 
-def get_sets_generator(dataset: data.pair_data.SplitPairs,
+def get_sets_generator(dataset: pair_data.SplitPairs,
                        cv_folds: int,
                        test_size: int,
                        random_labels: bool,
@@ -41,7 +40,8 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
         enum_generator = [(0, (train_ids, test_ids))]
         logger.info("1 fold")
     else:
-        enum_generator = dataset.folds(cv_folds, random=random_labels)
+        dataset.survival_categorizing(model, threshold, category = 5) # todo get rid of hard code
+        enum_generator = dataset.folds(cv_folds, random=random_labels, random_seed=random_seed)
     logger.debug("Folds created")
 
     return enum_generator
@@ -56,14 +56,20 @@ def main(args: Dict[str, Any]) -> None:
 
     with open("splitTestTrainConf.yml", 'r') as cfg_file:
         cfg = yaml.load(cfg_file)
+    #Numbers of train and test spliting
+    split_numbers = cfg['split_numbers']
+    #The output path is refer to the folder that all the output are in
     output_path = cfg['output_path']
     logger.info(f"output path: {output_path}")
-    random_states = list(range(cfg['split_numbers'] * 2))
+
+    #we randomly select a number to generate split based on the seed
     random.seed(1)
-    random_seeds =  random.shuffle(random_states)
+    random_states = random.sample(range(1, 100000), split_numbers)
+
 
     mrmr_sizes = cfg['mrmr']
     features= pd.read_csv(cfg['input_features'])
+    clinical_info = pd.read_csv(cfg['input_clinical'])
     train_test_columns = ['cv_folds', 'spliting_models', 'random_seed','test_train_path','feature_path','mrmr_size' ]
     trains_tests_description = pd.DataFrame(columns=train_test_columns)
 
@@ -73,14 +79,15 @@ def main(args: Dict[str, Any]) -> None:
     os.makedirs(output_path)
 
     #results_path.mkdir(parents=True, exist_ok=True)
-    dataset = data.pair_data.SplitPairs()
+    dataset = pair_data.SplitPairs()
     logger.info("read Feature DataFrame")
     for cv_folds in cfg['cv_folds']:
-        path=os.path.join(output_path,f"cv_{cv_folds}")
-        for random_seed in random_seeds:
-            path = os.path.join(path,f"random_seed_{random_seed}")
+        cv_path=os.path.join("",f"cv_{cv_folds}")
+        for n, random_seed in enumerate(random_states):
+            random_path = os.path.join(cv_path,f"random_seed_{n}")
             for splitting_model in cfg['splitting_models']:
-                path = os.path.join(path, f"splitting_models_{splitting_model}")
+                logger.info('splitting_model')
+                split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
                 enum_generator = get_sets_generator(dataset,
                                                     cv_folds,
                                                     cfg['test_size'],
@@ -89,25 +96,27 @@ def main(args: Dict[str, Any]) -> None:
                                                     random_seed
                                                     )
                 for i, (train_ids, test_ids) in enum_generator:
-                    train_ids.to_csv(os.path.join(path, f"train{i}.csv"))
-                    test_ids.to_csv(os.path.join(path, f"test{i}results.csv"))
-                    path=os.path.join(path,f"features{i}")
+                    pathlib.Path(os.path.join(output_path, split_path)).mkdir(parents=True, exist_ok=True)
+                    pd.DataFrame(train_ids).to_csv(os.path.join(output_path, split_path, f"train_fold{i}.csv"))
+                    pd.DataFrame(test_ids).to_csv(os.path.join(output_path, split_path, f"test_fold{i}.csv"))
+                    path=os.path.join(split_path,f"features_fold{i}")
                     for mrmr_size in mrmr_sizes:
-                        features_path = os.path.join(path,f"radiomic{mrmr_size}.csv")
-                        trains_tests_description.append(pd.DataFrame(cv_folds,
-                                                                     splitting_model,
-                                                                     random_seed,
-                                                                     path,
-                                                                     features_path,
-                                                                     mrmr_size
-                                                        ,columns=train_test_columns))
+                        features_path = os.path.join(output_path, path,f"radiomic{mrmr_size}.csv")
+                        trains_tests_description.append(pd.DataFrame({'cv_folds': cv_folds,
+                                                                                'spliting_models': splitting_model,
+                                                                                'random_seed': random_seed,
+                                                                                'test_train_path': path,
+                                                                                'feature_path': features_path,
+                                                                                'mrmr_size': mrmr_size
+                                                                                },index=[0]))
+                        pathlib.Path(os.path.join(output_path, path)).mkdir(parents=True, exist_ok=True)
                         if mrmr_size > 0:
-                            df_features = data.mrmrpy.select_mrmr_features(features, mrmr_size, train_ids).copy()
-                            df_features.to_csv(features_path)
+                            df_features = mrmrpy.select_mrmr_features(features,clinical_info , mrmr_size, train_ids).copy()
+                            df_features.to_csv(features_path, index=False)
                         else:
                             df_features = features.copy()
-                            df_features.to_csv(features_path)
-    trains_tests_description.to_csv()
+                            df_features.to_csv(features_path, index=False)
+    trains_tests_description.to_csv(os.path.join(output_path,'train_tests_description'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

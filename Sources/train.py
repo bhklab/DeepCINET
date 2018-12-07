@@ -300,6 +300,7 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
         enum_generator = [(0, (train_ids, test_ids))]
         logger.info("1 fold")
     else:
+        dataset.survival_categorizing(model, threshold, category=5)  # todo get rid of hard code
         enum_generator = dataset.folds(cv_folds, random=random_labels)
     logger.debug("Folds created")
 

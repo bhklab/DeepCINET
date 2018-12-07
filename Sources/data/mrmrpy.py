@@ -74,6 +74,6 @@ def select_mrmr_features(dataframe_features: pd.DataFrame, clinical_df: pd.DataF
     clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
 
     #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
-    mrmr_list= data.mrmr_selection(features=dataframe_features, clinical_info=clinicals, solution_count=1, feature_count=mrmr_size)
+    mrmr_list= mrmr_selection(features=dataframe_features, clinical_info=clinicals, solution_count=1, feature_count=mrmr_size)
     features = dataframe_features.iloc[mrmr_list] # todo check iloc is better or loc should check
     return features

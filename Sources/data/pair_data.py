@@ -35,8 +35,8 @@ class SplitPairs:
         self.std = 1
         self.logger = logging.getLogger(__name__)
 
-    def folds(self, n_folds: int = 4,
-              random: bool = False) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
+    def folds(self, n_folds: int = 4, random_seed = RANDOM_SEED,
+              random: bool = False, ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
         """
         Creates different folds of data for use with CV
         :param n_folds: Number of folds to be created, if negative, the number of folds will be created using
@@ -45,7 +45,7 @@ class SplitPairs:
                        It changes the labels randomly
         :return: Iterator with the fold number and its corresponding train and test sets
         """
-        skf = self._get_folds_generator(n_folds)
+        skf = self._get_folds_generator(n_folds, random_seed)
         n_folds = self.get_n_splits(n_folds)
         generator = skf.split(self.total_x, self.total_y)
 
@@ -65,8 +65,8 @@ class SplitPairs:
         return enum_generator
 
 
-    def get_n_splits(self, n_folds: int = 4) -> int:
-        return self._get_folds_generator(n_folds).get_n_splits(self.total_y, self.total_y)
+    def get_n_splits(self, n_folds: int = 4, random_seed = RANDOM_SEED) -> int:
+        return self._get_folds_generator(n_folds, random_seed).get_n_splits(self.total_y, self.total_y)
 
     def survival_categorizing(self, models, threshold, category : int = 8):
         """
@@ -87,11 +87,11 @@ class SplitPairs:
             block = int(clinic_time.size/category)
             for i in range(0, category):
                 self.clinical_data.loc[self.clinical_data['time'] > clinic_time[i * block], 'category'] = i #+(self.clinical_data['event']) * category
-            self.total_y = self.clinical_data['category'].values
+            self.category = self.clinical_data['category'].values
         if models == 2:
             self.clinical_data.loc[self.clinical_data['time'] > threshold, 'category'] = 2 + self.clinical_data['event']
             self.clinical_data.loc[self.clinical_data['time'] <= threshold, 'category'] = 0 + self.clinical_data['event']
-            self.total_y = self.clinical_data['category'].values
+            self.category = self.clinical_data['category'].values
 
 
     def train_test_split(self,
@@ -116,10 +116,10 @@ class SplitPairs:
         return train_ids, test_ids #self._create_train_test(train_ids, test_ids, random)
 
     @staticmethod
-    def _get_folds_generator(n_folds: int) -> BaseCrossValidator:
+    def _get_folds_generator(n_folds: int, random_seed = RANDOM_SEED) -> BaseCrossValidator:
         if n_folds < 0:
             return LeaveOneOut()
-        return StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=RANDOM_SEED)
+        return StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_seed)
 
 
     def create_train_test(self,
