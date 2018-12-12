@@ -1,0 +1,19 @@
+Config1: --model ScalarOnlySiamese --splitting-model 2 --threshold 2 --batch-size 10 --num-epochs 3
+clinic_path : /Users/farnoosh/Projects/DeepCINET/DATA/OPC/clinical_info.csv
+mixed_result_path: /Users/farnoosh/Projects/DeepCINET/DATA/OPC/Result/result.csv
+mixed_result_path_siamese: /Users/farnoosh/Projects/DeepCINET/DATA/OPC/result_siamese.csv
+result_path: /Users/farnoosh/Projects/DeepCINET/DATA/OPC/Result
+parameters:
+  model: ScalarOnlySiamese
+  cv_folds: 1
+  test_size: .25
+  gpu_level:  0
+  gpu_allow_growth: False
+  num_epochs: 2
+  batch_size: 20
+  learning_rate: 0.001
+  regularization: 0.01
+  splitting_model: 0
+  threshold: 3
+  bin_number: 4
+  dropout: 0.2
