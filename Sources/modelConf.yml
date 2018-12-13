@@ -3,6 +3,8 @@ clinic_path : /Users/farnoosh/Projects/DeepCINET/DATA/OPC/clinical_info.csv
 mixed_result_path: /Users/farnoosh/Projects/DeepCINET/DATA/OPC/Result/result.csv
 mixed_result_path_siamese: /Users/farnoosh/Projects/DeepCINET/DATA/OPC/result_siamese.csv
 result_path: /Users/farnoosh/Projects/DeepCINET/DATA/OPC/Result
+running_times: 5
+
 parameters:
   model: ScalarOnlySiamese
   cv_folds: 1
