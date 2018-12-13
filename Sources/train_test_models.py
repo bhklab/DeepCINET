@@ -221,7 +221,7 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.concat(result_data)
 
 
-def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
+def select_model(model_key: str, number_feature: int, **kwargs) -> models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
@@ -233,7 +233,7 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
     elif model_key == "ImageScalarSiamese":
         return models.ImageScalarSiamese(**kwargs)
     elif model_key == "ScalarOnlySiamese":
-        return models.ScalarOnlySiamese(**kwargs)
+        return models.ScalarOnlySiamese(number_feature, **kwargs)
     elif model_key == "ScalarOnlyDropoutSiamese":
         return models.ScalarOnlyDropoutSiamese(**kwargs)
     elif model_key == "ImageSiamese":
@@ -349,8 +349,9 @@ def main(args: Dict[str, Any]) -> None:
     num_epochs = args['num_epochs']
     results_path=args['results_path']
     save_model = args['save_model']
-
+    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
     siamese_model = select_model(model,
+                                 number_feature=number_feature,
                                  gpu_level=gpu_level,
                                  regularization=regularization,
                                  dropout=dropout,
@@ -388,6 +389,8 @@ def main(args: Dict[str, Any]) -> None:
         for i, (train_ids, test_ids) in enum_generator:
             if mrmr_size > 0:
                 df_features = data.select_mrmr_features(features,clinical_df.copy(), mrmr_size, train_ids).copy()
+            else:
+                df_features = features.copy()
             train_pairs, test_pairs, mixed_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
@@ -495,8 +498,9 @@ def deepCinet(model: str,
 
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
     input_path = settings.DATA_PATH_INPUT_TEST_TRAIN
-
+    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
     siamese_model = select_model(model,
+                                 number_feature=number_feature,
                                  gpu_level=gpu_level,
                                  regularization=regularization,
                                  dropout=dropout,

@@ -221,7 +221,7 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.concat(result_data)
 
 
-def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
+def select_model(model_key: str, number_feature: int, **kwargs) -> models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
@@ -233,7 +233,7 @@ def select_model(model_key: str, **kwargs) -> models.basics.BasicSiamese:
     elif model_key == "ImageScalarSiamese":
         return models.ImageScalarSiamese(**kwargs)
     elif model_key == "ScalarOnlySiamese":
-        return models.ScalarOnlySiamese(**kwargs)
+        return models.ScalarOnlySiamese(number_feature, **kwargs)
     elif model_key == "ScalarOnlyDropoutSiamese":
         return models.ScalarOnlyDropoutSiamese(**kwargs)
     elif model_key == "ImageSiamese":
@@ -319,13 +319,16 @@ def main(args: Dict[str, Any]) -> None:
     logger.info(f"Using batch size: {args['batch_size']}")
     mrmr_size = args['mrmr_size']
     random_labels = args['random_labels']
+    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
     siamese_model = select_model(args['model'],
+                                 number_feature=number_feature,
                                  gpu_level=args['gpu_level'],
                                  regularization=args['regularization'],
                                  dropout=args['dropout'],
                                  learning_rate=args['learning_rate'],
                                  use_distance=args['use_distance'],
-                                 full_summary=args['full_summary'])
+                                 full_summary=args['full_summary']
+                                )
 
     conf = tf.ConfigProto(log_device_placement=args['log_device'])
     conf.gpu_options.allow_growth = args['gpu_allow_growth']
@@ -355,6 +358,8 @@ def main(args: Dict[str, Any]) -> None:
         for i, (train_ids, test_ids) in enum_generator:
             if mrmr_size > 0:
                 df_features = select_mrmr_features(features, mrmr_size, train_ids).copy()
+            else:
+                df_features = features.copy()
             train_pairs, test_pairs, mixed_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
             # Initialize all the variables
             logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
@@ -456,6 +461,8 @@ def deepCinet(model: str,
     features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
     logger.info("read Feature DataFrame")
 
+    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
+
     siamese_model = select_model(model,
                                  gpu_level=gpu_level,
                                  regularization=regularization,
@@ -463,7 +470,8 @@ def deepCinet(model: str,
                                  learning_rate=learning_rate,
                                  use_distance=use_distance,
                                  full_summary=full_summary,
-                                 seed=initial_seed)
+                                 seed=initial_seed,
+                                 number_feature=number_feature)
 
     conf = tf.ConfigProto(log_device_placement=log_device)
     conf.gpu_options.allow_growth = gpu_allow_growth

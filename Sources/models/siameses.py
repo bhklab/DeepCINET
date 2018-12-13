@@ -966,9 +966,9 @@ class ScalarOnlySiamese(BasicSiamese):
     :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, number_features: int, **kwargs):
         #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
-        self.x_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
 
         super().__init__(**kwargs)
 
