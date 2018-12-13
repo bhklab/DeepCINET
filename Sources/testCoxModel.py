@@ -124,10 +124,6 @@ def main(args: Dict[str, Any]) -> None:
         print(cph.predict_survival_function(radiomic_features))
 
 
-
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Fit the data with a Cox model",
