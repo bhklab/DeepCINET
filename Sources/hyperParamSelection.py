@@ -95,15 +95,15 @@ def trainDeepCInet(hparams):
 # set up our argparser and make the model tunable
 # Use either random_search or grid_search for tuning
 parser = HyperOptArgumentParser(strategy='random_search')
-parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese3')
+parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese4')
 parser.add_argument('--log_path', default='/Users/farnoosh/Desktop/test')
 
 parser.opt_list('--model', default='ScalarOnlySiamese', options=['ScalarOnlySiamese'], tunable=True)
-parser.opt_list('--mrmr_size', default=300, options=[200,300,400])
+parser.opt_list('--mrmr_size', default=300, options=[200, 300, 400])
 parser.opt_list('--num_epochs', default=50, options=[50, 100], tunable=True)
 parser.opt_list('--batch_size', default=250, options=[250], tunable=True)
 parser.opt_list('--regularization', default=0.5, options=[0.1, 0.5], tunable=True)
-parser.opt_list('--learningRate', default=0.0001, options=[0.001,0.0003,0.0001,0.00003], tunable=True)
+parser.opt_list('--learningRate', default=0.0001, options=[0.001, 0.0003, 0.0001, 0.00003], tunable=True)
 
 hyperparams = parser.parse_args()
 
