@@ -61,19 +61,24 @@ def mrmr_selection(features : pd.DataFrame,
     selected_features = selected_features.sub(1)
     return selected_features.iloc[:,0]
 
-def select_mrmr_features(dataframe_features: pd.DataFrame, clinical_df: pd.DataFrame , mrmr_size : int, train_ids: List):
+
+def select_mrmr_features(dataframe_features: pd.DataFrame,
+                         clinical_df: pd.DataFrame,
+                         mrmr_size : int,
+                         train_ids: List):
     """
       select the mrmr features
 
       :param dataframe_features: DataFrame of the features
+      :param clinical_df: DataFrame of the clinical data
       :param mrmr_size: The number of features which should be selected with mrmr
       :param train_ids: List of the train_ids that should be considered in mrmr
       :return: DataFrame that contain selected features
     """
-    #clinical_df= pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
     clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
-
-    #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
-    mrmr_list= mrmr_selection(features=dataframe_features, clinical_info=clinicals, solution_count=1, feature_count=mrmr_size)
+    mrmr_list= mrmr_selection(features=dataframe_features,
+                              clinical_info=clinicals,
+                              solution_count=1,
+                              feature_count=mrmr_size)
     features = dataframe_features.iloc[mrmr_list] # todo check iloc is better or loc should check
     return features

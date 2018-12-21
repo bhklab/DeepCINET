@@ -3,6 +3,7 @@ import data
 import settings
 import utils
 from lifelines import CoxPHFitter
+from lifelines.utils import concordance_index
 from typing import Dict, Tuple, Any, Iterator
 import argparse
 import os
@@ -26,7 +27,7 @@ def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, tra
     clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
     #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
     mrmr_list= data.mrmr_selection(features=dataframe_features, clinical_info=clinicals, solution_count=1, feature_count=mrmr_size)
-    logger.info(mrmr_list)
+    logger.info(f"mrmr list contains{mrmr_list.values}")
     #print(dataframe_features)
     features = dataframe_features.loc[mrmr_list]
     return features
@@ -70,6 +71,11 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
 
     return enum_generator
 
+def del_low_var(df):
+    low_variance = df.columns[df.var(0) < 10e-5]
+    logger.info(f"The columns with low variance are removed{low_variance}")
+    df.drop(low_variance, axis=1, inplace=True)
+    logger.info(df.columns)
 
 
 
@@ -85,24 +91,19 @@ def main(args: Dict[str, Any]) -> None:
 
     clinical_info = dataset.clinical_data
     #clinical_info.set_index('id', inplace=True)
-    radiomic_features = features_df.T
 
-    radiomic_features = pd.merge(radiomic_features, clinical_info[['id','event','time']] , how='inner', left_index=True, right_on='id')
-    #radiomic_features['event'] = clinical_info['event']
-    #radiomic_features['time'] = clinical_info['time']
     logger.info("read Feature DataFrame")
 
     enum_generator = get_sets_generator(dataset,
                                         args['cv_folds'],
                                         args['test_size'],
-                                        args['random_labels'],
+                                        False,
                                         args['splitting_model'],
                                         args['threshold'],
                                         None
                                         )
     for i, (train_ids, test_ids) in enum_generator:
         if mrmr_size > 0:
-            logger.info(train_ids)
             features = select_mrmr_features(features_df.copy(), mrmr_size, train_ids)
         else:
             features = features_df.copy()
@@ -113,15 +114,22 @@ def main(args: Dict[str, Any]) -> None:
         radiomic_features = pd.merge(features.T, clinical[ ['id', 'event', 'time']], how='inner',
                                      left_index=True, right_on='id')
         radiomic_features.drop(['id'] ,axis = 'columns', inplace=True)
-        print(radiomic_features)
-        cph.fit(radiomic_features, duration_col='time', event_col='event', show_progress=True)
+        radiomic_features = radiomic_features.dropna()
+        del_low_var(radiomic_features)
+        logger.info(radiomic_features.columns)
+
+
+        #print(radiomic_features)
+        cph.fit(radiomic_features, duration_col='time', event_col='event', show_progress=True, step_size=0.2)
+        cph.print_summary()
 
         clinical = clinical_info.iloc[test_ids]
-        radiomic_features = pd.merge(features.T, clinical[['id', 'event', 'time']], how='inner',
+        radiomic_features_test = pd.merge(features.T, clinical[['id', 'event', 'time']], how='inner',
                                      left_index=True, right_on='id')
-        radiomic_features.drop(['id'], axis='columns', inplace=True)
-        print(radiomic_features)
-        print(cph.predict_survival_function(radiomic_features))
+        radiomic_features_test.drop(['id'], axis='columns', inplace=True)
+
+        print(concordance_index(radiomic_features_test['time'], -cph.predict_partial_hazard(radiomic_features_test).values, radiomic_features_test['event']))
+        #print(cph.predict_survival_function(radiomic_features))
 
 
 if __name__ == '__main__':
@@ -156,20 +164,7 @@ if __name__ == '__main__':
         default=.25,
         type=float
     )
-    optional.add_argument(
-        "--gpu-level",
-        help="Amount of GPU resources used when fitting the model. 0: no GPU usage, "
-             "1: only second conv layers, 2: all conv layers, "
-             "3: all layers and parameters are on the GPU",
-        default=0,
-        type=int
-    )
-    optional.add_argument(
-        "--gpu-allow-growth",
-        help="Allow Tensorflow to use dynamic allocations with GPU memory",
-        default=False,
-        action="store_true",
-    )
+
 
     optional.add_argument(
         "--results-path",
@@ -201,18 +196,6 @@ if __name__ == '__main__':
     optional.add_argument(
         "--log-device",
         help="Log device placement when creating all the tensorflow tensors",
-        action="store_true",
-        default=False
-    )
-    optional.add_argument(
-        "--save-model",
-        help="Save the model to the location specified at the results path",
-        action="store_true",
-        default=False
-    )
-    optional.add_argument(
-        "--random-labels",
-        help="Whether to use or not random labels, use ONLY to validate a model",
         action="store_true",
         default=False
     )
