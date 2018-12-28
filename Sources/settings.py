@@ -38,6 +38,9 @@ DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
 DATA_PATH_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
 DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
 DATA_PATH_RADIOMIC_PROCESSED = os.path.abspath(os.getenv('DATA_RADIOMIC_PROCESSED'))
+DATA_PATH_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_CLINIC_PROCESSED'))
+DATA_PATH_VOLUME_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_VOLUME_CLINIC_PROCESSED'))
+
 DATA_PATH_INPUT_TEST_TRAIN = os.path.abspath(os.getenv('DATA_PATH_INPUT_TEST_TRAIN'))
 
 # Log dir, fallback to current directory
@@ -73,5 +76,5 @@ else:
     np.random.seed(RANDOM_SEED)
 
 #: The total number of features that are provided by the CSV of radiomic features
-NUMBER_FEATURES = 722
+NUMBER_FEATURES = 724
 VOLUME_FEATURE_INDEX = 26
