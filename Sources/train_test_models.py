@@ -524,7 +524,8 @@ def deepCinet(model: str,
             cv_path = os.path.join(input_path, f"cv_{cv_folds}")
             random_path = os.path.join(cv_path, f"random_seed_{split_number}")
             split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
-            enum_generator = get_sets_reader(cv_folds, split_path,mrmr_size)
+            uniq_random = os.path.join(split_path,f"T")
+            enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size)
             for i, (train_ids, test_ids, df_features) in enum_generator:
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_ids, test_ids,
                                                                                  random=random_labels)
@@ -532,6 +533,7 @@ def deepCinet(model: str,
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
                 summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
+                #current.Format("01-02-2006")
                 logger.info(f"Saving results at: {summaries_dir}")
                 train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
                 batch_data = data.BatchData(df_features)
@@ -651,7 +653,7 @@ def deepCinet(model: str,
             if counts[key]['total'] <= 0:
                 continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
-        return counts,predictions
+        return counts,predictions,save_model
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

@@ -68,7 +68,7 @@ def main(args: Dict[str, Any]) -> None:
 
 
     mrmr_sizes = cfg['mrmr']
-    features= pd.read_csv(cfg['input_features'])
+    features= pd.read_csv(cfg['input_features'], low_memory=False)
     clinical_info = pd.read_csv(cfg['input_clinical'])
     train_test_columns = ['cv_folds', 'spliting_models', 'random_seed','test_train_path','feature_path','mrmr_size' ]
     trains_tests_description = pd.DataFrame(columns=train_test_columns)

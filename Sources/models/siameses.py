@@ -1086,41 +1086,30 @@ class ScalarOnlySiamese(BasicSiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            300,
+            80,
             "fc1"
-        )
-        x = tf.layers.dropout(
-            x,
-            rate=self._dropout,
-            training=self.training
         )
         y = self._dense(
             x,
-            20,
+            5,
             "fcY"
         )
 
         x = self._dense(
             x,
-            200,
+            50,
             "fc2"
         )
-        x = tf.layers.dropout(
-            x,
-            rate=self._dropout,
-            training=self.training
-        )
 
-
-        x = self._dense(
-            x,
-            100,
-            "fc3"
-        )
+  #      x = self._dense(
+  #          x,
+  #          100,
+  #          "fc3"
+  #      )
 
         x = self._dense(
             x,
-            50,
+            20,
             "fc4"
         )
 
@@ -1133,8 +1122,8 @@ class ScalarOnlySiamese(BasicSiamese):
         )
 
         x = self._dense(
-            x ,
-            20,
+            x,
+            5,
             "fc6",
             activation=tf.nn.relu
         )

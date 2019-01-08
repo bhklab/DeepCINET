@@ -95,19 +95,19 @@ def trainDeepCInet(hparams):
 # set up our argparser and make the model tunable
 # Use either random_search or grid_search for tuning
 parser = HyperOptArgumentParser(strategy='random_search')
-parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese4')
+parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese7')
 parser.add_argument('--log_path', default='/Users/farnoosh/Desktop/test')
 
 parser.opt_list('--model', default='ScalarOnlySiamese', options=['ScalarOnlySiamese'], tunable=True)
-parser.opt_list('--mrmr_size', default=300, options=[200, 300, 400])
-parser.opt_list('--num_epochs', default=50, options=[50, 100], tunable=True)
+parser.opt_list('--mrmr_size', default=40, options=[40, 200], tunable=True)
+parser.opt_list('--num_epochs', default=100, options=[200,400], tunable=True)
 parser.opt_list('--batch_size', default=250, options=[250], tunable=True)
-parser.opt_list('--regularization', default=0.5, options=[0.1, 0.5], tunable=True)
-parser.opt_list('--learningRate', default=0.0001, options=[0.001, 0.0003, 0.0001, 0.00003], tunable=True)
+parser.opt_list('--regularization', default=0.5, options=[0.5,0.8, 1.5], tunable=True)
+parser.opt_list('--learningRate', default=0.0001, options=[0.0003, 0.0002, 0.0001], tunable=True)
 
 hyperparams = parser.parse_args()
 
 
 # optimize on 4 gpus at the same time
 # each gpu will get 1 experiment with a set of hyperparams
-hyperparams.optimize_parallel_cpu(trainDeepCInet, nb_trials=500, nb_workers=5)
+hyperparams.optimize_parallel_cpu(trainDeepCInet, nb_trials=100, nb_workers=2)

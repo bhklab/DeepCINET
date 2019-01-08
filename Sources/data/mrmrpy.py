@@ -8,6 +8,7 @@ import rpy2.robjects as robjects
 import rpy2.robjects.packages as rpackages
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
+from sklearn.feature_selection import VarianceThreshold
 
 pandas2ri.activate()
 from typing import Iterator, Tuple, Generator, List, Dict
@@ -50,7 +51,7 @@ def mrmr_selection(features : pd.DataFrame,
                 ''')
     r_mrmrSelection = robjects.r['mrmrSelection']
     # Merge the features and labels (the survival time, which are the 'time' and 'event'  field of clinical information)
-    features = features.T
+    features = features.T # todo apply on all the model
     samples = clinical_info['id']
     features = features.loc[samples]
     clinical_info.set_index('id', inplace=True)
