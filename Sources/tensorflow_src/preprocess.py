@@ -17,7 +17,7 @@ import os
 import argparse
 
 import data.image_data
-import settings
+import tensorflow_src.settings as settings
 import multiprocessing
 
 import data

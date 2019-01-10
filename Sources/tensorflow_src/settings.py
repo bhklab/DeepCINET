@@ -6,7 +6,7 @@ import numpy as np
 
 import dotenv
 
-APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
+APP_ROOT = os.path.join(os.path.dirname(__file__), "../../")
 
 dotenv.load_dotenv(os.path.join(APP_ROOT, ".env"), verbose=True)
 
@@ -38,7 +38,7 @@ DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
 DATA_PATH_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
 DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
 DATA_PATH_RADIOMIC_PROCESSED = os.path.abspath(os.getenv('DATA_RADIOMIC_PROCESSED'))
-DATA_PATH_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_CLINIC_PROCESSED'))
+# DATA_PATH_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_CLINIC_PROCESSED'))
 DATA_PATH_VOLUME_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_VOLUME_CLINIC_PROCESSED'))
 
 DATA_PATH_INPUT_TEST_TRAIN = os.path.abspath(os.getenv('DATA_PATH_INPUT_TEST_TRAIN'))

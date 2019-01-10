@@ -3,7 +3,7 @@ from test_tube import Experiment, HyperOptArgumentParser
 import pandas as pd
 import random
 import yaml
-import train_test_models
+from tensorflow_src import train_test_models
 import os
 
 """
@@ -41,20 +41,20 @@ def trainDeepCInet(hparams):
     for i in range(running_times):
 
         counts, predictions = train_test_models.deepCinet(model = hparams.model,
-                                              num_epochs= hparams.num_epochs,
-                                              batch_size= hparams.batch_size,
-                                              splitting_model=1,
-                                              split=random_states[i],
-                                              save_model=True,
-                                              split_seed=random_states[i],
-                                              regularization=hparams.regularization,
-                                              initial_seed=random_states[i],
-                                              learning_rate=hparams.learningRate,
-                                              mrmr_size = hparams.mrmr_size,
-                                              read_splits = True,
-                                              split_number=i,
-                                              cv_folds=5
-                                              )
+                                                          num_epochs= hparams.num_epochs,
+                                                          batch_size= hparams.batch_size,
+                                                          splitting_model=1,
+                                                          split=random_states[i],
+                                                          save_model=True,
+                                                          split_seed=random_states[i],
+                                                          regularization=hparams.regularization,
+                                                          initial_seed=random_states[i],
+                                                          learning_rate=hparams.learningRate,
+                                                          mrmr_size = hparams.mrmr_size,
+                                                          read_splits = True,
+                                                          split_number=i,
+                                                          cv_folds=5
+                                                          )
 
         counts['train']['c_index'] = sum([v[1] for v in counts['train']['c_index']]) / float(
             len(counts['train']['c_index']))

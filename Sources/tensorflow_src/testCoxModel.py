@@ -1,6 +1,6 @@
 import pandas as pd
 import data
-import settings
+import tensorflow_src.settings as settings
 import utils
 from lifelines import CoxPHFitter
 from lifelines.utils import concordance_index
