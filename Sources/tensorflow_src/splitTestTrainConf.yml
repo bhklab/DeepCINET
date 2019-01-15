@@ -1,8 +1,8 @@
-mrmr: [50,100,250,500]
-cv_folds: [1,5,6]
-test_size: 0.25
-split_numbers: 100
-splitting_models: [1]
-output_path: '/Users/farnoosh/Projects/DeepCINET/Data/OPC/input_test'
-input_clinical: '/Users/farnoosh/Projects/DeepCINET/Data/OPC/clinical_info.csv'
-input_features: '/Users/farnoosh/Projects/DeepCINET/Data/OPC/OPC1_radiomic_features.csv'
+mrmr: [50,100,250,500] # number of diffrent mrmr
+cv_folds: [1,5,6] #number of folds
+test_size: 0.25  # test size
+split_numbers: 100 # number of different splitting
+splitting_models: [1] # the model of splitting that can be
+output_path: '/path/to/output/' # Set to the path to the output folder
+input_clinical: '/path/to/clinical/' # Set to the path to the clinical data
+input_features: '/path/to/radiomic' # Set to the path to the radiomic data
