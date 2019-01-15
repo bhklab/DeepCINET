@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import pandas as pd
 #import STprediction
-import train_test_models
+from tensorflow_src import train_test_models
 import seaborn as sns
 import random
 import yaml
 
-from joblib import Parallel, delayed
 import multiprocessing
 
 sns.set()

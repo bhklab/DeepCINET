@@ -1,6 +1,9 @@
 import argparse
 import os
 import pathlib
+import sys
+# to import from other local packages in the model which are in diffrent folder
+sys.path.append('../')
 from typing import Dict, Tuple, Any, Iterator
 import pandas as pd
 import utils
@@ -8,6 +11,7 @@ from data import pair_data,mrmrpy
 import yaml
 import random
 import shutil
+
 
 def get_sets_generator(dataset: pair_data.SplitPairs,
                        cv_folds: int,

@@ -3,7 +3,7 @@ import logging.handlers
 import os
 import sys
 
-import settings
+import tensorflow_src.settings as settings
 
 file_formatter = logging.Formatter("[%(asctime)s - %(name)s] %(levelname)s: %(message)s")
 console_formatter = logging.Formatter("(%(name)s): %(message)s")

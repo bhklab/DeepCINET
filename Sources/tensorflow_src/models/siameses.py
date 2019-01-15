@@ -25,7 +25,7 @@ from typing import Dict, Any, Union, Tuple
 import tensorflow as tf
 import numpy as np
 import data
-import settings
+import tensorflow_src.settings as settings
 from .basics import BasicImageSiamese, BasicSiamese
 
 

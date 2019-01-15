@@ -72,24 +72,24 @@ optional named arguments:
 import argparse
 import os
 import pathlib
-from typing import Dict, Tuple, Any, Iterator
+from typing import Any
 
 import tensorflow as tf
 import pandas as pd
 
 import data
-import models
-import models.basics
-import settings
+import tensorflow_src.models as models
+import tensorflow_src.models.basics
+import tensorflow_src.settings as settings
 import utils
 
 from tensorflow.core.protobuf import config_pb2
-from typing import Iterator, Tuple, Generator, List, Dict
+from typing import Iterator, Tuple, Dict
 
 logger = utils.init_logger("start")
 
 def train_iterations(sess: tf.Session,
-                     model: models.basics.BasicSiamese,
+                     model: tensorflow_src.models.basics.BasicSiamese,
                      batch_data: data.BatchData,
                      pairs: pd.DataFrame,
                      summary_writer: tf.summary.FileWriter,
@@ -156,7 +156,7 @@ def train_iterations(sess: tf.Session,
 
 
 def test_iterations(sess: tf.Session,
-                    model: models.basics.BasicSiamese,
+                    model: tensorflow_src.models.basics.BasicSiamese,
                     batch_data: data.BatchData,
                     pairs: pd.DataFrame,
                     batch_size: int) -> Tuple[int, int, pd.DataFrame]:
@@ -221,7 +221,7 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.concat(result_data)
 
 
-def select_model(model_key: str, number_feature: int, **kwargs) -> models.basics.BasicSiamese:
+def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_src.models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
@@ -242,6 +242,13 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> models.basics
         return models.ResidualImageScalarSiamese(**kwargs)
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
+    elif model_key == "ClinicalOnlySiamese":
+        return models.ClinicalOnlySiamese(**kwargs)
+    elif model_key == "ClinicalVolumeSiamese":
+        return models.ClinicalVolumeSiamese(**kwargs)
+    elif model_key == "ClinicalRadiomicSiamese":
+        return models.ClinicalRadiomicSiamese(**kwargs)
+
     else:
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
@@ -322,134 +329,14 @@ def get_sets_reader(cv_folds: int,
 ################
 #     MAIN     #
 ################
-def main(args: Dict[str, Any]) -> None:
-    """
-    Main function
-    :param args: Command Line Arguments
-    """
-    logger.info("Script to train a siamese neural network model")
-    logger.info(f"Using batch size: {args['batch_size']}")
-    mrmr_size = args['mrmr_size']
-    random_labels = args['random_labels']
-    model = args['model']
-    gpu_level = args['gpu_level']
-    regularization = args['regularization']
-    dropout = args['dropout']
-    learning_rate = args['learning_rate']
-    use_distance = args['use_distance']
-    full_summary = args['full_summary']
-    log_device = args['log_device']
-    gpu_allow_growth = args['gpu_allow_growth']
-    cv_folds = args['cv_folds']
-    test_size = args['test_size']
-    random_labels = args['random_labels']
-    splitting_model = args['splitting_model']
-    threshold = args['threshold']
-    batch_size = args['batch_size']
-    num_epochs = args['num_epochs']
-    results_path=args['results_path']
-    save_model = args['save_model']
-    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
-    siamese_model = select_model(model,
-                                 number_feature=number_feature,
-                                 gpu_level=gpu_level,
-                                 regularization=regularization,
-                                 dropout=dropout,
-                                 learning_rate=learning_rate,
-                                 use_distance=use_distance,
-                                 full_summary=full_summary)
-
-    conf = tf.ConfigProto(log_device_placement=log_device)
-    conf.gpu_options.allow_growth = gpu_allow_growth
-
-    features: pd.DataFrame = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
-    clinical_df = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
-    logger.info("read Feature DataFrame")
-
-    with tf.Session(config=conf) as sess:
-        dataset = data.pair_data.SplitPairs()
-        enum_generator = get_sets_generator(dataset,
-                                            cv_folds,
-                                            test_size,
-                                            random_labels,
-                                            splitting_model,
-                                            threshold,
-                                            mrmr_size,
-                                            None
-                                            )
-
-        counts = {}
-        for key in ['train', 'test', 'mixed']:
-            counts[key] = {
-                'total': 0,
-                'correct': 0,
-                'c_index': []
-            }
-
-        for i, (train_ids, test_ids) in enum_generator:
-            if mrmr_size > 0:
-                df_features = data.select_mrmr_features(features,clinical_df.copy(), mrmr_size, train_ids).copy()
-            else:
-                df_features = features.copy()
-            train_pairs, test_pairs, mixed_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
-            # Initialize all the variables
-            logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
-            summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
-            train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
-            batch_data = data.BatchData(df_features)
-
-            # Epoch iterations
-            train_iterations(sess,
-                             siamese_model,
-                             batch_data,
-                             train_pairs,
-                             train_summary,
-                             batch_size,
-                             num_epochs)
-
-            predictions = {}
-            for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
-                if len(pairs) <= 0:
-                    continue
-                logger.info(f"Computing {name} c-index")
-                correct, total, results = \
-                    test_iterations(sess,
-                                    siamese_model,
-                                    batch_data,
-                                    pairs,
-                                    batch_size)
-
-                correct = int(correct)
-
-                c_index = correct/total
-
-                counts[name]['total'] += total
-                counts[name]['correct'] += correct
-                counts[name]['c_index'].append((i, c_index))
-
-                predictions[name] = results
-
-                logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
-                            f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
-
-            # Save each fold in a different directory
-            results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
-            logger.info(f"Saving results at: {results_save_path}")
-            utils.save_results(sess, predictions, results_save_path,save_model)
-            logger.info("\r ")
-
-        for key in counts:
-            if counts[key]['total'] <= 0:
-                continue
-            logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
-
 def deepCinet(model: str,
-              cv_folds: int= 1,
+              cv_folds: int = 1,
               test_size: float = .25,
-              gpu_level : int = 0  ,
-              gpu_allow_growth = False,
-              num_epochs:int = 1,
-              batch_size:int = 20,
+              gpu_level: int = 0,
+              gpu_allow_growth=False,
+              num_epochs: int = 1,
+              batch_size: int = 20,
+              data_type: str = 'radiomic',
               results_path: str = settings.SESSION_SAVE_PATH,
               learning_rate: int = 0.001,
               regularization: float = 0.01,
@@ -457,17 +344,17 @@ def deepCinet(model: str,
               threshold: float = 3,
               bin_number: int = 4,
               dropout: float = 0.2,
-              log_device = False,
-              use_distance = False,
-              random_labels = False,
-              full_summary = True,
-              save_model = True,
-              split = 1, # todo check if required to add split_seed and initial_seed to the argument
-              split_seed= None,
-              split_number = None, #it is used for the time we are using the generated test and train sets
-              initial_seed = None,
-              mrmr_size = 0,
-              read_splits = False):
+              log_device=False,
+              use_distance=False,
+              random_labels=False,
+              full_summary=True,
+              save_model=True,
+              split=1,  # todo check if required to add split_seed and initial_seed to the argument
+              split_seed=None,
+              split_number=None,  # it is used for the time we are using the generated test and train sets
+              initial_seed=None,
+              mrmr_size=0,
+              read_splits=False):
     """
     deepCient
     :param args: Command Line Arguments
@@ -492,7 +379,14 @@ def deepCinet(model: str,
     logger.info(f"Using batch size: {batch_size}")
 
     # read features and clinical data frame the path is defined in the settings.py
-    features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
+    if data_type == "radiomic":
+        features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
+    elif data_type == "clinical":
+        features = pd.read_csv(settings.DATA_PATH_CLINIC_PROCESSED, index_col=0)
+    elif data_type == "clinicalVolume":
+        features = pd.read_csv(settings.DATA_PATH_VOLUME_CLINIC_PROCESSED, index_col=0)
+
+    logger.info(f"number of features is {len(features.index)}")
     clinical_df = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
     logger.info("read Feature DataFrame")
 
@@ -524,7 +418,6 @@ def deepCinet(model: str,
             cv_path = os.path.join(input_path, f"cv_{cv_folds}")
             random_path = os.path.join(cv_path, f"random_seed_{split_number}")
             split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
-            uniq_random = os.path.join(split_path,f"T")
             enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size)
             for i, (train_ids, test_ids, df_features) in enum_generator:
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_ids, test_ids,
@@ -533,7 +426,6 @@ def deepCinet(model: str,
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
                 summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
-                #current.Format("01-02-2006")
                 logger.info(f"Saving results at: {summaries_dir}")
                 train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
                 batch_data = data.BatchData(df_features)
@@ -592,7 +484,7 @@ def deepCinet(model: str,
 
             for i, (train_ids, test_ids) in enum_generator:
                 if mrmr_size > 0:
-                    df_features = data.select_mrmr_features(features, clinical_df.copy(),mrmr_size, train_ids).copy()
+                    df_features = data.select_mrmr_features(features, clinical_df.copy(), mrmr_size, train_ids).copy()
                 else:
                     df_features = features.copy()
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_ids, test_ids, random=random_labels)
@@ -644,7 +536,7 @@ def deepCinet(model: str,
                 # Save each fold in a different directory
 
                 results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
-                results_save_path = os.path.join(results_save_path, f"split_{split:0>2}" )
+                results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
                 logger.info(f"Saving results at: {results_save_path}")
                 utils.save_results(sess, predictions, results_save_path, save_model)
                 logger.info("\r ")
@@ -653,7 +545,65 @@ def deepCinet(model: str,
             if counts[key]['total'] <= 0:
                 continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
-        return counts,predictions,save_model
+        return counts, predictions
+
+
+def main(args: Dict[str, Any]) -> None:
+    """
+    Main function
+    :param args: Command Line Arguments
+    """
+    logger.info("Script to train a siamese neural network model")
+    logger.info(f"Using batch size: {args['batch_size']}")
+    data_type = args['data_type']
+    mrmr_size = args['mrmr_size']
+    random_labels = args['random_labels']
+    model = args['model']
+    gpu_level = args['gpu_level']
+    regularization = args['regularization']
+    dropout = args['dropout']
+    learning_rate = args['learning_rate']
+    use_distance = args['use_distance']
+    full_summary = args['full_summary']
+    log_device = args['log_device']
+    gpu_allow_growth = args['gpu_allow_growth']
+    cv_folds = args['cv_folds']
+    test_size = args['test_size']
+    random_labels = args['random_labels']
+    splitting_model = args['splitting_model']
+    threshold = args['threshold']
+    batch_size = args['batch_size']
+    num_epochs = args['num_epochs']
+    results_path=args['results_path']
+    save_model = args['save_model']
+    read_splits = args['read-split']
+    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
+
+    deepCinet(model = model,
+              cv_folds = cv_folds,
+              test_size = test_size,
+              gpu_level = gpu_level,
+              num_epochs = num_epochs,
+              batch_size = batch_size,
+              data_type = data_type,
+              results_path = results_path,
+              learning_rate = learning_rate,
+              regularization = regularization,
+              splitting_model = splitting_model,
+              threshold = threshold,
+              bin_number = 4,
+              dropout = dropout,
+              log_device = log_device,
+              use_distance = use_distance,
+              random_labels = random_labels,
+              full_summary = full_summary,
+              split = 1,
+              split_seed = None,
+              split_number = None,
+              mrmr_size = mrmr_size,
+              read_splits = read_splits)
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -811,6 +761,13 @@ if __name__ == '__main__':
         help="The model of generationg and using train test",
         default=0,
         type=int
+    )
+
+    optional.add_argument(
+        "--read-splits",
+        help="The way that generate input for the model read split or read from the pre generated inputs",
+        action = "store_true",
+        default = False
     )
 
 

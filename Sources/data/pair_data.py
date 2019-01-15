@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
-from settings import \
+from tensorflow_src.settings import \
     DATA_PATH_CLINICAL_PROCESSED, \
     DATA_PATH_PROCESSED, \
     DATA_PATH_RADIOMIC_PROCESSED, \

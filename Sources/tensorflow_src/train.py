@@ -72,24 +72,26 @@ optional named arguments:
 import argparse
 import os
 import pathlib
-from typing import Dict, Tuple, Any, Iterator
-
+from typing import Any
+import sys
+# to import from other local packages in the model which are in diffrent folder
+sys.path.append('../')
 import tensorflow as tf
 import pandas as pd
 
 import data
-import models
-import models.basics
-import settings
+import tensorflow_src.models as models
+import tensorflow_src.models.basics
+import tensorflow_src.settings as settings
 import utils
 
 from tensorflow.core.protobuf import config_pb2
-from typing import Iterator, Tuple, Generator, List, Dict
+from typing import Iterator, Tuple, List, Dict
 
 logger = utils.init_logger("start")
 
 def train_iterations(sess: tf.Session,
-                     model: models.basics.BasicSiamese,
+                     model: tensorflow_src.models.basics.BasicSiamese,
                      batch_data: data.BatchData,
                      pairs: pd.DataFrame,
                      summary_writer: tf.summary.FileWriter,
@@ -156,7 +158,7 @@ def train_iterations(sess: tf.Session,
 
 
 def test_iterations(sess: tf.Session,
-                    model: models.basics.BasicSiamese,
+                    model: tensorflow_src.models.basics.BasicSiamese,
                     batch_data: data.BatchData,
                     pairs: pd.DataFrame,
                     batch_size: int) -> Tuple[int, int, pd.DataFrame]:
@@ -221,7 +223,7 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.concat(result_data)
 
 
-def select_model(model_key: str, number_feature: int, **kwargs) -> models.basics.BasicSiamese:
+def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_src.models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
