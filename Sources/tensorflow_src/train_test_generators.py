@@ -72,8 +72,8 @@ def main(args: Dict[str, Any]) -> None:
 
 
     mrmr_sizes = cfg['mrmr']
-    features= pd.read_csv(cfg['input_features'], low_memory=False)
-    clinical_info = pd.read_csv(cfg['input_clinical'])
+    features= pd.read_csv(cfg['input_features'], index_col=0)
+    clinical_info = pd.read_csv(cfg['input_clinical'], index_col=0)
     train_test_columns = ['cv_folds', 'spliting_models', 'random_seed','test_train_path','feature_path','mrmr_size' ]
     trains_tests_description = pd.DataFrame(columns=train_test_columns)
 
@@ -84,6 +84,7 @@ def main(args: Dict[str, Any]) -> None:
 
     #results_path.mkdir(parents=True, exist_ok=True)
     dataset = pair_data.SplitPairs()
+    dataset.clinical_data = clinical_info
     logger.info("read Feature DataFrame")
     for cv_folds in cfg['cv_folds']:
         cv_path=os.path.join("",f"cv_{cv_folds}")
@@ -99,8 +100,10 @@ def main(args: Dict[str, Any]) -> None:
                                                     splitting_model,
                                                     random_seed
                                                     )
-                for i, (train_ids, test_ids) in enum_generator:
+                for i, (train_idx, test_idx) in enum_generator:
                     pathlib.Path(os.path.join(output_path, split_path)).mkdir(parents=True, exist_ok=True)
+                    train_ids = clinical_info.iloc[train_idx]['id']
+                    test_ids = clinical_info.iloc[train_idx]['id']
                     pd.DataFrame(train_ids).to_csv(os.path.join(output_path, split_path, f"train_fold{i}.csv"))
                     pd.DataFrame(test_ids).to_csv(os.path.join(output_path, split_path, f"test_fold{i}.csv"))
                     path=os.path.join(split_path,f"features_fold{i}")
@@ -115,7 +118,7 @@ def main(args: Dict[str, Any]) -> None:
                                                                                 },index=[0]))
                         pathlib.Path(os.path.join(output_path, path)).mkdir(parents=True, exist_ok=True)
                         if mrmr_size > 0:
-                            df_features = mrmrpy.select_mrmr_features(features,clinical_info , mrmr_size, train_ids).copy()
+                            df_features = mrmrpy.select_mrmr_features(features, clinical_info.iloc[train_idx] , mrmr_size).copy()
                             df_features.to_csv(features_path, index=False)
                         else:
                             df_features = features.copy()

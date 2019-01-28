@@ -71,6 +71,9 @@ optional named arguments:
 
 import argparse
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
 import pathlib
 from typing import Any
 
@@ -377,8 +380,9 @@ def deepCinet(model: str,
 
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {batch_size}")
-
+    features = pd.DataFrame()
     # read features and clinical data frame the path is defined in the settings.py
+    logger.info("data type: ", data_type)
     if data_type == "radiomic":
         features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
     elif data_type == "clinical":
@@ -420,7 +424,9 @@ def deepCinet(model: str,
             split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
             enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size)
             for i, (train_ids, test_ids, df_features) in enum_generator:
-                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_ids, test_ids,
+                train_data = dataset.clinical_data[clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")]
+                test_data = dataset.clinical_data[clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")]
+                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
@@ -482,12 +488,14 @@ def deepCinet(model: str,
                                                 split_seed)
 
 
-            for i, (train_ids, test_ids) in enum_generator:
+            for i, (train_idx, test_idx) in enum_generator:
                 if mrmr_size > 0:
-                    df_features = data.select_mrmr_features(features, clinical_df.copy(), mrmr_size, train_ids).copy()
+                    df_features = data.select_mrmr_features(features, clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
                 else:
                     df_features = features.copy()
-                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_ids, test_ids, random=random_labels)
+                train_data = dataset.clinical_data.iloc[train_idx]
+                test_data = dataset.clinical_data.iloc[test_idx]
+                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=random_labels)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
@@ -576,7 +584,7 @@ def main(args: Dict[str, Any]) -> None:
     num_epochs = args['num_epochs']
     results_path=args['results_path']
     save_model = args['save_model']
-    read_splits = args['read-split']
+    read_splits = args['read_splits']
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
     deepCinet(model = model,
@@ -700,6 +708,12 @@ if __name__ == '__main__':
         type=int
     )
     optional.add_argument(
+        "--data_type",
+        help="The threshold for splitting ",
+        default="radiomic",
+        type=str
+    )
+    optional.add_argument(
         "--threshold",
         help="The threshold for splitting ",
         default=3,
@@ -764,7 +778,7 @@ if __name__ == '__main__':
     )
 
     optional.add_argument(
-        "--read-splits",
+        "--read_splits",
         help="The way that generate input for the model read split or read from the pre generated inputs",
         action = "store_true",
         default = False

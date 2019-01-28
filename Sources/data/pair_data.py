@@ -123,8 +123,8 @@ class SplitPairs:
 
 
     def create_train_test(self,
-                           train_ids: List[int],
-                           test_ids: List[int],
+                           train_data: pd.DataFrame,
+                           test_data: pd.DataFrame,
                            random: bool) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
@@ -134,12 +134,6 @@ class SplitPairs:
         :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
         :return: List for the train set and list for the test set respectively
         """
-
-        train_data = self.clinical_data.iloc[train_ids]
-        test_data = self.clinical_data.iloc[test_ids]
-
-
-
 
         self.logger.debug("Generating train pairs")
         train_pairs = self._get_pairs(train_data, random)
@@ -310,7 +304,6 @@ class BatchData:
 
         total_ids = np.append(pairs["pA"].values, pairs["pB"].values)
         total_ids = list(set(total_ids))  # To avoid repetitions
-
         features: pd.DataFrame = self.radiomic_df[total_ids]
 
         if train:
