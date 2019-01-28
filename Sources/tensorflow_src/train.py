@@ -75,7 +75,7 @@ import pathlib
 from typing import Any
 import sys
 # to import from other local packages in the model which are in diffrent folder
-sys.path.append('../')
+sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
 import tensorflow as tf
 import pandas as pd
 

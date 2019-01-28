@@ -17,6 +17,11 @@ matrix = importr('Matrix')
 survival = importr('survival')
 igraph = importr('igraph')
 mrmre = importr('mRMRe')
+from sklearn.feature_selection import VarianceThreshold
+def variance_threshold_selector(data, threshold=0.01):
+    selector = VarianceThreshold(threshold)
+    selector.fit(data)
+    return data[data.columns[selector.get_support(indices=True)]]
 
 def mrmr_selection(features : pd.DataFrame,
                     clinical_info : pd.DataFrame,
@@ -52,10 +57,10 @@ def mrmr_selection(features : pd.DataFrame,
     r_mrmrSelection = robjects.r['mrmrSelection']
     # Merge the features and labels (the survival time, which are the 'time' and 'event'  field of clinical information)
     features = features.T # todo apply on all the model
-    samples = clinical_info['id']
-    features = features.loc[samples]
-    clinical_info.set_index('id', inplace=True)
-    features[['time', 'event']] = clinical_info[['time', 'event']]
+    clinical = clinical_info.copy()
+    clinical.set_index('id', inplace=True)
+    features = features.merge(clinical[['time', 'event']], how='inner', left_index=True, right_index=True)
+    features = variance_threshold_selector(features)
     all_features = r_mrmrSelection(features, feature_count= feature_count, solution_count = solution_count)
     selected_features = pandas2ri.ri2py_dataframe(all_features)
     #the dataframe index is diffrent in R and python
@@ -66,7 +71,7 @@ def mrmr_selection(features : pd.DataFrame,
 def select_mrmr_features(dataframe_features: pd.DataFrame,
                          clinical_df: pd.DataFrame,
                          mrmr_size : int,
-                         train_ids: List):
+                        ):
     """
       select the mrmr features
 
@@ -76,7 +81,7 @@ def select_mrmr_features(dataframe_features: pd.DataFrame,
       :param train_ids: List of the train_ids that should be considered in mrmr
       :return: DataFrame that contain selected features
     """
-    clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
+    clinicals= clinical_df #clinical_df[train_ids.tolist()]
     mrmr_list= mrmr_selection(features=dataframe_features,
                               clinical_info=clinicals,
                               solution_count=1,
