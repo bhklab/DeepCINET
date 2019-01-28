@@ -21,4 +21,6 @@ docs_source/api/
 
 .DS_Store
 
-.Sources/settings.py
+.Sources/tensorflow_src/settings.py
+
+.Sources/tensorflow_src/splitTestTrainConf.yml
