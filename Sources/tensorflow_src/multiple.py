@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 import pandas as pd
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
 #import STprediction
 from tensorflow_src import train_test_models
 import seaborn as sns
@@ -23,7 +27,7 @@ random.shuffle(random_states)
 
 for i in range(running_times):
     counts,predictions = train_test_models.deepCinet('ScalarOnlySiamese',
-                                                     num_epochs=150,
+                                                     num_epochs=200,
                                                      batch_size=250,
                                                      splitting_model=1,
                                                      learning_rate=0.0002,
@@ -31,9 +35,10 @@ for i in range(running_times):
                                                      regularization=0.8,
                                                      split_seed=random_states[i],
                                                      initial_seed=None, mrmr_size=500,
-                                                     read_splits=True,
+                                                     read_splits=False,
                                                      cv_folds=5,
-                                                     split_number=i)
+                                                     split_number=i,
+                                                     data_type='radiomic')
 
 
     print(f"test{[v[1] for v in counts['test']['c_index']]}")
