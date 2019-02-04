@@ -317,10 +317,10 @@ def get_sets_reader(cv_folds: int,
                         pass
     """
     for i in range(0,cv_folds):
-        train_df = pd.read_csv(os.path.join(split_path, f"train_fold{i}.csv"))
-        test_df = pd.read_csv(os.path.join(split_path, f"test_fold{i}.csv"))
-        train_ids = train_df.iloc[:,1].values
-        test_ids = test_df.iloc[:,1].values
+        train_df = pd.read_csv(os.path.join(split_path, f"train_fold{i}.csv"), index_col=0)
+        test_df = pd.read_csv(os.path.join(split_path, f"test_fold{i}.csv"),index_col=0)
+        train_ids = train_df
+        test_ids = test_df
         path = os.path.join(split_path, f"features_fold{i}", f"radiomic{mrmr_size}.csv")
         features = pd.read_csv(path, index_col=0)
         yield (i,(train_ids,test_ids,features))
@@ -423,9 +423,11 @@ def deepCinet(model: str,
             random_path = os.path.join(cv_path, f"random_seed_{split_number}")
             split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
             enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size)
+            clinical_data = dataset.clinical_data.copy()
             for i, (train_ids, test_ids, df_features) in enum_generator:
-                train_data = dataset.clinical_data[clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")]
-                test_data = dataset.clinical_data[clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")]
+                print(train_ids)
+                train_data = dataset.clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")
+                test_data = dataset.clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
                 # Initialize all the variables
