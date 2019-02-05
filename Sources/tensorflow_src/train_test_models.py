@@ -334,7 +334,7 @@ def get_sets_reader(cv_folds: int,
 ################
 def deepCinet(model: str,
               cv_folds: int = 1,
-              test_size: float = .25,
+              test_size: float = .2,
               gpu_level: int = 0,
               gpu_allow_growth=False,
               num_epochs: int = 1,
@@ -382,7 +382,7 @@ def deepCinet(model: str,
     logger.info(f"Using batch size: {batch_size}")
     features = pd.DataFrame()
     # read features and clinical data frame the path is defined in the settings.py
-    logger.info("data type: ", data_type)
+    logger.info(f"data type: {data_type}")
     if data_type == "radiomic":
         features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
     elif data_type == "clinical":

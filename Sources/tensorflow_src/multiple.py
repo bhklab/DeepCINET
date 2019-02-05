@@ -19,26 +19,29 @@ with open("modelConf.yml", 'r') as cfg_file:
 
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
-running_times = 4
+running_times = 20
 random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
 
 
 for i in range(running_times):
-    counts,predictions = train_test_models.deepCinet('ScalarOnlySiamese',
-                                                     num_epochs=200,
+    counts,predictions = train_test_models.deepCinet(model = 'ScalarOnlySiamese',
+                                                     num_epochs=150,
                                                      batch_size=250,
                                                      splitting_model=1,
-                                                     learning_rate=0.0002,
+                                                     learning_rate=0.0003,
+                                                     dropout=.2,
+                                                     threshold = 4,
                                                      split=i, save_model=True,
                                                      regularization=0.8,
                                                      split_seed=random_states[i],
                                                      initial_seed=None, mrmr_size=500,
                                                      read_splits=False,
+                                                     full_summary = False,
                                                      cv_folds=5,
                                                      split_number=i,
-                                                     data_type='radiomic')
+                                                     data_type="radiomic")
 
 
     print(f"test{[v[1] for v in counts['test']['c_index']]}")
