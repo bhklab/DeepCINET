@@ -13,5 +13,6 @@ from .siameses import \
     ScalarOnlyDropoutSiamese, \
     ImageSiamese, \
     ResidualImageScalarSiamese, \
-    VolumeOnlySiamese
+    VolumeOnlySiamese,\
+    ClinicalOnlySiamese
 from .basics import BasicModel, BasicSiamese, BasicImageSiamese

@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-The train module is a script that trains a deep learning model from medical imaging data.
+The train_test_models module is a script that trains a deep learning model from medical imaging data, radiomic features and any other features.
+There is a function,  deepCinet, as well .
 
-usage: train.py --model MODEL
+
+usage: train_test_models.py --model MODEL
                 [-h] [--cv-folds CV_FOLDS]
                 [--test-size TEST_SIZE] [--gpu-level GPU_LEVEL]
                 [--gpu-allow-growth] [-n NUM_EPOCHS] [--batch-size BATCH_SIZE]
                 [--results-path RESULTS_PATH] [--learning-rate LEARNING_RATE]
                 [--regularization REGULARIZATION] [--dropout {0.0 - 1.0}]
                 [--log-device] [--use-distance] [--random-labels]
-                [--full-summary]
+                [--full-summary][--mrmr-size][--full-summary]
+                [--read_splits][--save-model][--bin-number]
 
 Fit the data with a Tensorflow model
 
@@ -24,6 +27,10 @@ required named arguments:
                           - :any:`ImageSiamese`
                           - :any:`ResidualImageScalarSiamese`
                           - :any:`VolumeOnlySiamese`
+                          - :any: `ClinicalOnlySiamese`
+                          - :any: `ClinicalVolumeSiamese":
+        return models.ClinicalVolumeSiamese(**kwargs)
+    elif model_key == "ClinicalRadiomicSiamese":
 
 optional named arguments:
   -h, --help            Show this help
@@ -81,10 +88,12 @@ import tensorflow as tf
 import pandas as pd
 
 import data
+from data.train_test import get_sets_generator,get_sets_reader
 import tensorflow_src.models as models
 import tensorflow_src.models.basics
 import tensorflow_src.settings as settings
 import utils
+
 
 from tensorflow.core.protobuf import config_pb2
 from typing import Iterator, Tuple, Dict
@@ -246,7 +255,7 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
     elif model_key == "ClinicalOnlySiamese":
-        return models.ClinicalOnlySiamese(**kwargs)
+        return models.ClinicalOnlySiamese(number_feature,**kwargs)
     elif model_key == "ClinicalVolumeSiamese":
         return models.ClinicalVolumeSiamese(**kwargs)
     elif model_key == "ClinicalRadiomicSiamese":
@@ -256,74 +265,6 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
 
-
-def get_sets_generator(dataset: data.pair_data.SplitPairs,
-                       cv_folds: int,
-                       test_size: int,
-                       random_labels: bool,
-                       model:int,
-                       threshold:float,
-                       random_seed: int = None
-                       ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
-    """
-    Get the generator that creates the train/test sets and the folds if Cross Validation is used
-
-    :param cv_folds: Number of Cross Validation folds
-    :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
-                      whole set
-    :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
-    :param model: This parameter use for selecting the model for spliting data 0 censored, 1 target distribution, 2 based on threshold
-    :param threshold: this is a threshold which is used in the model spliting
-    :param random_seed that is used for model spliting
-    :return: The sets generator then it can be used in a ``for`` loop to get the sets
-
-                >>> folds = get_sets_generator(...)
-                >>> for fold, (train_pairs, test_pairs, mixed_pairs) in folds:
-                        # Insert your code
-                        pass
-    """
-
-
-    # Decide whether to use CV or only a single test/train sets
-    if 0 < cv_folds < 2:
-        train_ids, test_ids = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold , random_seed=random_seed)
-        enum_generator = [(0, (train_ids, test_ids))]
-        logger.info("1 fold")
-    else:
-        dataset.survival_categorizing(model, threshold, category=5)  # todo get rid of hard code
-        enum_generator = dataset.folds(cv_folds, random=random_labels)
-    logger.debug("Folds created")
-
-    return enum_generator
-
-def get_sets_reader(cv_folds: int,
-                    split_path,mrmr_size
-                    ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
-    """
-    Get the read the train/test sets which has been generated before ahead by train_test_generator.py ans is in the folders
-
-    :param cv_folds: Number of Cross Validation folds (currently we only consider the number of folds which has been generated)
-    :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
-                      whole set (currently it is 0.25 but it can be change in yml file)
-    :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
-    :param model: This parameter use for selecting the model for spliting data 0 censored, 1 target distribution, 2 based on threshold
-    :param threshold: this is a threshold which is used in the model spliting
-    :param random_seed that is used for model spliting
-    :return: The sets generator then it can be used in a ``for`` loop to get the sets
-
-                >>> folds = get_sets_generator(...)
-                >>> for fold, (train_pairs, test_pairs, mixed_pairs) in folds:
-                        # Insert your code
-                        pass
-    """
-    for i in range(0,cv_folds):
-        train_df = pd.read_csv(os.path.join(split_path, f"train_fold{i}.csv"), index_col=0)
-        test_df = pd.read_csv(os.path.join(split_path, f"test_fold{i}.csv"),index_col=0)
-        train_ids = train_df
-        test_ids = test_df
-        path = os.path.join(split_path, f"features_fold{i}", f"radiomic{mrmr_size}.csv")
-        features = pd.read_csv(path, index_col=0)
-        yield (i,(train_ids,test_ids,features))
 
 
 
@@ -425,7 +366,6 @@ def deepCinet(model: str,
             enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size)
             clinical_data = dataset.clinical_data.copy()
             for i, (train_ids, test_ids, df_features) in enum_generator:
-                print(train_ids)
                 train_data = dataset.clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")
                 test_data = dataset.clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
@@ -492,7 +432,7 @@ def deepCinet(model: str,
 
             for i, (train_idx, test_idx) in enum_generator:
                 if mrmr_size > 0:
-                    df_features = data.select_mrmr_features(features, clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
+                    df_features = data.select_mrmr_features(features.copy(), clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
                 else:
                     df_features = features.copy()
                 train_data = dataset.clinical_data.iloc[train_idx]
@@ -768,13 +708,6 @@ if __name__ == '__main__':
     optional.add_argument(
         "--mrmr-size",
         help="The number of features that should be selected with Mrmr- 0 means Mrmr shouldn't apply",
-        default=0,
-        type=int
-    )
-
-    optional.add_argument(
-        "--generation_model",
-        help="The model of generationg and using train test",
         default=0,
         type=int
     )

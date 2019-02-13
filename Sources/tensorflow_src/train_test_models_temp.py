@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-The train module is a script that trains a deep learning model from medical imaging data.
+The train_test_models module is a script that trains a deep learning model from medical imaging data, radiomic features and any other features.
+There is a function,  deepCinet, as well .
 
-usage: train.py --model MODEL
+
+usage: train_test_models.py --model MODEL
                 [-h] [--cv-folds CV_FOLDS]
                 [--test-size TEST_SIZE] [--gpu-level GPU_LEVEL]
                 [--gpu-allow-growth] [-n NUM_EPOCHS] [--batch-size BATCH_SIZE]
                 [--results-path RESULTS_PATH] [--learning-rate LEARNING_RATE]
                 [--regularization REGULARIZATION] [--dropout {0.0 - 1.0}]
                 [--log-device] [--use-distance] [--random-labels]
-                [--full-summary]
+                [--full-summary][--mrmr-size][--full-summary]
+                [--read_splits][--save-model][--bin-number]
 
 Fit the data with a Tensorflow model
 
@@ -24,6 +27,10 @@ required named arguments:
                           - :any:`ImageSiamese`
                           - :any:`ResidualImageScalarSiamese`
                           - :any:`VolumeOnlySiamese`
+                          - :any: `ClinicalOnlySiamese`
+                          - :any: `ClinicalVolumeSiamese":
+        return models.ClinicalVolumeSiamese(**kwargs)
+    elif model_key == "ClinicalRadiomicSiamese":
 
 optional named arguments:
   -h, --help            Show this help
@@ -71,6 +78,9 @@ optional named arguments:
 
 import argparse
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
 import pathlib
 from typing import Any
 
@@ -78,13 +88,15 @@ import tensorflow as tf
 import pandas as pd
 
 import data
+from data.train_test import get_sets_generator,get_sets_reader
 import tensorflow_src.models as models
 import tensorflow_src.models.basics
 import tensorflow_src.settings as settings
 import utils
 
+
 from tensorflow.core.protobuf import config_pb2
-from typing import Iterator, Tuple, List, Dict
+from typing import Iterator, Tuple, Dict
 
 logger = utils.init_logger("start")
 
@@ -221,7 +233,7 @@ def test_iterations(sess: tf.Session,
     return correct_count, pairs_count, pd.concat(result_data)
 
 
-def select_model(model_key: str, **kwargs) -> tensorflow_src.models.basics.BasicSiamese:
+def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_src.models.basics.BasicSiamese:
     """
     Selects and constructs the model to be used based on the CLI options passed.
 
@@ -233,7 +245,7 @@ def select_model(model_key: str, **kwargs) -> tensorflow_src.models.basics.Basic
     elif model_key == "ImageScalarSiamese":
         return models.ImageScalarSiamese(**kwargs)
     elif model_key == "ScalarOnlySiamese":
-        return models.ScalarOnlySiamese(**kwargs)
+        return models.ScalarOnlySiamese(number_feature, **kwargs)
     elif model_key == "ScalarOnlyDropoutSiamese":
         return models.ScalarOnlyDropoutSiamese(**kwargs)
     elif model_key == "ImageSiamese":
@@ -242,180 +254,33 @@ def select_model(model_key: str, **kwargs) -> tensorflow_src.models.basics.Basic
         return models.ResidualImageScalarSiamese(**kwargs)
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
+    elif model_key == "ClinicalOnlySiamese":
+        return models.ClinicalOnlySiamese(number_feature,**kwargs)
+    elif model_key == "ClinicalVolumeSiamese":
+        return models.ClinicalVolumeSiamese(**kwargs)
+    elif model_key == "ClinicalRadiomicSiamese":
+        return models.ClinicalRadiomicSiamese(**kwargs)
+
     else:
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
 
 
-def select_mrmr_features(dataframe_features: pd.DataFrame , mrmr_size : int, train_ids: List):
-    """
-      select the mrmr features
-
-      :param dataframe_features: DataFrame of the features
-      :param mrmr_size: The number of features which should be selected with mrmr
-      :param train_ids: List of the train_ids that should be considered in mrmr
-      :return: DataFrame that contain selected features
-    """
-    clinical_df= pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
-    clinicals= clinical_df.iloc[train_ids] #clinical_df[train_ids.tolist()]
-    #clinicals= pd.merge(clinical_df,pd.DataFrame(train_ids))
-    mrmr_list= data.mrmr_selection(features=dataframe_features, clinical_info=clinicals, solution_count=1, feature_count=mrmr_size)
-    logger.info(mrmr_list)
-    #print(dataframe_features)
-    features = dataframe_features.loc[mrmr_list]
-    return features
 
 
-
-def get_sets_generator(dataset: data.pair_data.SplitPairs,
-                       cv_folds: int,
-                       test_size: int,
-                       random_labels: bool,
-                       model:int,
-                       threshold:float,
-                       random_seed: int = None
-                       ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
-    """
-    Get the generator that creates the train/test sets and the folds if Cross Validation is used
-
-    :param cv_folds: Number of Cross Validation folds
-    :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
-                      whole set
-    :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
-    :param model: This parameter use for selecting the model for spliting data 0 censored, 1 target distribution, 2 based on threshold
-    :param threshold: this is a threshold which is used in the model spliting
-    :param random_seed that is used for model spliting
-    :return: The sets generator then it can be used in a ``for`` loop to get the sets
-
-                >>> folds = get_sets_generator(...)
-                >>> for fold, (train_pairs, test_pairs, mixed_pairs) in folds:
-                        # Insert your code
-                        pass
-    """
-
-
-    # Decide whether to use CV or only a single test/train sets
-    if 0 < cv_folds < 2:
-        train_ids, test_ids = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold , random_seed=random_seed)
-        enum_generator = [(0, (train_ids, test_ids))]
-        logger.info("1 fold")
-    else:
-        enum_generator = dataset.folds(cv_folds, random=random_labels)
-    logger.debug("Folds created")
-
-    return enum_generator
 
 
 ################
 #     MAIN     #
 ################
-def main(args: Dict[str, Any]) -> None:
-    """
-    Main function
-    :param args: Command Line Arguments
-    """
-    logger.info("Script to train a siamese neural network model")
-    logger.info(f"Using batch size: {args['batch_size']}")
-    mrmr_size = args['mrmr_size']
-    random_labels = args['random_labels']
-    siamese_model = select_model(args['model'],
-                                 gpu_level=args['gpu_level'],
-                                 regularization=args['regularization'],
-                                 dropout=args['dropout'],
-                                 learning_rate=args['learning_rate'],
-                                 use_distance=args['use_distance'],
-                                 full_summary=args['full_summary'])
-
-    conf = tf.ConfigProto(log_device_placement=args['log_device'])
-    conf.gpu_options.allow_growth = args['gpu_allow_growth']
-
-    features: pd.DataFrame = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
-    logger.info("read Feature DataFrame")
-
-    with tf.Session(config=conf) as sess:
-        dataset = data.pair_data.SplitPairs()
-        enum_generator = get_sets_generator(dataset,
-                                            args['cv_folds'],
-                                            args['test_size'],
-                                            args['random_labels'],
-                                            args['splitting_model'],
-                                            args['threshold'],
-                                            None
-                                            )
-
-        counts = {}
-        for key in ['train', 'test', 'mixed']:
-            counts[key] = {
-                'total': 0,
-                'correct': 0,
-                'c_index': []
-            }
-
-        for i, (train_ids, test_ids) in enum_generator:
-            if mrmr_size > 0:
-                logger.info(type(train_ids))
-                features = select_mrmr_features(features, mrmr_size, train_ids)
-                print(features)
-            train_pairs, test_pairs, mixed_pairs =dataset.create_train_test(train_ids, test_ids,random=random_labels)
-            # Initialize all the variables
-            logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
-            summaries_dir = os.path.join(args['results_path'], 'summaries', f'fold_{i}')
-            train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
-            print(features)
-            batch_data = data.BatchData(features)
-
-            # Epoch iterations
-            train_iterations(sess,
-                             siamese_model,
-                             batch_data,
-                             train_pairs,
-                             train_summary,
-                             args['batch_size'],
-                             args['num_epochs'])
-
-            predictions = {}
-            for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
-                if len(pairs) <= 0:
-                    continue
-                logger.info(f"Computing {name} c-index")
-                correct, total, results = \
-                    test_iterations(sess,
-                                    siamese_model,
-                                    batch_data,
-                                    pairs,
-                                    args['batch_size'])
-
-                correct = int(correct)
-
-                c_index = correct/total
-
-                counts[name]['total'] += total
-                counts[name]['correct'] += correct
-                counts[name]['c_index'].append((i, c_index))
-
-                predictions[name] = results
-
-                logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
-                            f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
-
-            # Save each fold in a different directory
-            results_save_path = os.path.join(args['results_path'], f"fold_{i:0>2}")
-            logger.info(f"Saving results at: {results_save_path}")
-            utils.save_results(sess, predictions, results_save_path, args['save_model'])
-            logger.info("\r ")
-
-        for key in counts:
-            if counts[key]['total'] <= 0:
-                continue
-            logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
-
 def deepCinet(model: str,
-              cv_folds: int= 1,
-              test_size: float = .25,
-              gpu_level : int = 0  ,
-              gpu_allow_growth = False,
-              num_epochs:int = 1,
-              batch_size:int = 20,
+              cv_folds: int = 1,
+              test_size: float = .2,
+              gpu_level: int = 0,
+              gpu_allow_growth=False,
+              num_epochs: int = 1,
+              batch_size: int = 20,
+              data_type: str = 'radiomic',
               results_path: str = settings.SESSION_SAVE_PATH,
               learning_rate: int = 0.001,
               regularization: float = 0.01,
@@ -423,15 +288,17 @@ def deepCinet(model: str,
               threshold: float = 3,
               bin_number: int = 4,
               dropout: float = 0.2,
-              log_device = False,
-              use_distance = False,
-              random_labels = False,
-              full_summary = True,
-              save_model = True,
-              split = 1,
-              split_seed= None,
-              initial_seed = None,
-              mrmr_size = 0):
+              log_device=False,
+              use_distance=False,
+              random_labels=False,
+              full_summary=True,
+              save_model=True,
+              split=1,  # todo check if required to add split_seed and initial_seed to the argument
+              split_seed=None,
+              split_number=None,  # it is used for the time we are using the generated test and train sets
+              initial_seed=None,
+              mrmr_size=0,
+              read_splits=False):
     """
     deepCient
     :param args: Command Line Arguments
@@ -454,8 +321,25 @@ def deepCinet(model: str,
 
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {batch_size}")
+    features = pd.DataFrame()
+    # read features and clinical data frame the path is defined in the settings.py
+    logger.info(f"data type: {data_type}")
+    if data_type == "radiomic":
+        features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
+    elif data_type == "clinical":
+        features = pd.read_csv(settings.DATA_PATH_CLINIC_PROCESSED, index_col=0)
+    elif data_type == "clinicalVolume":
+        features = pd.read_csv(settings.DATA_PATH_VOLUME_CLINIC_PROCESSED, index_col=0)
 
+    logger.info(f"number of features is {len(features.index)}")
+    clinical_df = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
+    logger.info("read Feature DataFrame")
+
+    # read the input path for the time that train and test are splitted before head by train_test_generator.py
+    input_path = settings.DATA_PATH_INPUT_TEST_TRAIN
+    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
     siamese_model = select_model(model,
+                                 number_feature=number_feature,
                                  gpu_level=gpu_level,
                                  regularization=regularization,
                                  dropout=dropout,
@@ -463,18 +347,10 @@ def deepCinet(model: str,
                                  use_distance=use_distance,
                                  full_summary=full_summary,
                                  seed=initial_seed)
-
     conf = tf.ConfigProto(log_device_placement=log_device)
     conf.gpu_options.allow_growth = gpu_allow_growth
 
     with tf.Session(config=conf) as sess:
-        enum_generator = get_sets_generator(cv_folds,
-                                            test_size,
-                                            random_labels,
-                                            splitting_model,
-                                            threshold,
-                                            split_seed)
-
         counts = {}
         for key in ['train', 'test', 'mixed']:
             counts[key] = {
@@ -482,72 +358,201 @@ def deepCinet(model: str,
                 'correct': 0,
                 'c_index': []
             }
+        dataset = data.pair_data.SplitPairs()
+        if(read_splits):
+            cv_path = os.path.join(input_path, f"cv_{cv_folds}")
+            random_path = os.path.join(cv_path, f"random_seed_{split_number}")
+            split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
+            enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size)
+            clinical_data = dataset.clinical_data.copy()
+            for i, (train_ids, test_ids, df_features) in enum_generator:
+                print(train_ids)
+                train_data = dataset.clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")
+                test_data = dataset.clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")
+                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
+                                                                                 random=random_labels)
+                # Initialize all the variables
+                logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+                summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
+                summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
+                logger.info(f"Saving results at: {summaries_dir}")
+                train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
+                batch_data = data.BatchData(df_features)
+                train_summary.add_graph(sess.graph)
+                # Epoch iterations
+                train_iterations(sess,
+                                 siamese_model,
+                                 batch_data,
+                                 train_pairs,
+                                 train_summary,
+                                 batch_size,
+                                 num_epochs)
 
-        for i, (train_pairs, test_pairs, mixed_pairs) in enum_generator:
-            # Initialize all the variables
-            logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
-            summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
-            summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}" )
-            logger.info(f"Saving results at: {summaries_dir}")
+                predictions = {}
+                for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                    if len(pairs) <= 0:
+                        continue
+                    logger.info(f"Computing {name} c-index")
+                    correct, total, results = \
+                        test_iterations(sess,
+                                        siamese_model,
+                                        batch_data,
+                                        pairs,
+                                        batch_size)
 
-            train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
- #           train_summary.add_graph(sess.graph)
-            batch_data = data.BatchData(mrmr_size)
+                    correct = int(correct)
 
-            # Epoch iterations
-            train_iterations(sess,
-                             siamese_model,
-                             batch_data,
-                             train_pairs,
-                             train_summary,
-                             batch_size,
-                             num_epochs)
+                    c_index = correct / total
 
-            predictions = {}
-            for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
-                if len(pairs) <= 0:
-                    continue
-                logger.info(f"Computing {name} c-index")
-                correct, total, results = \
-                    test_iterations(sess,
-                                    siamese_model,
-                                    batch_data,
-                                    pairs,
-                                    batch_size)
+                    counts[name]['total'] += total
+                    counts[name]['correct'] += correct
+                    counts[name]['c_index'].append((i, c_index))
 
-                correct = int(correct)
+                    predictions[name] = results
 
-                c_index = correct/total
+                    logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
+                                f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
 
-                counts[name]['total'] += total
-                counts[name]['correct'] += correct
-                counts[name]['c_index'].append((i, c_index))
+                # Save each fold in a different directory
 
-                predictions[name] = results
+                results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
+                results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
+                logger.info(f"Saving results at: {results_save_path}")
+                utils.save_results(sess, predictions, results_save_path, save_model)
+                logger.info("\r ")
 
-                logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
-                            f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
+        else:
+            enum_generator = get_sets_generator(dataset,
+                                                cv_folds,
+                                                test_size,
+                                                random_labels,
+                                                splitting_model,
+                                                threshold,
+                                                split_seed)
 
 
+            for i, (train_idx, test_idx) in enum_generator:
+                if mrmr_size > 0:
+                    df_features = data.select_mrmr_features(features.copy(), clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
+                else:
+                    df_features = features.copy()
+                train_data = dataset.clinical_data.iloc[train_idx]
+                test_data = dataset.clinical_data.iloc[test_idx]
+                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=random_labels)
+                # Initialize all the variables
+                logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+                summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
+                summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
+                logger.info(f"Saving results at: {summaries_dir}")
+                train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
+                batch_data = data.BatchData(df_features)
+                train_summary.add_graph(sess.graph)
 
-            # Save each fold in a different directory
+                # Epoch iterations
+                train_iterations(sess,
+                                 siamese_model,
+                                 batch_data,
+                                 train_pairs,
+                                 train_summary,
+                                 batch_size,
+                                 num_epochs)
 
-            results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
-            results_save_path = os.path.join(results_save_path, f"split_{split:0>2}" )
-            logger.info(f"Saving results at: {results_save_path}")
-            utils.save_results(sess, predictions, results_save_path, save_model)
-            logger.info("\r ")
+                predictions = {}
+                for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                    if len(pairs) <= 0:
+                        continue
+                    logger.info(f"Computing {name} c-index")
+                    correct, total, results = \
+                        test_iterations(sess,
+                                        siamese_model,
+                                        batch_data,
+                                        pairs,
+                                        batch_size)
+
+                    correct = int(correct)
+
+                    c_index = correct/total
+
+                    counts[name]['total'] += total
+                    counts[name]['correct'] += correct
+                    counts[name]['c_index'].append((i, c_index))
+
+                    predictions[name] = results
+
+                    logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
+                                f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
+
+
+
+                # Save each fold in a different directory
+
+                results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
+                results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
+                logger.info(f"Saving results at: {results_save_path}")
+                utils.save_results(sess, predictions, results_save_path, save_model)
+                logger.info("\r ")
 
         for key in counts:
             if counts[key]['total'] <= 0:
                 continue
             logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
-        return counts,predictions
+        return counts, predictions
 
 
+def main(args: Dict[str, Any]) -> None:
+    """
+    Main function
+    :param args: Command Line Arguments
+    """
+    logger.info("Script to train a siamese neural network model")
+    logger.info(f"Using batch size: {args['batch_size']}")
+    data_type = args['data_type']
+    mrmr_size = args['mrmr_size']
+    random_labels = args['random_labels']
+    model = args['model']
+    gpu_level = args['gpu_level']
+    regularization = args['regularization']
+    dropout = args['dropout']
+    learning_rate = args['learning_rate']
+    use_distance = args['use_distance']
+    full_summary = args['full_summary']
+    log_device = args['log_device']
+    gpu_allow_growth = args['gpu_allow_growth']
+    cv_folds = args['cv_folds']
+    test_size = args['test_size']
+    random_labels = args['random_labels']
+    splitting_model = args['splitting_model']
+    threshold = args['threshold']
+    batch_size = args['batch_size']
+    num_epochs = args['num_epochs']
+    results_path=args['results_path']
+    save_model = args['save_model']
+    read_splits = args['read_splits']
+    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
-
-
+    deepCinet(model = model,
+              cv_folds = cv_folds,
+              test_size = test_size,
+              gpu_level = gpu_level,
+              num_epochs = num_epochs,
+              batch_size = batch_size,
+              data_type = data_type,
+              results_path = results_path,
+              learning_rate = learning_rate,
+              regularization = regularization,
+              splitting_model = splitting_model,
+              threshold = threshold,
+              bin_number = 4,
+              dropout = dropout,
+              log_device = log_device,
+              use_distance = use_distance,
+              random_labels = random_labels,
+              full_summary = full_summary,
+              split = 1,
+              split_seed = None,
+              split_number = None,
+              mrmr_size = mrmr_size,
+              read_splits = read_splits)
 
 
 
@@ -646,6 +651,12 @@ if __name__ == '__main__':
         type=int
     )
     optional.add_argument(
+        "--data_type",
+        help="The threshold for splitting ",
+        default="radiomic",
+        type=str
+    )
+    optional.add_argument(
         "--threshold",
         help="The threshold for splitting ",
         default=3,
@@ -700,6 +711,13 @@ if __name__ == '__main__':
         help="The number of features that should be selected with Mrmr- 0 means Mrmr shouldn't apply",
         default=0,
         type=int
+    )
+
+    optional.add_argument(
+        "--read_splits",
+        help="The way that generate input for the model read split or read from the pre generated inputs",
+        action = "store_true",
+        default = False
     )
 
 

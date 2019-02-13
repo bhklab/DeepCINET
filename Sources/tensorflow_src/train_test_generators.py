@@ -104,10 +104,13 @@ def main(args: Dict[str, Any]) -> None:
                     pathlib.Path(os.path.join(output_path, split_path)).mkdir(parents=True, exist_ok=True)
                     train_ids = clinical_info.iloc[train_idx]['id']
                     test_ids = clinical_info.iloc[train_idx]['id']
+                    logger.info(f'test{i}:',test_ids)
+                    logger.info(f'train{i}:',train_ids)
                     pd.DataFrame(train_ids).to_csv(os.path.join(output_path, split_path, f"train_fold{i}.csv"))
                     pd.DataFrame(test_ids).to_csv(os.path.join(output_path, split_path, f"test_fold{i}.csv"))
                     path=os.path.join(split_path,f"features_fold{i}")
                     for mrmr_size in mrmr_sizes:
+                        logger.info(f'mrmr{mrmr_size}created\n')
                         features_path = os.path.join(output_path, path,f"radiomic{mrmr_size}.csv")
                         trains_tests_description.append(pd.DataFrame({'cv_folds': cv_folds,
                                                                                 'spliting_models': splitting_model,
@@ -123,7 +126,7 @@ def main(args: Dict[str, Any]) -> None:
                         else:
                             df_features = features.copy()
                             df_features.to_csv(features_path, index=False)
-    trains_tests_description.to_csv(os.path.join(output_path,'train_tests_description'))
+    trains_tests_description.to_csv(os.path.join(output_path,'train_tests_description.csv'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

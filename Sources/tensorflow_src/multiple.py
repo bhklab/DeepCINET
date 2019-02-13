@@ -27,26 +27,27 @@ random.shuffle(random_states)
 
 for i in range(running_times):
     counts,predictions = train_test_models.deepCinet(model = 'ScalarOnlySiamese',
-                                                     num_epochs=150,
+                                                     num_epochs=100,
                                                      batch_size=250,
                                                      splitting_model=1,
-                                                     learning_rate=0.0003,
+                                                     learning_rate=0.0004,
                                                      dropout=.2,
                                                      threshold = 4,
                                                      split=i, save_model=True,
                                                      regularization=0.8,
                                                      split_seed=random_states[i],
-                                                     initial_seed=None, mrmr_size=500,
+                                                     initial_seed=None,
+                                                     mrmr_size=500,
                                                      read_splits=False,
                                                      full_summary = False,
-                                                     cv_folds=5,
+                                                     cv_folds=1,
                                                      split_number=i,
                                                      data_type="radiomic")
 
 
     print(f"test{[v[1] for v in counts['test']['c_index']]}")
     print(f"test{len([v[1] for v in counts['test']['c_index']])}")
-
+    print(counts)
     counts['train']['c_index'] = sum([v[1] for v in counts['train']['c_index']]) / float(len(counts['train']['c_index']))
     counts['test']['c_index'] = sum([v[1] for v in counts['test']['c_index']]) / float(len(counts['test']['c_index']))
     counts['mixed']['c_index'] = sum([v[1] for v in counts['mixed']['c_index']]) / float(len(counts['mixed']['c_index']))
