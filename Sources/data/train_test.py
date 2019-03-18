@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
-
+import tensorflow_src.settings as settings
 import data
 import utils
 import pandas as pd
@@ -51,7 +51,7 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
     return enum_generator
 
 def get_sets_reader(cv_folds: int,
-                    split_path,mrmr_size
+                    split_path,mrmr_size,data_type
                     ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     """
     Get the read the train/test sets which has been generated before ahead by train_test_generator.py ans is in the folders
@@ -71,11 +71,19 @@ def get_sets_reader(cv_folds: int,
                         pass
     """
     for i in range(0,cv_folds):
-        train_df = pd.read_csv(os.path.join(split_path, f"train_fold{i}.csv"), index_col=0)
-        test_df = pd.read_csv(os.path.join(split_path, f"test_fold{i}.csv"),index_col=0)
+        train_df = pd.read_csv(os.path.join(split_path, "train_fold{i}.csv".format(i=i)), index_col=0)
+        test_df = pd.read_csv(os.path.join(split_path, "test_fold{i}.csv".format(i=i)),index_col=0)
         train_ids = train_df
         test_ids = test_df
-        path = os.path.join(split_path, f"features_fold{i}", f"radiomic{mrmr_size}.csv")
+        if mrmr_size==0:
+            if data_type == "radiomic":
+                path = settings.DATA_PATH_RADIOMIC_PROCESSED
+            elif data_type == "clinical":
+                path = settings.DATA_PATH_CLINIC_PROCESSED
+            elif data_type == "clinicalVolume":
+                path = settings.DATA_PATH_VOLUME_CLINIC_PROCESSED
+        else:
+            path = os.path.join(split_path, "features_fold{i}".format(i=i), "radiomic{mrmr_size}.csv".format(mrmr_size=mrmr_size))
         features = pd.read_csv(path, index_col=0)
         yield (i,(train_ids,test_ids,features))
 
