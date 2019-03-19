@@ -1,18 +1,18 @@
 import pandas as pd
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
 import data
 import tensorflow_src.settings as settings
 import utils
 from lifelines import CoxPHFitter
 from lifelines.utils import concordance_index
-from typing import Dict, Tuple, Any, Iterator
-import argparse
 import os
-import pathlib
 import argparse
-import os
 import pathlib
 from typing import Dict, Tuple, Any, Iterator
-
+from data.train_test import get_sets_generator,get_sets_reader
 #!/usr/bin/env python3
 """
 The train module is a script that trains cox model for clinical and radiomic data.
@@ -24,73 +24,6 @@ usage:
 logger = utils.init_logger("start")
 
 
-def get_sets_generator(dataset: data.pair_data.SplitPairs,
-                       cv_folds: int,
-                       test_size: int,
-                       random_labels: bool,
-                       model:int,
-                       threshold:float,
-                       random_seed: int = None
-                       ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
-    """
-    Get the generator that creates the train/test sets and the folds if Cross Validation is used
-
-    :param cv_folds: Number of Cross Validation folds
-    :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
-                      whole set
-    :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
-    :param model: This parameter use for selecting the model for spliting data 0 censored, 1 target distribution, 2 based on threshold
-    :param threshold: this is a threshold which is used in the model spliting
-    :param random_seed that is used for model spliting
-    :return: The sets generator then it can be used in a ``for`` loop to get the sets
-
-                >>> folds = get_sets_generator(...)
-                >>> for fold, (train_pairs, test_pairs, mixed_pairs) in folds:
-                        # Insert your code
-                        pass
-    """
-
-
-    # Decide whether to use CV or only a single test/train sets
-    if 0 < cv_folds < 2:
-        train_ids, test_ids = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold , random_seed=random_seed)
-        enum_generator = [(0, (train_ids, test_ids))]
-        logger.info("1 fold")
-    else:
-        dataset.survival_categorizing(model, threshold, category=5)  # todo get rid of hard code
-        enum_generator = dataset.folds(cv_folds, random=random_labels)
-    logger.debug("Folds created")
-
-    return enum_generator
-
-def get_sets_reader(cv_folds: int,
-                    split_path,mrmr_size
-                    ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
-    """
-    Get the read the train/test sets which has been generated before ahead by train_test_generator.py ans is in the folders
-
-    :param cv_folds: Number of Cross Validation folds (currently we only consider the number of folds which has been generated)
-    :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
-                      whole set (currently it is 0.25 but it can be change in yml file)
-    :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
-    :param model: This parameter use for selecting the model for spliting data 0 censored, 1 target distribution, 2 based on threshold
-    :param threshold: this is a threshold which is used in the model spliting
-    :param random_seed that is used for model spliting
-    :return: The sets generator then it can be used in a ``for`` loop to get the sets
-
-                >>> folds = get_sets_generator(...)
-                >>> for fold, (train_pairs, test_pairs, mixed_pairs) in folds:
-                        # Insert your code
-                        pass
-    """
-    for i in range(0,cv_folds):
-        train_df = pd.read_csv(os.path.join(split_path, f"train_fold{i}.csv"))
-        test_df = pd.read_csv(os.path.join(split_path, f"test_fold{i}.csv"))
-        train_ids = train_df.iloc[:,1].values
-        test_ids = test_df.iloc[:,1].values
-        path = os.path.join(split_path, f"features_fold{i}", f"radiomic{mrmr_size}.csv")
-        features = pd.read_csv(path, index_col=0)
-        yield (i,(train_ids,test_ids,features))
 
 ################
 #     MAIN     #
@@ -100,6 +33,13 @@ def del_low_var(df):
     logger.info(f"The columns with low variance are removed{low_variance}")
     df.drop(low_variance, axis=1, inplace=True)
     logger.info(df.columns)
+
+
+from sklearn.feature_selection import VarianceThreshold
+def variance_threshold_selector(data, threshold=0.01):
+    selector = VarianceThreshold(threshold)
+    selector.fit(data)
+    return data[data.columns[selector.get_support(indices=True)]]
 
 
 
@@ -159,7 +99,7 @@ def coxModel(cv_folds: int = 1,
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
     counts = {}
-    for key in ['train', 'test']:
+    for key in ['train', 'test', 'mixed']:
         counts[key] = {
             'c_index': []
         }
@@ -179,7 +119,7 @@ def coxModel(cv_folds: int = 1,
             radiomic_features_train.drop(['id'], axis='columns', inplace=True)
             radiomic_features_train = radiomic_features_train.dropna()
             del_low_var(radiomic_features_train)
-            cph.fit(radiomic_features_train, duration_col='time', event_col='event', show_progress=False, step_size=0.2)
+            cph.fit(radiomic_features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.11)
 
             clinical = clinical_df.iloc[test_ids]
             radiomic_features_test = pd.merge(features.T, clinical[['id', 'event', 'time']], how='inner',
@@ -217,47 +157,55 @@ def coxModel(cv_folds: int = 1,
                                             splitting_model,
                                             threshold,
                                             split_seed)
-        for i, (train_ids, test_ids) in enum_generator:
+        for i, (train_idx, test_idx) in enum_generator:
             if mrmr_size > 0:
-                df_features = data.select_mrmr_features(features, clinical_df.copy(), mrmr_size, train_ids).copy()
+                df_features = data.select_mrmr_features(features, clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
             else:
                 df_features = features.copy()
-            logger.info(f"New fold {i}, {len(train_ids)} train pairs, {len(test_ids)} test pairs")
-            cph = CoxPHFitter()
-            clinical = clinical_df.iloc[train_ids]
-            radiomic_features = pd.merge(df_features.T, clinical[['id', 'event', 'time']], how='inner',
+            train_data = dataset.clinical_data.iloc[train_idx]
+            test_data = dataset.clinical_data.iloc[test_idx]
+            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,random=random_labels)
+            logger.info(f"New fold {i}, {len(train_idx)} train pairs, {len(test_idx)} test pairs")
+            cph = CoxPHFitter(penalizer=0.5,alpha=0.95)
+            #radiomic_features = pd.merge(df_features.T, dataset.clinical_data[['id', 'event', 'time']], how='inner',left_index=True, right_on='id')
+
+            clinical_train = clinical_df.iloc[train_idx]
+            radiomic_features_train = pd.merge(df_features.T, train_data[['id', 'event', 'time']], how='inner',
                                          left_index=True, right_on='id')
-            radiomic_features.drop(['id'], axis='columns', inplace=True)
-            radiomic_features = radiomic_features.dropna()
-            del_low_var(radiomic_features)
-            logger.info(radiomic_features.columns)
+            radiomic_features_train.drop(['id'], axis='columns', inplace=True)
+            radiomic_features_train = radiomic_features_train.dropna()
+            radiomic_features_train = variance_threshold_selector(radiomic_features_train)
+            radiomic_features_train.to_csv('test.csv')
+            #logger.info(radiomic_features.columns)
 
-            # print(radiomic_features)
-            cph.fit(radiomic_features, duration_col='time', event_col='event', show_progress=False, step_size=0.2)
-            cph.print_summary()
+            #print(radiomic_features)
+            cph.fit(radiomic_features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.1)
+            #cph.print_summary()
 
-            clinical = clinical_df.iloc[test_ids]
-            radiomic_features_test = pd.merge(df_features.T, clinical[['id', 'event', 'time']], how='inner',
-                                              left_index=True, right_on='id')
-            radiomic_features_test.drop(['id'], axis='columns', inplace=True)
-            test_cindex = concordance_index(radiomic_features_test['time'],
-                                            -cph.predict_partial_hazard(radiomic_features_test).values,
-                                            radiomic_features_test['event'])
-            train_cindex = concordance_index(radiomic_features_test['time'],
-                                             -cph.predict_partial_hazard(radiomic_features_test).values,
-                                             radiomic_features_test['event'])
-            # print(cph.predict_survival_function(radiomic_features))
-            counts['train']['c_index'].append((i, train_cindex))
-            counts['test']['c_index'].append((i, test_cindex))
+            #clinical = clinical_df.iloc[train_idx]
+            radiomic_features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',left_index=True, right_on='id')
 
-            logger.info(f"{'test'} set c-index: {test_cindex}")
-
+            radiomic_features['predict'] = cph.predict_partial_hazard(radiomic_features)
+            for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                logger.info(f"Computing {name} c-index")
+                result = pd.merge(radiomic_features[['id', 'time', 'predict', 'event']], pairs, left_on='id',
+                                       right_on='pA', how='inner')
+                result = pd.merge(radiomic_features[['id', 'time', 'predict', 'event']], result, left_on='id',
+                                       right_on='pB', suffixes=('_pB', '_pA'), how='inner')
+                result['predict_comp'] = result['predict_pB'] < result['predict_pA']
+                correct = (result['predict_comp'] == result['comp']).sum()
+                total = (result['predict_comp'] == result['comp']).count()
+                c_index = correct / total
+                counts[name]['c_index'].append((i, c_index))
             results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
             results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
             #todo save
             logger.info(f"result{counts}")
+            pathlib.Path(results_save_path).mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(counts).to_csv(os.path.join(results_save_path,'result.csv'))
             logger.info("\r ")
+            return counts
 
 
 

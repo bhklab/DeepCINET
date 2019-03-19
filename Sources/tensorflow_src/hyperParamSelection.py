@@ -3,19 +3,15 @@ from test_tube import Experiment, HyperOptArgumentParser
 import pandas as pd
 import random
 import yaml
-from tensorflow_src import train_test_models
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
 
-"""
-This script demonstrates how to do a hyperparameter search over 2 parameters in tensorflow
-on 4 simultaneous GPUs. Each trial will also save its own experiment logs.   
-A single trial gets allocated on a single GPU until all trials have completed.   
-This means for 10 trials and 4 GPUs, we'll run 4 in parallel twice and the last 2 trials in parallel.   
-"""
+#import STprediction
+from tensorflow_src import train_test_models
 
 
 mixed_c_index, train_c_index, test_c_index = [], [], []
-
 
 with open("modelConf.yml", 'r') as cfg_file:
     cfg = yaml.load(cfg_file)
