@@ -548,7 +548,7 @@ def deepCinet(model: str,
         for key in counts:
             if counts[key]['total'] <= 0:
                 continue
-            logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
+            logger.info("Final {key} c-index: {cindex}".format(key=key,cindex=counts[key]['correct']/counts[key]['total']))
         return counts, predictions
 
 
@@ -786,10 +786,10 @@ if __name__ == '__main__':
 
     logger.debug("Script starts")
     logger.debug(arguments)
-    logger.info(f"Results path: {results_path}")
+    logger.info("Results path: {results_path}".format(results_path=results_path))
 
     if len(unknown) > 0:
-        logger.warning(f"Warning: there are unknown arguments {unknown}")
+        logger.warning("Warning: there are unknown arguments {unknown}".format(unknown=unknown))
 
     if arguments['batch_size'] < 2:
         logger.error("Batch size is too small! It should be at least 2. Exiting")
