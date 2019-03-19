@@ -231,7 +231,7 @@ def test_iterations(sess: tf.Session,
         pairs_count += len(batch.pairs)
 
         # Save results
-        temp_results: pd.DataFrame = batch.pairs.copy()
+        temp_results = batch.pairs.copy()
         temp_results['gather_a'] = gather_a
         temp_results['gather_b'] = gather_b
         temp_results['probabilities'] = probabilities
