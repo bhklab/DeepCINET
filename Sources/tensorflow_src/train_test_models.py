@@ -330,7 +330,7 @@ def deepCinet(model: str,
     logger.info("Results path: {_results_path}".format(_results_path=results_path))
     results_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger(f'train_{0}', str(results_path))
+    logger = utils.init_logger('train_{0}', str(results_path))
 
     logger.debug("Script starts")
 
