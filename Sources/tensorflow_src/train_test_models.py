@@ -782,7 +782,7 @@ if __name__ == '__main__':
     results_path = pathlib.Path(arguments['results_path'])
     results_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger(f'train_{array_id}', str(results_path))
+    logger = utils.init_logger('train_{array_id}'.format(array_id=array_id), str(results_path))
 
     logger.debug("Script starts")
     logger.debug(arguments)
