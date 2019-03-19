@@ -282,7 +282,7 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
         return models.ClinicalRadiomicSiamese(**kwargs)
 
     else:
-        logger.error(f"Unknown option for model {model_key}")
+        logger.error("Unknown option for model {model_key}".format(model_key=model_key))
         exit(1)
 
 
