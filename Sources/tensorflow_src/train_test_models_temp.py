@@ -80,15 +80,12 @@ import argparse
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
-
 import pathlib
 from typing import Any
-
 import tensorflow as tf
 import pandas as pd
-
-import data
 from data.train_test import get_sets_generator,get_sets_reader
+import data
 import tensorflow_src.models as models
 import tensorflow_src.models.basics
 import tensorflow_src.settings as settings
@@ -227,8 +224,15 @@ def test_iterations(sess: tf.Session,
         result_data.append(temp_results)
 
         if i % 10 == 0 or total_pairs == 0:
-            logger.info(f"Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: {total_pairs:>5}, "
-                        f"c-index: {c_index_result:>#5.3}, final c-index:{correct_count/pairs_count:>#5.3}")
+            # logger.info(f"Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: {total_pairs:>5}, "
+            #             f"c-index: {c_index_result:>#5.3}, final c-index:{correct_count/pairs_count:>#5.3}")
+            logger.info("Batch: {_i:>4}, size: {_batch_pairs_len:>5}, remaining: {_total_pairs:>5}, "
+                        "c-index: {_c_index_result:>#5.3}, final c-index:{_correct_count_pairs_count:>#5.3}".format
+                        (_i=i,
+                         _batch_pairs_len=len(batch.pairs),
+                         _total_pairs=total_pairs,
+                         _c_index_result=c_index_result,
+                         _correct_count_pairs_count=correct_count / pairs_count))
 
     return correct_count, pairs_count, pd.concat(result_data)
 
@@ -307,23 +311,24 @@ def deepCinet(model: str,
     results_path = pathlib.Path(results_path)
     results_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger(f'train_{0}', str(results_path))
+    logger = utils.init_logger('train_{0}', str(results_path))
 
     logger.debug("Script starts")
-    logger.info(f"Results path: {results_path}")
+    # logger.info(f"Results path: {results_path}")
+    logger.info("Results path: {_results_path}".format(_results_path=results_path))
     results_path.mkdir(parents=True, exist_ok=True)
 
     logger = utils.init_logger(f'train_{0}', str(results_path))
 
     logger.debug("Script starts")
 
-    logger.info(f"Results path: {results_path}")
-
     logger.info("Script to train a siamese neural network model")
-    logger.info(f"Using batch size: {batch_size}")
+    # logger.info(f"Using batch size: {batch_size}")
+    logger.info("Using batch size: {_batch_size}".format(_batch_size=batch_size))
     features = pd.DataFrame()
     # read features and clinical data frame the path is defined in the settings.py
-    logger.info(f"data type: {data_type}")
+    # logger.info(f"data type: {data_type}")
+    logger.info("data type: {_data_type}".format(_data_type=data_type))
     if data_type == "radiomic":
         features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
     elif data_type == "clinical":
@@ -331,13 +336,15 @@ def deepCinet(model: str,
     elif data_type == "clinicalVolume":
         features = pd.read_csv(settings.DATA_PATH_VOLUME_CLINIC_PROCESSED, index_col=0)
 
-    logger.info(f"number of features is {len(features.index)}")
+    # logger.info(f"number of features is {len(features.index)}")
+    logger.info("number of features is {_len_feature_index}".format(_len_feature_index=len(features.index)))
     clinical_df = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
     logger.info("read Feature DataFrame")
 
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
     input_path = settings.DATA_PATH_INPUT_TEST_TRAIN
-    number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
+    # number of features set to the number of mrmr_size otherwise it should be set to the number of all features
+    number_feature = mrmr_size if mrmr_size > 0 else len(features.index)
     siamese_model = select_model(model,
                                  number_feature=number_feature,
                                  gpu_level=gpu_level,
@@ -359,23 +366,31 @@ def deepCinet(model: str,
                 'c_index': []
             }
         dataset = data.pair_data.SplitPairs()
-        if(read_splits):
-            cv_path = os.path.join(input_path, f"cv_{cv_folds}")
-            random_path = os.path.join(cv_path, f"random_seed_{split_number}")
-            split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
-            enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size)
+        if (read_splits):
+            # cv_path = os.path.join(input_path, f"cv_{cv_folds}")
+            # random_path = os.path.join(cv_path, f"random_seed_{split_number}")
+            # split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
+            cv_path = os.path.join(input_path, "cv_{_cv_folds}".format(_cv_folds=cv_folds))
+            random_path = os.path.join(cv_path, "random_seed_{_split_number}".format(_split_number=split_number))
+            split_path = os.path.join(random_path,
+                                      "splitting_models_{_splitting_model}".format(_splitting_model=splitting_model))
+            enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
             clinical_data = dataset.clinical_data.copy()
             for i, (train_ids, test_ids, df_features) in enum_generator:
-                print(train_ids)
-                train_data = dataset.clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")
-                test_data = dataset.clinical_data.merge(train_ids, left_on = "id", right_on = "id", how = "inner")
+                train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+                test_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
                 # Initialize all the variables
-                logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
-                summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
-                summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
-                logger.info(f"Saving results at: {summaries_dir}")
+                # logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+                logger.info("New fold {i}, {_len_train_pairs} train pairs, {len(test_pairs)} test pairs".format(
+                    i=i, _len_train_pairs=len(train_pairs), _len_test_pairs=len(test_pairs)))
+                # summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
+                summaries_dir = os.path.join(results_path, 'summaries', 'fold_{i}'.format(i=i))
+                # summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
+                summaries_dir = os.path.join(summaries_dir, "split_{split:0>2}".format(split=split))
+                # logger.info(f"Saving results at: {summaries_dir}")
+                logger.info("Saving results at: {summaries_dir}".format(summaries_dir=summaries_dir))
                 train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
                 batch_data = data.BatchData(df_features)
                 train_summary.add_graph(sess.graph)
@@ -392,7 +407,8 @@ def deepCinet(model: str,
                 for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                     if len(pairs) <= 0:
                         continue
-                    logger.info(f"Computing {name} c-index")
+                    # logger.info(f"Computing {name} c-index")
+                    logger.info("Computing {name} c-index".format(name=name))
                     correct, total, results = \
                         test_iterations(sess,
                                         siamese_model,
@@ -433,7 +449,8 @@ def deepCinet(model: str,
 
             for i, (train_idx, test_idx) in enum_generator:
                 if mrmr_size > 0:
-                    df_features = data.select_mrmr_features(features.copy(), clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
+                    #df_features = data.select_mrmr_features(features.copy(), clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
+                    logger.info("to use mrmr you need run train_test_moduls.py this file is just for using in H4H")
                 else:
                     df_features = features.copy()
                 train_data = dataset.clinical_data.iloc[train_idx]

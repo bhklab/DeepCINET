@@ -13,19 +13,23 @@ from sklearn.feature_selection import VarianceThreshold
 pandas2ri.activate()
 from typing import Iterator, Tuple, Generator, List, Dict
 import logging
+
 matrix = importr('Matrix')
 survival = importr('survival')
 igraph = importr('igraph')
 mrmre = importr('mRMRe')
 from sklearn.feature_selection import VarianceThreshold
+
+
 def variance_threshold_selector(data, threshold=0.01):
     selector = VarianceThreshold(threshold)
-    selector.fit(data)
-    return data[data.columns[selector.get_support(indices=True)]]
+    selector.fit_transform(data)
+    return data
 
-def mrmr_selection(features : pd.DataFrame,
-                    clinical_info : pd.DataFrame,
-                    solution_count: int,
+
+def mrmr_selection(features: pd.DataFrame,
+                   clinical_info: pd.DataFrame,
+                   solution_count: int,
                    feature_count: int):
     '''
      This function use mrmr feature selection to select specific number of features
@@ -37,16 +41,15 @@ def mrmr_selection(features : pd.DataFrame,
      :return: New feature dataframe
      '''
 
-
-    #Call the r wrapper to use mrmre for selecting features
-    #This function use mRMR.ensemble to return max relevant min redundant features
+    # Call the r wrapper to use mrmre for selecting features
+    # This function use mRMR.ensemble to return max relevant min redundant features
     robjects.r('''
                 # create a function `mrmrSelection`
                 mrmrSelection <- function(df_all, feature_count= feature_count, solution_count = solution_count) {
                     df_all$event <- as.numeric(df_all$event)
                     df_all$surv <- with(df_all, Surv(time, event))
                     df_all <- subset(df_all, select = -c(time,event) )
-                    df_all <- df_all[,colSums(is.na(df_all))<nrow(df_all)]
+                    #df_all <- df_all[,colSums(is.na(df_all))<nrow(df_all)]
                     surv_index = grep("surv", colnames(df_all)) 
                     feature_data <- mRMR.data(df_all)
                     feature_selected <- mRMR.ensemble(data = feature_data, target_indices = surv_index,feature_count= feature_count, solution_count = solution_count)
@@ -56,22 +59,19 @@ def mrmr_selection(features : pd.DataFrame,
                 ''')
     r_mrmrSelection = robjects.r['mrmrSelection']
     # Merge the features and labels (the survival time, which are the 'time' and 'event'  field of clinical information)
-    features = features.T # todo apply on all the model
     clinical = clinical_info.copy()
     clinical.set_index('id', inplace=True)
     features = features.merge(clinical[['time', 'event']], how='inner', left_index=True, right_index=True)
-    features = variance_threshold_selector(features)
-    all_features = r_mrmrSelection(features, feature_count= feature_count, solution_count = solution_count)
+    all_features = r_mrmrSelection(features, feature_count=feature_count, solution_count=solution_count)
     selected_features = pandas2ri.ri2py_dataframe(all_features)
-    #the dataframe index is diffrent in R and python
     selected_features = selected_features.sub(1)
-    return selected_features.iloc[:,0]
+    return selected_features.iloc[:, 0]
 
 
 def select_mrmr_features(dataframe_features: pd.DataFrame,
                          clinical_df: pd.DataFrame,
-                         mrmr_size : int,
-                        ):
+                         mrmr_size: int,
+                         ):
     """
       select the mrmr features
 
@@ -81,10 +81,14 @@ def select_mrmr_features(dataframe_features: pd.DataFrame,
       :param train_ids: List of the train_ids that should be considered in mrmr
       :return: DataFrame that contain selected features
     """
-    clinicals= clinical_df #clinical_df[train_ids.tolist()]
-    mrmr_list= mrmr_selection(features=dataframe_features,
-                              clinical_info=clinicals,
-                              solution_count=1,
-                              feature_count=mrmr_size)
-    features = dataframe_features.iloc[mrmr_list] # todo check iloc is better or loc should check
+    clinicals = clinical_df  # clinical_df[train_ids.tolist()]
+    features = dataframe_features.T  # todo apply on all the model
+    features = variance_threshold_selector(features)
+    mrmr_list = mrmr_selection(features=features,
+                               clinical_info=clinicals,
+                               solution_count=1,
+                               feature_count=mrmr_size)
+
+    features = dataframe_features.iloc[mrmr_list]  # todo check iloc is better or loc should check
+    #features.to_csv('mrmr.csv')
     return features

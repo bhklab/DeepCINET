@@ -67,7 +67,7 @@ class ImageSiamese(BasicImageSiamese):
         # Retrieve Filters
         #F1, F2, F3 = filters
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug("Using device: {device} for first conv layers".format(device=device))
         with tf.device(device):
 
             a1 = tf.layers.conv3d(
@@ -106,7 +106,7 @@ class ImageSiamese(BasicImageSiamese):
 
             )
         device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug("Using device: {device} for first conv layers".format(device=device))
         with tf.device(device):
 
             b1 = tf.layers.conv3d(
@@ -145,7 +145,7 @@ class ImageSiamese(BasicImageSiamese):
 
             )
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug("Using device: {device} for first conv layers".format(device=device))
         with tf.device(device):
             c1 = tf.nn.max_pool3d(
 
@@ -226,7 +226,7 @@ class ImageSiamese(BasicImageSiamese):
         :return: Tensor with shape ``[batch, 1]``
         """
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for FC layers")
+        self.logger.debug("Using device: {device} for FC layers".format(device=device))
         with tf.device(device):
             # Out: [batch, 64*64*64*1]
             x = tf.layers.flatten(
@@ -304,7 +304,7 @@ class SimpleImageSiamese(BasicImageSiamese):
         # In: [batch, 256, 256, 256, 1]
 
         device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug("Using device: {device} for first conv layers".format(device=device))
         with tf.device(device):
             # Out: [batch, 127, 127, 127, 30]
             x = tf.layers.conv3d(
@@ -336,7 +336,7 @@ class SimpleImageSiamese(BasicImageSiamese):
 
 
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for second conv layers")
+        self.logger.debug("Using device: {device} for second conv layers".format(device=device))
         with tf.device(device):
             # Out: [batch, 19, 19, 19, 40]
             x = tf.layers.conv3d(
@@ -366,7 +366,7 @@ class SimpleImageSiamese(BasicImageSiamese):
         :return: Tensor with shape ``[batch, 1]``
         """
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for FC layers")
+        self.logger.debug("Using device: {device} for FC layers".format(device=device))
         with tf.device(device):
             # Out: [batch, 25*25*25*50]
             x = tf.layers.flatten(
@@ -454,7 +454,7 @@ class ImageScalarSiamese(BasicImageSiamese):
         # In: [batch, 64, 64, 64, 1]
 
         device = '/gpu:0' if self._gpu_level >= 2 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for first conv layers")
+        self.logger.debug("Using device: {device} for first conv layers".format(device=device))
         with tf.device(device):
             # Out: [batch, 31, 31, 31, 30]
             x = self._conv3d(
@@ -475,7 +475,7 @@ class ImageScalarSiamese(BasicImageSiamese):
             )
 
         device = '/gpu:0' if self._gpu_level >= 1 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for second conv layers")
+        self.logger.debug("Using device: {device} for second conv layers".format(device=device))
         with tf.device(device):
             # Out: [batch, 13, 13, 13, 40]
             x = self._conv3d(
@@ -514,7 +514,7 @@ class ImageScalarSiamese(BasicImageSiamese):
         # In this case we will be using the same idea seen in SimpleSiamese but we will be adding the scalar
         # features instead
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        self.logger.debug(f"Using device: {device} for FC layers")
+        self.logger.debug("Using device: {device} for FC layers".format(device=device))
         with tf.device(device):
             # Out: [batch, 9*9*9*50]
             x = tf.layers.flatten(
@@ -707,7 +707,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
         :return:
         """
 
-        with tf.variable_scope(f"block_31_{self.residual_count_a}"):
+        with tf.variable_scope("block_31_{residual_count_a}".format(self.residual_count_a)):
             self.residual_count_a += 1
 
             x_a = self._conv3d(
@@ -745,7 +745,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
             for i in range(1, 3):
                 x_c = self._conv3d(
                     x=x_c,
-                    name=f"c_{i}_conv_3x3x3",
+                    name="c_{i}_conv_3x3x3".format(i=i),
                     filters=32,
                     kernel_size=3,
                     padding="same"
@@ -818,7 +818,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
         :return: Tensor with shape ``[batch, 15, 15, 15, 130]``
         """
 
-        with tf.variable_scope(f"block_15_{self.residual_count_b}"):
+        with tf.variable_scope("block_15_{residual_count_b}".format(residual_count_b=self.residual_count_b)):
             self.residual_count_b += 1
 
             x_a = self._conv3d(
@@ -1343,7 +1343,7 @@ class VolumeOnlySiamese(BasicSiamese):
 
         total = tf.Variable(0., name="bias")
         for i in range(1):
-            w = tf.Variable(-1., name=f"weight_{i}")
+            w = tf.Variable(-1., name="weight_{i}".format(i=i))
             total = total + w*(self.x_volume**(i + 1))
 
         return total

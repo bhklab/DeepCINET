@@ -64,7 +64,7 @@ def main(args: Dict[str, Any]) -> None:
     split_numbers = cfg['split_numbers']
     #The output path is refer to the folder that all the output are in
     output_path = cfg['output_path']
-    logger.info(f"output path: {output_path}")
+    logger.info("output path: {output_path}".format(output_path=output_path))
 
     #we randomly select a number to generate split based on the seed
     random.seed(1)
@@ -103,7 +103,7 @@ def main(args: Dict[str, Any]) -> None:
                 for i, (train_idx, test_idx) in enum_generator:
                     pathlib.Path(os.path.join(output_path, split_path)).mkdir(parents=True, exist_ok=True)
                     train_ids = clinical_info.iloc[train_idx]['id']
-                    test_ids = clinical_info.iloc[train_idx]['id']
+                    test_ids = clinical_info.iloc[test_idx]['id']
                     logger.info(f'test{i}:',test_ids)
                     logger.info(f'train{i}:',train_ids)
                     pd.DataFrame(train_ids).to_csv(os.path.join(output_path, split_path, f"train_fold{i}.csv"))

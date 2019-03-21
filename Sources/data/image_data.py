@@ -46,7 +46,8 @@ class RawData:
         valid_dirs = filter(self._is_valid_dir, os.scandir(self.data_path))
         self._valid_dirs = [PseudoDir(x.name, x.path, x.is_dir()) for x in valid_dirs]
         self._valid_ids = [str(x.name) for x in self._valid_dirs]
-        self.logger.info(f"{len(self._valid_dirs)} valid ids have been found")
+        #self.logger.info(f"{len(self._valid_dirs)} valid ids have been found")
+        self.logger.info("{_valid_dirs} valid ids have been found".format(_valid_dirs=len(self._valid_dirs)))
 
     def total_elements(self) -> int:
         return len(self._valid_dirs)
@@ -138,7 +139,7 @@ class RawData:
         numpy_file = os.path.join(self.cache_path, image_dir.name + ".npz")
         numpy_file_temp = os.path.join(self.cache_path, image_dir.name + "_temp.npz")
 
-        self.logger.info(f"Reading {count} of {total}")
+        self.logger.info("Reading {count} of {total}".format(count=count,total=total))
 
         main_stack, mask_stack = self._compact_files(image_dir)
         self.logger.debug("Saving {} file".format(numpy_file_temp))
@@ -156,13 +157,14 @@ class RawData:
 
         # Load .npz file instead of .dcm if we have already read it
         if os.path.exists(numpy_file):
-            self.logger.debug(f"File {numpy_file} found reading npz file")
+            #self.logger.debug(f"File {numpy_file} found reading npz file")
+            self.logger.debug("File {numpy_file} found reading npz file".format(numpy_file=numpy_file))
             npz_file = np.load(numpy_file)
             main_stack = npz_file['main']
             mask_stack = npz_file['mask']
             npz_file.close()
         else:
-            raise FileNotFoundError(f"File {numpy_file} does not exist, this should not happen")
+            raise FileNotFoundError("File {numpy_file} does not exist, this should not happen".format(numpy_file=numpy_file))
 
         return main_stack, mask_stack
 
@@ -262,7 +264,7 @@ class PreProcessedData:
         # To pre-process on Mordor (computing cluster), this variable is defined with Sun Grid
         # Engine and is the number of threads that we are allowed to use
         jobs = int(os.getenv("NSLOTS", -1))
-        self.logger.debug(f"Jobs: {jobs}")
+        self.logger.debug("Jobs: {jobs}".format(jobs=jobs))
 
         # generator = (delayed(self._process_individual)(idx, main_stack, mask_stack, i + 1, len(to_create))
         #              for i, (idx, main_stack, mask_stack) in enumerate(self._raw_data.elements(to_create)))
@@ -290,7 +292,7 @@ class PreProcessedData:
         save_dir = os.path.join(self._data_path, image_id)
         temp_dir = os.path.join(self._data_path, image_id + "_temp")
 
-        self.logger.info(f"Processing dataset {image_id}, {count} of {total}")
+        self.logger.info("Processing dataset {image_id}, {count} of {total}".format(image_id=image_id,count=count,total=total))
 
         # Remove existing temporary directory from previous runs
         if os.path.exists(temp_dir):
@@ -362,7 +364,7 @@ class PreProcessedData:
 
         # scipy.misc.imsave(os.path.join(temp_dir, "process_8.png"), sliced[:, :, new_slice])
 
-        self.logger.debug(f"Volume: {original_volume}")
+        self.logger.debug("Volume: {original_volume}".format(original_volume=original_volume))
         return sliced
 
     def _write_clinical_filtered(self):
@@ -374,8 +376,8 @@ class PreProcessedData:
         """
         # Process the clinical CSV
         if not os.path.exists(DATA_PATH_CLINICAL):
-            self.logger.error(f"The clinical info file has not been found at {DATA_PATH_CLINICAL}")
-            raise FileNotFoundError(f"The clinical info file has not been found at {DATA_PATH_CLINICAL}")
+            self.logger.error("The clinical info file has not been found at {DATA_PATH_CLINICAL}".format(DATA_PATH_RADIOMIC=DATA_PATH_RADIOMIC))
+            raise FileNotFoundError("The clinical info file has not been found at {DATA_PATH_CLINICAL}".format(DATA_PATH_CLINICAL=DATA_PATH_CLINICAL))
 
         df = pd.read_csv(DATA_PATH_CLINICAL)
         df = df.take([self.COL_ID, self.COL_AGE, self.COL_SEX, self.COL_EVENT, self.COL_TIME], axis=1)
@@ -385,8 +387,10 @@ class PreProcessedData:
 
         # Process the radiomc features CSV
         if not os.path.exists(DATA_PATH_RADIOMIC):
-            self.logger.error(f"The radiomic features file has not been found at {DATA_PATH_RADIOMIC}")
-            raise FileNotFoundError(f"The radiomic features file has not been found at {DATA_PATH_RADIOMIC}")
+            self.logger.error("The radiomic features file has not been found at {DATA_PATH_RADIOMIC}".format
+                              (DATA_PATH_RADIOMIC=DATA_PATH_RADIOMIC))
+            raise FileNotFoundError("The radiomic features file has not been found at {DATA_PATH_RADIOMIC}".format
+                                    (DATA_PATH_RADIOMIC=DATA_PATH_RADIOMIC))
 
         df = pd.read_csv(DATA_PATH_RADIOMIC)
         df = df[self._raw_data.valid_ids()]
