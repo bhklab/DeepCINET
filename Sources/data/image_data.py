@@ -9,7 +9,7 @@ import pydicom as dcm
 import scipy.misc
 import scipy.ndimage
 from joblib import delayed, Parallel
-from skimage import transform as skt
+#from skimage import transform as skt
 
 from data.data_structures import PseudoDir
 from tensorflow_src.settings import \
@@ -351,7 +351,7 @@ class PreProcessedData:
         # scipy.misc.imsave(os.path.join(temp_dir, "process_6.png"), sliced[:, :, 138 - z_min])
 
         # Resize the normalized data
-        sliced = skt.resize(sliced, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
+        #sliced = skt.resize(sliced, (self.X_SIZE, self.Y_SIZE, self.Z_SIZE), mode='symmetric')
 
         # new_slice = int((138 - z_min)/(z_max - z_min)*64)
         # scipy.misc.imsave(os.path.join(temp_dir, "process_7.png"), sliced[:, :, new_slice])
