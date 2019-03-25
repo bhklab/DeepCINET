@@ -88,6 +88,8 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
 
 import pathlib
+
+
 import tensorflow as tf
 import pandas as pd
 
@@ -154,18 +156,9 @@ def train_iterations(sess: tf.Session,
                     ],
                     feed_dict=model.feed_dict(batch)
                 )
-                # logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: "
-                #             f"{total_pairs:>6}, "
-                #             f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
-                logger.info("Epoch: {_epoch:>3}, Batch: {_i:>4}, size: {_batch_pair:>5}, remaining: "
-                            "{_total_pairs:>6}, "
-                            "c-index: {_c_index_result:>#5.3}, loss: {_loss:>#5.3}".format
-                            (_epoch=epoch, _i=i,
-                             _batch_pair=len(batch.pairs),
-                             _total_pairs=total_pairs,
-                             _c_index_result=c_index_result,
-                             _loss=loss))
-
+                logger.info(f"Epoch: {epoch:>3}, Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: "
+                            f"{total_pairs:>6}, "
+                            f"c-index: {c_index_result:>#5.3}, loss: {loss:>#5.3}")
                 summary_writer.add_summary(summary, final_iterations)
             else:
                 _, c_index_result, loss = sess.run(
@@ -231,7 +224,7 @@ def test_iterations(sess: tf.Session,
         pairs_count += len(batch.pairs)
 
         # Save results
-        temp_results = batch.pairs.copy()
+        temp_results: pd.DataFrame = batch.pairs.copy()
         temp_results['gather_a'] = gather_a
         temp_results['gather_b'] = gather_b
         temp_results['probabilities'] = probabilities
@@ -240,15 +233,8 @@ def test_iterations(sess: tf.Session,
         result_data.append(temp_results)
 
         if i % 10 == 0 or total_pairs == 0:
-            # logger.info(f"Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: {total_pairs:>5}, "
-            #             f"c-index: {c_index_result:>#5.3}, final c-index:{correct_count/pairs_count:>#5.3}")
-            logger.info("Batch: {_i:>4}, size: {_batch_pairs_len:>5}, remaining: {_total_pairs:>5}, "
-                        "c-index: {_c_index_result:>#5.3}, final c-index:{_correct_count_pairs_count:>#5.3}".format
-                        (_i=i,
-                         _batch_pairs_len=len(batch.pairs),
-                         _total_pairs=total_pairs,
-                         _c_index_result=c_index_result,
-                         _correct_count_pairs_count=correct_count / pairs_count))
+            logger.info(f"Batch: {i:>4}, size: {len(batch.pairs):>5}, remaining: {total_pairs:>5}, "
+                        f"c-index: {c_index_result:>#5.3}, final c-index:{correct_count/pairs_count:>#5.3}")
 
     return correct_count, pairs_count, pd.concat(result_data)
 
@@ -282,7 +268,7 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
         return models.ClinicalRadiomicSiamese(**kwargs)
 
     else:
-        logger.error("Unknown option for model {model_key}".format(model_key=model_key))
+        logger.error(f"Unknown option for model {model_key}")
         exit(1)
 
 
@@ -323,24 +309,24 @@ def deepCinet(model: str,
     results_path = pathlib.Path(results_path)
     results_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger('train_{0}', str(results_path))
+    logger = utils.init_logger(f'train_{0}', str(results_path))
 
     logger.debug("Script starts")
     # logger.info(f"Results path: {results_path}")
     logger.info("Results path: {_results_path}".format(_results_path=results_path))
     results_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger('train_{0}', str(results_path))
+    logger = utils.init_logger(f'train_{0}', str(results_path))
 
     logger.debug("Script starts")
 
+    logger.info(f"Results path: {results_path}")
+
     logger.info("Script to train a siamese neural network model")
-    # logger.info(f"Using batch size: {batch_size}")
-    logger.info("Using batch size: {_batch_size}".format(_batch_size=batch_size))
+    logger.info(f"Using batch size: {batch_size}")
     features = pd.DataFrame()
     # read features and clinical data frame the path is defined in the settings.py
-    # logger.info(f"data type: {data_type}")
-    logger.info("data type: {_data_type}".format(_data_type=data_type))
+    logger.info(f"data type: {data_type}")
     if data_type == "radiomic":
         features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
     elif data_type == "clinical":
@@ -348,15 +334,13 @@ def deepCinet(model: str,
     elif data_type == "clinicalVolume":
         features = pd.read_csv(settings.DATA_PATH_VOLUME_CLINIC_PROCESSED, index_col=0)
 
-    # logger.info(f"number of features is {len(features.index)}")
-    logger.info("number of features is {_len_feature_index}".format(_len_feature_index=len(features.index)))
+    logger.info(f"number of features is {len(features.index)}")
     clinical_df = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
     logger.info("read Feature DataFrame")
 
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
     input_path = settings.DATA_PATH_INPUT_TEST_TRAIN
-    # number of features set to the number of mrmr_size otherwise it should be set to the number of all features
-    number_feature = mrmr_size if mrmr_size > 0 else len(features.index)
+    number_feature = mrmr_size if mrmr_size > 0 else features.index
     siamese_model = select_model(model,
                                  number_feature=number_feature,
                                  gpu_level=gpu_level,
@@ -378,14 +362,10 @@ def deepCinet(model: str,
                 'c_index': []
             }
         dataset = data.pair_data.SplitPairs()
-        if (read_splits):
-            # cv_path = os.path.join(input_path, f"cv_{cv_folds}")
-            # random_path = os.path.join(cv_path, f"random_seed_{split_number}")
-            # split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
-            cv_path = os.path.join(input_path, "cv_{_cv_folds}".format(_cv_folds=cv_folds))
-            random_path = os.path.join(cv_path, "random_seed_{_split_number}".format(_split_number=split_number))
-            split_path = os.path.join(random_path,
-                                      "splitting_models_{_splitting_model}".format(_splitting_model=splitting_model))
+        if(read_splits):
+            cv_path = os.path.join(input_path, f"cv_{cv_folds}")
+            random_path = os.path.join(cv_path, f"random_seed_{split_number}")
+            split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
             enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
             clinical_data = dataset.clinical_data.copy()
             for i, (train_ids, test_ids, df_features) in enum_generator:
@@ -394,15 +374,10 @@ def deepCinet(model: str,
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
                 # Initialize all the variables
-                # logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
-                logger.info("New fold {i}, {_len_train_pairs} train pairs, {len(test_pairs)} test pairs".format(
-                    i=i, _len_train_pairs=len(train_pairs), _len_test_pairs=len(test_pairs)))
-                # summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
-                summaries_dir = os.path.join(results_path, 'summaries', 'fold_{i}'.format(i=i))
-                # summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
-                summaries_dir = os.path.join(summaries_dir, "split_{split:0>2}".format(split=split))
-                # logger.info(f"Saving results at: {summaries_dir}")
-                logger.info("Saving results at: {summaries_dir}".format(summaries_dir=summaries_dir))
+                logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+                summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
+                summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
+                logger.info(f"Saving results at: {summaries_dir}")
                 train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
                 batch_data = data.BatchData(df_features)
                 train_summary.add_graph(sess.graph)
@@ -419,8 +394,7 @@ def deepCinet(model: str,
                 for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                     if len(pairs) <= 0:
                         continue
-                    # logger.info(f"Computing {name} c-index")
-                    logger.info("Computing {name} c-index".format(name=name))
+                    logger.info(f"Computing {name} c-index")
                     correct, total, results = \
                         test_iterations(sess,
                                         siamese_model,
@@ -438,23 +412,14 @@ def deepCinet(model: str,
 
                     predictions[name] = results
 
-                    # logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
-                    #             f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
-                    logger.info("{_name} set c-index: {_c_index}, correct: {_correct}, total: {total}, ".format(
-                        _name=name,
-                        _c_index=c_index,
-                        _correct=correct,
-                        _total=total))
-                    logger.info("temp c-index: {temp_cindex}".format(
-                        temp_cindex=counts[name]['correct'] / counts[name]['total']))
+                    logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
+                                f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
 
                 # Save each fold in a different directory
 
-                # results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
-                # results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
-                results_save_path = os.path.join(results_path, "fold_{_i:0>2}".format(_i=i))
-                results_save_path = os.path.join(results_save_path, "split_{_split:0>2}".format(_split=split))
-                logger.info("Saving results at: {_results_save_path}".format(_results_save_path=results_save_path))
+                results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
+                results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
+                logger.info(f"Saving results at: {results_save_path}")
                 utils.save_results(sess, predictions, results_save_path, save_model)
                 logger.info("\r ")
 
@@ -478,15 +443,10 @@ def deepCinet(model: str,
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
                 # Initialize all the variables
-                logger.info("New fold {i}, {_len_train_pairs} train pairs, {_len_test_pairs} test pairs".format(
-                    i=i, _len_train_pairs=len(train_pairs), _len_test_pairs=len(test_pairs)))
-
-                # summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
-                summaries_dir = os.path.join(results_path, 'summaries', 'fold_{i}'.format(i=i))
-                # summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
-                summaries_dir = os.path.join(summaries_dir, "split_{split:0>2}".format(split=split))
-                # logger.info(f"Saving results at: {summaries_dir}")
-                logger.info("Saving results at: {summaries_dir}".format(summaries_dir=summaries_dir))
+                logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
+                summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
+                summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
+                logger.info(f"Saving results at: {summaries_dir}")
                 train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
                 batch_data = data.BatchData(df_features)
                 train_summary.add_graph(sess.graph)
@@ -504,8 +464,7 @@ def deepCinet(model: str,
                 for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                     if len(pairs) <= 0:
                         continue
-                    # logger.info(f"Computing {name} c-index")
-                    logger.info("Computing {name} c-index".format(name=name))
+                    logger.info(f"Computing {name} c-index")
                     correct, total, results = \
                         test_iterations(sess,
                                         siamese_model,
@@ -523,32 +482,23 @@ def deepCinet(model: str,
 
                     predictions[name] = results
 
-                    # logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
-                    # f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
-                    logger.info("{_name} set c-index: {_c_index}, correct: {_correct}, total: {_total}, ".format(
-                        _name=name,
-                        _c_index=c_index,
-                        _correct=correct,
-                        _total=total))
-                    logger.info("temp c-index: {temp_cindex}".format(
-                        temp_cindex=counts[name]['correct'] / counts[name]['total']))
+                    logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
+                                f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
+
+
 
                 # Save each fold in a different directory
 
-                # results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
-                # results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
-                # logger.info(f"Saving results at: {results_save_path}")
-
-                results_save_path = os.path.join(results_path, "fold_{_i:0>2}".format(_i=i))
-                results_save_path = os.path.join(results_save_path, "split_{_split:0>2}".format(_split=split))
-                logger.info("Saving results at: {_results_save_path}".format(_results_save_path=results_save_path))
+                results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
+                results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
+                logger.info(f"Saving results at: {results_save_path}")
                 utils.save_results(sess, predictions, results_save_path, save_model)
                 logger.info("\r ")
 
         for key in counts:
             if counts[key]['total'] <= 0:
                 continue
-            logger.info("Final {key} c-index: {cindex}".format(key=key,cindex=counts[key]['correct']/counts[key]['total']))
+            logger.info(f"Final {key} c-index: {counts[key]['correct']/counts[key]['total']}")
         return counts, predictions
 
 
@@ -558,7 +508,7 @@ def main(args: Dict[str, Any]) -> None:
     :param args: Command Line Arguments
     """
     logger.info("Script to train a siamese neural network model")
-    logger.info("Using batch size: {batch_size}".format(batch_size=args['batch_size']))
+    logger.info(f"Using batch size: {args['batch_size']}")
     data_type = args['data_type']
     mrmr_size = args['mrmr_size']
     random_labels = args['random_labels']
@@ -782,14 +732,14 @@ if __name__ == '__main__':
     results_path = pathlib.Path(arguments['results_path'])
     results_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger('train_{array_id}'.format(array_id=array_id), str(results_path))
+    logger = utils.init_logger(f'train_{array_id}', str(results_path))
 
     logger.debug("Script starts")
     logger.debug(arguments)
-    logger.info("Results path: {results_path}".format(results_path=results_path))
+    logger.info(f"Results path: {results_path}")
 
     if len(unknown) > 0:
-        logger.warning("Warning: there are unknown arguments {unknown}".format(unknown=unknown))
+        logger.warning(f"Warning: there are unknown arguments {unknown}")
 
     if arguments['batch_size'] < 2:
         logger.error("Batch size is too small! It should be at least 2. Exiting")
