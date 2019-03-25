@@ -49,8 +49,7 @@ class SplitPairs:
         n_folds = self.get_n_splits(n_folds)
         generator = skf.split(self.total_x, self.total_y)
 
-        #self.logger.info(f"Folds: {n_folds}")
-        self.logger.info("Folds: {n_folds}".format(n_folds))
+        self.logger.info(f"Folds: {n_folds}")
         # Slurm configuration
         task_id = int(os.getenv('SLURM_ARRAY_TASK_ID', 0))
         task_count = int(os.getenv('SLURM_ARRAY_TASK_COUNT', 0))
@@ -156,9 +155,7 @@ class SplitPairs:
         length = int(math.ceil(total_tasks / workers))
         limit = total_tasks - (length - 1)*workers
 
-        #self.logger.debug(f"Tasks: {total_tasks}, Workers: {workers}, Length: {length}, Limit: {limit}")
-        self.logger.debug("Tasks: {total_tasks}, Workers: {workers}, Length: {length}, Limit: {limit}".format(
-            total_tasks=total_tasks,workers=workers,length=length,limit=limit))
+        self.logger.debug(f"Tasks: {total_tasks}, Workers: {workers}, Length: {length}, Limit: {limit}")
 
         task_list = []
         prev_end = 0
@@ -440,9 +437,7 @@ class BatchData:
 
             # Check if the file exists, so the data has been preprocessed
             if load_images and not os.path.exists(file_path):
-                #self.logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
-                self.logger.error("The file {file_path} could not be found. Have you pre-processed the data?".format(file_path=file_path))
-                raise FileNotFoundError("The file {file_path} could not be found. Have you pre-processed the data?".format(file_path=file_path))
+                self.logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
             if load_images:
                 loaded_npz = np.load(file_path)
