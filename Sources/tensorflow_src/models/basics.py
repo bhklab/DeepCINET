@@ -92,7 +92,7 @@ class BasicModel:
         self.logger = logging.getLogger(__name__)
 
         if len(ignored) > 0:
-            self.logger.warning("There are unknown arguments {ignored}".format(ignored=ignored))
+            self.logger.warning(f"There are unknown arguments {ignored}")
 
         #: **Attribute**: Whether to use distance or the boolean values when computing the cost function
         self._use_distance = use_distance
@@ -314,7 +314,7 @@ class BasicSiamese(BasicModel):
         :return: Tensor with the contrastive loss, comparing the two sister's output with shape ``[batch, 1]``
         """
         device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
-        self.logger.debug("Using device: {device} for contrastive loss".format(device=device))
+        self.logger.debug(f"Using device: {device} for contrastive loss")
         with tf.device(device):
             with tf.variable_scope("contrastive_loss"):
                 self.gathered_a = tf.gather(sister_out, self.pairs_a, name="gather_a")
