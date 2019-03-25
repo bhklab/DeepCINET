@@ -340,7 +340,7 @@ def deepCinet(model: str,
 
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
     input_path = settings.DATA_PATH_INPUT_TEST_TRAIN
-    number_feature = mrmr_size if mrmr_size > 0 else features.index
+    number_feature = mrmr_size if mrmr_size > 0 else len(features.index)
     siamese_model = select_model(model,
                                  number_feature=number_feature,
                                  gpu_level=gpu_level,
