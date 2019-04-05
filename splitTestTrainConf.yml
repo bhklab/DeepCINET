@@ -1,4 +1,4 @@
-mrmr: [50,100,250,500]
+mrmr: [,50,100,250,500]
 cv_folds: [1,5]
 test_size: 0.25
 split_numbers: 100

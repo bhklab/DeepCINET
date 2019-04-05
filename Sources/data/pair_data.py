@@ -35,7 +35,7 @@ class SplitPairs:
         self.std = 1
         self.logger = logging.getLogger(__name__)
 
-    def folds(self, n_folds: int = 4, random_seed = RANDOM_SEED,
+    def folds(self, n_folds: int = 4, random_seed=RANDOM_SEED,
               random: bool = False, ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
         """
         Creates different folds of data for use with CV
@@ -63,15 +63,15 @@ class SplitPairs:
             enum_generator = enumerate(generator)
         return enum_generator
 
-
-    def get_n_splits(self, n_folds: int = 4, random_seed = RANDOM_SEED) -> int:
+    def get_n_splits(self, n_folds: int = 4, random_seed=RANDOM_SEED) -> int:
         return self._get_folds_generator(n_folds, random_seed).get_n_splits(self.total_y, self.total_y)
 
-    def survival_categorizing(self, models, threshold, category : int = 8):
+    def survival_categorizing(self, models, threshold, category: int = 5):
         """
          Designed for define the way of splitting data based on the survival distribution or based on the
          categorizing data by considering threshold. Setting classification to use in splitting data
 
+         :type category: the number of categories
          :param models: int values can be  ``0``,``1`` or 2 in 0 is pure model and categorical data is event
          1 is the model based on the survival distribution
          2 is the model based on the threshould
@@ -83,54 +83,61 @@ class SplitPairs:
             clinic_time = self.clinical_data['time'].copy()
             clinic_time.sort_values(inplace=True)
             clinic_time = clinic_time.reset_index(drop=True)
-            block = int(clinic_time.size/category)
+            block = int(clinic_time.size / category)
             for i in range(0, category):
-                self.clinical_data.loc[self.clinical_data['time'] > clinic_time[i * block], 'category'] = i #+(self.clinical_data['event']) * category
+                self.clinical_data.loc[self.clinical_data['time'] > clinic_time[
+                    i * block], 'category'] = i  # +(self.clinical_data['event']) * category
             self.category = self.clinical_data['category'].values
         if models == 2:
             self.clinical_data.loc[self.clinical_data['time'] > threshold, 'category'] = 2 + self.clinical_data['event']
-            self.clinical_data.loc[self.clinical_data['time'] <= threshold, 'category'] = 0 + self.clinical_data['event']
+            self.clinical_data.loc[self.clinical_data['time'] <= threshold, 'category'] = 0 + self.clinical_data[
+                'event']
             self.category = self.clinical_data['category'].values
-
 
     def train_test_split(self,
                          test_size: float = .25,
                          random: bool = False,
-                         models: int= 0,
-                         threshold: float= 2,
-                         category: int=4,
-                         random_seed: int = RANDOM_SEED) -> Tuple[ List[int],  List[int]]:
+                         models: int = 0,
+                         threshold: float = 2,
+                         category: int = 4,
+                         random_seed: int = RANDOM_SEED) -> Tuple[List[int], List[int]]:
         """
         Split data in train/test with the specified proportion
 
+        :param random_seed: the random seed which need to use for categorizing
+        :param category: the number of categories
+        :param threshold: the threshold that is used in the second model for spliting data
+        :param models: int values can be  ``0``,``1`` or 2 in 0 is pure model and categorical data is event
+         1 is the model based on the survival distribution
         :param test_size: ``float`` between ``0`` and ``1`` with the test set size
         :param random: Whether to create random pairs, use this to verify the model, **Never** to train a real model
                        It changes the labels randomly
         :return: Tuple with the train set and the test set
         """
         self.survival_categorizing(models, threshold, category)
-        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state = random_seed) # random_state=)
+        rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_seed)  # random_state=)
 
         train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
-        return train_ids, test_ids #self._create_train_test(train_ids, test_ids, random)
+        return train_ids, test_ids  # self._create_train_test(train_ids, test_ids, random)
 
     @staticmethod
-    def _get_folds_generator(n_folds: int, random_seed = RANDOM_SEED) -> BaseCrossValidator:
+    def _get_folds_generator(n_folds: int, random_seed=RANDOM_SEED) -> BaseCrossValidator:
         if n_folds < 0:
             return LeaveOneOut()
         return StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_seed)
 
-
     def create_train_test(self,
-                           train_data: pd.DataFrame,
-                           test_data: pd.DataFrame,
-                           random: bool) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+                          train_data: pd.DataFrame,
+                          test_data: pd.DataFrame,
+                          random: bool) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
         for each set
 
-        :param train_ids: Ids for the train set should be between ``0`` and ``len(self.total_x) - 1``
-        :param test_ids: Ids for the test set should be between ``0`` and ``len(self.total_x) - 1``
+
+        :param train_data: dataFrame containing train data``
+        :param test_data: dataFrame containging test data``
+        :param random:
         :return: List for the train set and list for the test set respectively
         """
 
@@ -149,11 +156,9 @@ class SplitPairs:
 
         return train_pairs, test_pairs, test_mix_pairs
 
-
-
     def _tasks_distribution(self, total_tasks: int, workers: int) -> List[Tuple[int, int]]:
         length = int(math.ceil(total_tasks / workers))
-        limit = total_tasks - (length - 1)*workers
+        limit = total_tasks - (length - 1) * workers
 
         self.logger.debug(f"Tasks: {total_tasks}, Workers: {workers}, Length: {length}, Limit: {limit}")
 
@@ -238,12 +243,11 @@ class SplitPairs:
         rand_pairs['comp'] ^= True
         pairs.update(rand_pairs)
 
-
         if random:
             # Hack to test some values
             rand_bool = np.random.randint(2, size=len(pairs))
             pairs['comp'] = rand_bool.astype(bool)
-            pairs['distance'] *= -1*rand_bool
+            pairs['distance'] *= -1 * rand_bool
 
         return pairs
 
@@ -273,11 +277,10 @@ class BatchData:
     """
 
     def __init__(self, radiomic_df):
-        self.radiomic_df= radiomic_df
+        self.radiomic_df = radiomic_df
         self.logger = logging.getLogger(__name__)
         self.norm_mean = 0.
         self.norm_std = 1.
-
 
     def batches(self, pairs: pd.DataFrame,
                 batch_size: int = 64,
@@ -349,7 +352,7 @@ class BatchData:
             batch_pairs = pairs.loc[pairs['pA'].isin(ids) & pairs['pB'].isin(ids)]
             pairs = pairs.drop(batch_pairs.index)
 
-            assert len(batch_pairs)*2 >= len(ids)
+            assert len(batch_pairs) * 2 >= len(ids)
 
             yield self._create_pair_batch(batch_pairs, features, load_images)
 
@@ -431,8 +434,8 @@ class BatchData:
         ids_map = {}
         selected_features, images, final_ids = [], [], []
         for i, idx in enumerate(ids_list):
-            ids_map[idx] = i*total_rotations
-            final_ids += [idx]*total_rotations
+            ids_map[idx] = i * total_rotations
+            final_ids += [idx] * total_rotations
             file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
 
             # Check if the file exists, so the data has been preprocessed
@@ -448,11 +451,11 @@ class BatchData:
                     images.append(loaded_array.reshape(64, 64, 64, 1))
                 loaded_npz.close()
             else:
-                images += [np.array([])]*total_rotations
+                images += [np.array([])] * total_rotations
 
             # Select radiomic features
             column = features[idx].values
-            selected_features += [column]*total_rotations
+            selected_features += [column] * total_rotations
 
         assert len(images) == len(selected_features) == len(final_ids)
         elements = pd.DataFrame({

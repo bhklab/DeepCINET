@@ -37,12 +37,12 @@ for i in range(running_times):
                                                      regularization=0.8,
                                                      split_seed=random_states[i],
                                                      initial_seed=None,
-                                                     mrmr_size=500,
+                                                     mrmr_size=0,
                                                      read_splits=False,
                                                      full_summary = False,
-                                                     cv_folds=1,
+                                                     cv_folds=5,
                                                      split_number=i,
-                                                     data_type="radiomic")
+                                                     data_type="clinical")
 
 
     print(f"test{[v[1] for v in counts['test']['c_index']]}")

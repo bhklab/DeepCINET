@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 
 import dotenv
+import yaml
 
 APP_ROOT = os.path.join(os.path.dirname(__file__), "../../")
 
@@ -38,7 +39,7 @@ DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
 DATA_PATH_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
 DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
 DATA_PATH_RADIOMIC_PROCESSED = os.path.abspath(os.getenv('DATA_RADIOMIC_PROCESSED'))
-# DATA_PATH_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_CLINIC_PROCESSED'))
+DATA_PATH_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_PATH_CLINIC_PROCESSED'))
 DATA_PATH_VOLUME_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_VOLUME_CLINIC_PROCESSED'))
 
 DATA_PATH_INPUT_TEST_TRAIN = os.path.abspath(os.getenv('DATA_PATH_INPUT_TEST_TRAIN'))
@@ -74,6 +75,9 @@ if RANDOM_SEED < 0:
 else:
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
+
+CATEGORY = 5
+
 
 #: The total number of features that are provided by the CSV of radiomic features
 NUMBER_FEATURES = 724
