@@ -264,6 +264,14 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
         return models.ClinicalOnlySiamese(number_feature, **kwargs)
     elif model_key == "ClinicalVolumeSiamese":
         return models.ClinicalVolumeSiamese(**kwargs)
+    elif model_key == "ClinicalOnlySiamese2":
+        return models.ClinicalOnlySiamese2(number_feature, **kwargs)
+    elif model_key == "ClinicalVolumeSiamese2":
+        return models.ClinicalVolumeSiamese2(**kwargs)
+    elif model_key == "ClinicalOnlySiamese3":
+        return models.ClinicalOnlySiamese3(number_feature, **kwargs)
+    elif model_key == "ClinicalVolumeSiamese3":
+        return models.ClinicalVolumeSiamese3(**kwargs)
     elif model_key == "ClinicalRadiomicSiamese":
         return models.ClinicalRadiomicSiamese(**kwargs)
 
@@ -370,7 +378,7 @@ def deepCinet(model: str,
             clinical_data = dataset.clinical_data.copy()
             for i, (train_ids, test_ids, df_features) in enum_generator:
                 train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
-                test_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+                test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
                 # Initialize all the variables

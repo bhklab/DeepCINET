@@ -1,22 +1,22 @@
-
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 import tensorflow_src.settings as settings
 import data
 import utils
 import pandas as pd
 from typing import Iterator, Tuple, Generator, List, Dict
-logger = utils.init_logger("train_test")
 
+logger = utils.init_logger("train_test")
 
 
 def get_sets_generator(dataset: data.pair_data.SplitPairs,
                        cv_folds: int,
                        test_size: int,
                        random_labels: bool,
-                       model:int,
-                       threshold:float,
+                       model: int,
+                       threshold: float,
                        random_seed: int = None
                        ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     """
@@ -37,10 +37,10 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
                         pass
     """
 
-
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        train_ids, test_ids = dataset.train_test_split(test_size, random=random_labels, models=model, threshold=threshold , random_seed=random_seed)
+        train_ids, test_ids = dataset.train_test_split(test_size, random=random_labels, models=model,
+                                                       threshold=threshold, random_seed=random_seed)
         enum_generator = [(0, (train_ids, test_ids))]
         logger.info("1 fold")
     else:
@@ -50,8 +50,9 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
 
     return enum_generator
 
+
 def get_sets_reader(cv_folds: int,
-                    split_path,mrmr_size,data_type
+                    split_path, mrmr_size, data_type
                     ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     """
     Get the read the train/test sets which has been generated before ahead by train_test_generator.py ans is in the folders
@@ -70,12 +71,12 @@ def get_sets_reader(cv_folds: int,
                         # Insert your code
                         pass
     """
-    for i in range(0,cv_folds):
+    for i in range(0, cv_folds):
         train_df = pd.read_csv(os.path.join(split_path, "train_fold{i}.csv".format(i=i)), index_col=0)
-        test_df = pd.read_csv(os.path.join(split_path, "test_fold{i}.csv".format(i=i)),index_col=0)
+        test_df = pd.read_csv(os.path.join(split_path, "test_fold{i}.csv".format(i=i)), index_col=0)
         train_ids = train_df
         test_ids = test_df
-        if mrmr_size==0:
+        if mrmr_size == 0:
             if data_type == "radiomic":
                 path = settings.DATA_PATH_RADIOMIC_PROCESSED
             elif data_type == "clinical":
@@ -83,7 +84,7 @@ def get_sets_reader(cv_folds: int,
             elif data_type == "clinicalVolume":
                 path = settings.DATA_PATH_VOLUME_CLINIC_PROCESSED
         else:
-            path = os.path.join(split_path, "features_fold{i}".format(i=i), "radiomic{mrmr_size}.csv".format(mrmr_size=mrmr_size))
+            path = os.path.join(split_path, "features_fold{i}".format(i=i),
+                                "radiomic{mrmr_size}.csv".format(mrmr_size=mrmr_size))
         features = pd.read_csv(path, index_col=0)
-        yield (i,(train_ids,test_ids,features))
-
+        yield (i, (train_ids, test_ids, features))

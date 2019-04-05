@@ -19,7 +19,7 @@ with open("modelConf.yml", 'r') as cfg_file:
 
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
-running_times = 20
+running_times = 1
 random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
@@ -38,7 +38,7 @@ for i in range(running_times):
                                                      split_seed=random_states[i],
                                                      initial_seed=None,
                                                      mrmr_size=0,
-                                                     read_splits=False,
+                                                     read_splits=True,
                                                      full_summary = False,
                                                      cv_folds=5,
                                                      split_number=i,
