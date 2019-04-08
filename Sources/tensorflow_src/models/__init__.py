@@ -14,5 +14,11 @@ from .siameses import \
     ImageSiamese, \
     ResidualImageScalarSiamese, \
     VolumeOnlySiamese,\
-    ClinicalOnlySiamese
+    ClinicalOnlySiamese,\
+    ClinicalOnlySiamese2,\
+    ClinicalOnlySiamese3,\
+    ClinicalVolumeSiamese, \
+    ClinicalVolumeSiamese2, \
+    ClinicalVolumeSiamese3\
+
 from .basics import BasicModel, BasicSiamese, BasicImageSiamese

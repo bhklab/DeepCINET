@@ -26,7 +26,7 @@ random.shuffle(random_states)
 
 
 for i in range(running_times):
-    counts,predictions = train_test_models.deepCinet(model = 'ScalarOnlySiamese',
+    counts,predictions = train_test_models.deepCinet(model = 'ClinicalOnlySiamese2',
                                                      num_epochs=100,
                                                      batch_size=250,
                                                      splitting_model=1,

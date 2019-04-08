@@ -19,6 +19,8 @@ with open("modelConf.yml", 'r') as cfg_file:
 #the number of times which should run a model
 running_times = cfg['running_times']
 
+models = cfg['hyper_param']['model']
+print(models)
 #randomly feed random state.
 random_states = list(range(running_times* 2))
 random.seed(1)
@@ -49,7 +51,7 @@ def trainDeepCInet(hparams):
                                                           mrmr_size = hparams.mrmr_size,
                                                           read_splits = True,
                                                           split_number=i,
-                                                          cv_folds=5
+                                                          cv_folds=1
                                                           )
 
         counts['train']['c_index'] = sum([v[1] for v in counts['train']['c_index']]) / float(
@@ -67,12 +69,12 @@ def trainDeepCInet(hparams):
         log_content = {'train': counts['train']['c_index'],
                        'test': counts['test']['c_index'],
                        'mixed': counts['mixed']['c_index'],
-                       'models':[hparams.model],
-                       'num_epochs': [hparams.num_epochs],
-                       'batch_size': [hparams.batch_size],
-                       'regularization': [hparams.regularization],
-                       'learning_rate': [hparams.learningRate],
-                       'mrmr_size': [hparams.mrmr_size]
+                       'models':hparams.model,
+                       'num_epochs': hparams.num_epochs,
+                       'batch_size': hparams.batch_size,
+                       'regularization': hparams.regularization,
+                       'learning_rate': hparams.learningRate,
+                       'mrmr_size': hparams.mrmr_size
                        }
         exp.log(log_content)
         result = pd.DataFrame.from_dict(log_content)
@@ -91,15 +93,15 @@ def trainDeepCInet(hparams):
 # set up our argparser and make the model tunable
 # Use either random_search or grid_search for tuning
 parser = HyperOptArgumentParser(strategy='random_search')
-parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese7')
-parser.add_argument('--log_path', default='/Users/farnoosh/Desktop/test')
+parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese9')
+parser.add_argument('--log_path', default=cfg['log_path'])
 
-parser.opt_list('--model', default='ScalarOnlySiamese', options=['ScalarOnlySiamese'], tunable=True)
-parser.opt_list('--mrmr_size', default=40, options=[40, 200], tunable=True)
-parser.opt_list('--num_epochs', default=100, options=[200,400], tunable=True)
-parser.opt_list('--batch_size', default=250, options=[250], tunable=True)
-parser.opt_list('--regularization', default=0.5, options=[0.5,0.8, 1.5], tunable=True)
-parser.opt_list('--learningRate', default=0.0001, options=[0.0003, 0.0002, 0.0001], tunable=True)
+parser.opt_list('--model', default='ClinicalOnlySiamese', options=cfg['hyper_param']['model'], tunable=True)
+parser.opt_list('--mrmr_size', default=0, options= cfg['hyper_param']['mrmr_size'], tunable=True)
+parser.opt_list('--num_epochs', default=100, options=cfg['hyper_param']['num_epochs'], tunable=True)
+parser.opt_list('--batch_size', default=250, options=cfg['hyper_param']['batch_size'], tunable=True)
+parser.opt_list('--regularization', default=0.5, options=cfg['hyper_param']['regularization'], tunable=True)
+parser.opt_list('--learningRate', default=0.0001, options=cfg['hyper_param']['learningRate'], tunable=True)
 
 hyperparams = parser.parse_args()
 

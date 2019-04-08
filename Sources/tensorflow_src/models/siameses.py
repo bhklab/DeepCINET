@@ -949,7 +949,7 @@ class ResidualImageScalarSiamese(ImageScalarSiamese):
             return tf.concat([x_a, x_b, x_c, x_d], axis=4)
 
 
-class ScalarOnlySiamese1(BasicSiamese):
+class ScalarOnlySiamese(BasicSiamese):
     r"""
     Model that uses only radiomic features as input to train
 
@@ -1058,7 +1058,7 @@ class ScalarOnlySiamese1(BasicSiamese):
         return False
 
 
-class ScalarOnlySiamese(BasicSiamese):
+class ScalarOnlySiamese1(BasicSiamese):
     r"""
     Model that uses only radiomic features as input to train
 
@@ -1100,12 +1100,6 @@ class ScalarOnlySiamese(BasicSiamese):
             50,
             "fc2"
         )
-
-  #      x = self._dense(
-  #          x,
-  #          100,
-  #          "fc3"
-  #      )
 
         x = self._dense(
             x,
@@ -1253,6 +1247,197 @@ class ClinicalOnlySiamese(BasicSiamese):
         return False
 
 
+class ClinicalOnlySiamese2(BasicSiamese):
+    r"""
+    Model that uses only radiomic features as input to train
+
+    It has the same parameters as :class:`BasicSiamese`
+
+    It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+    **Attributes**:
+
+    Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
+
+    :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
+                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
+    """
+
+    def __init__(self, number_features: int, **kwargs):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            80,
+            "fc1"
+        )
+        y = self._dense(
+            x,
+            5,
+            "fcY"
+        )
+
+        x = self._dense(
+            x,
+            50,
+            "fc2"
+        )
+
+  #      x = self._dense(
+  #          x,
+  #          100,
+  #          "fc3"
+  #      )
+
+        x = self._dense(
+            x,
+            20,
+            "fc4"
+        )
+
+        # Out: [batch, 1]
+        x = self._dense(
+            tf.concat([x , y],1),
+            10,
+            "fc5",
+            activation=tf.nn.relu
+        )
+
+        x = self._dense(
+            x,
+            5,
+            "fc6",
+            activation=tf.nn.relu
+        )
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+
+        return {
+            **super().feed_dict(batch, training),
+            self.x_scalar: np.stack(batch.patients["features"]),
+        }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
+
+class ClinicalOnlySiamese3(BasicSiamese):
+        r"""
+        Model that uses only radiomic features as input to train
+
+        It has the same parameters as :class:`BasicSiamese`
+
+        It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+        **Attributes**:
+
+        Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
+
+        :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
+                                         `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
+        """
+
+        def __init__(self, number_features: int, **kwargs):
+            #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+            self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+            super().__init__(**kwargs)
+
+        def _sister(self):
+            # Out: [batch, 500]
+            x = self.x_scalar
+            x = self._dense(
+                x,
+                80,
+                "fc1"
+            )
+            y = self._dense(
+                x,
+                5,
+                "fcY"
+            )
+
+            x = self._dense(
+                x,
+                50,
+                "fc2"
+            )
+
+            #      x = self._dense(
+            #          x,
+            #          100,
+            #          "fc3"
+            #      )
+
+            x = self._dense(
+                x,
+                20,
+                "fc4"
+            )
+
+            # Out: [batch, 1]
+            x = self._dense(
+                tf.concat([x, y], 1),
+                10,
+                "fc5",
+                activation=tf.nn.relu
+            )
+
+            x = self._dense(
+                x,
+                5,
+                "fc6",
+                activation=tf.nn.relu
+            )
+            return x
+
+        def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+            return tf.layers.dense(
+                x,
+                units=units,
+                activation=activation,
+                kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+                kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+                name=name
+            )
+
+        def feed_dict(self, batch: data.PairBatch, training: bool = True):
+            return {
+                **super().feed_dict(batch, training),
+                self.x_scalar: np.stack(batch.patients["features"]),
+            }
+
+        def uses_images(self) -> bool:
+            """
+            Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+            :return: :any:`False` since this model does not use images to work
+            """
+            return False
+
 class ScalarOnlyDropoutSiamese(ScalarOnlySiamese):
 
     def __init__(self, **kwargs):
@@ -1360,3 +1545,291 @@ class VolumeOnlySiamese(BasicSiamese):
 
     def uses_images(self):
         return False
+
+
+class ClinicalVolumeSiamese(BasicSiamese):
+    r"""
+    Model that uses only radiomic features as input to train
+
+    It has the same parameters as :class:`BasicSiamese`
+
+    It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+    **Attributes**:
+
+    Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
+
+    :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
+                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
+    """
+
+    def __init__(self, number_features: int, **kwargs):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            80,
+            "fc1"
+        )
+        y = self._dense(
+            x,
+            5,
+            "fcY"
+        )
+
+        x = self._dense(
+            x,
+            50,
+            "fc2"
+        )
+
+  #      x = self._dense(
+  #          x,
+  #          100,
+  #          "fc3"
+  #      )
+
+        x = self._dense(
+            x,
+            20,
+            "fc4"
+        )
+
+        # Out: [batch, 1]
+        x = self._dense(
+            tf.concat([x , y],1),
+            10,
+            "fc5",
+            activation=tf.nn.relu
+        )
+
+        x = self._dense(
+            x,
+            5,
+            "fc6",
+            activation=tf.nn.relu
+        )
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+
+        return {
+            **super().feed_dict(batch, training),
+            self.x_scalar: np.stack(batch.patients["features"]),
+        }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
+
+
+class ClinicalVolumeSiamese2(BasicSiamese):
+    r"""
+    Model that uses only radiomic features as input to train
+
+    It has the same parameters as :class:`BasicSiamese`
+
+    It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+    **Attributes**:
+
+    Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
+
+    :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
+                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
+    """
+
+    def __init__(self, number_features: int, **kwargs):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            80,
+            "fc1"
+        )
+        y = self._dense(
+            x,
+            5,
+            "fcY"
+        )
+
+        x = self._dense(
+            x,
+            50,
+            "fc2"
+        )
+
+  #      x = self._dense(
+  #          x,
+  #          100,
+  #          "fc3"
+  #      )
+
+        x = self._dense(
+            x,
+            20,
+            "fc4"
+        )
+
+        # Out: [batch, 1]
+#        x = self._dense(
+#            tf.concat([x , y],1),
+#            10,
+#            "fc5",
+#            activation=tf.nn.relu
+#        )
+
+        x = self._dense(
+            x,
+            5,
+            "fc6",
+            activation=tf.nn.relu
+        )
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+
+        return {
+            **super().feed_dict(batch, training),
+            self.x_scalar: np.stack(batch.patients["features"]),
+        }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
+
+class ClinicalVolumeSiamese3(BasicSiamese):
+        r"""
+        Model that uses only radiomic features as input to train
+
+        It has the same parameters as :class:`BasicSiamese`
+
+        It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+        **Attributes**:
+
+        Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
+
+        :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
+                                         `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
+        """
+
+        def __init__(self, number_features: int, **kwargs):
+            #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+            self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+            super().__init__(**kwargs)
+
+        def _sister(self):
+            # Out: [batch, 500]
+            x = self.x_scalar
+            x = self._dense(
+                x,
+                20,
+                "fc1"
+            )
+            y = self._dense(
+                x,
+                5,
+                "fcY"
+            )
+
+            x = self._dense(
+                x,
+                50,
+                "fc2"
+            )
+
+            x = self._dense(
+                x,
+                100,
+                "fc3"
+            )
+
+            x = self._dense(
+                x,
+                20,
+                "fc4"
+            )
+
+            # Out: [batch, 1]
+            x = self._dense(
+                tf.concat([x, y], 1),
+                10,
+                "fc5",
+            )
+
+            x = self._dense(
+                x,
+                5,
+                "fc6",
+                activation=tf.nn.relu
+            )
+            return x
+
+        def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+            return tf.layers.dense(
+                x,
+                units=units,
+                activation=activation,
+                kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+                kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+                name=name
+            )
+
+        def feed_dict(self, batch: data.PairBatch, training: bool = True):
+            return {
+                **super().feed_dict(batch, training),
+                self.x_scalar: np.stack(batch.patients["features"]),
+            }
+
+        def uses_images(self) -> bool:
+            """
+            Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+            :return: :any:`False` since this model does not use images to work
+            """
+            return False
