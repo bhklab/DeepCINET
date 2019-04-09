@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+import settings
 
 #import STprediction
 from tensorflow_src import train_test_models
@@ -19,18 +20,18 @@ with open("modelConf.yml", 'r') as cfg_file:
 
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
-running_times = 1
+running_times = 20
 random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
 
 
 for i in range(running_times):
-    counts,predictions = train_test_models.deepCinet(model = 'ClinicalOnlySiamese2',
+    counts,predictions = train_test_models.deepCinet(model = 'ClinicalOnlySiamese3',
                                                      num_epochs=100,
-                                                     batch_size=250,
+                                                     batch_size=200,
                                                      splitting_model=1,
-                                                     learning_rate=0.0004,
+                                                     learning_rate=0.0003,
                                                      dropout=.2,
                                                      threshold = 4,
                                                      split=i, save_model=True,
@@ -62,7 +63,7 @@ for i in range(running_times):
     result['random state'] = random_states[i]
     result['number'] = i
     results = results.append(result)
-    results.to_csv(cfg['mixed_result_path'])
+    results.to_csv(os.path.join(settings.SESSION_SAVE_PATH,"result.csv"))
 results.to_csv(cfg['mixed_result_path'], index = False)
 
 
