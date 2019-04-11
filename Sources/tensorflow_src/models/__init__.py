@@ -19,6 +19,7 @@ from .siameses import \
     ClinicalOnlySiamese3,\
     ClinicalVolumeSiamese, \
     ClinicalVolumeSiamese2, \
-    ClinicalVolumeSiamese3\
+    ClinicalVolumeSiamese3,\
+    ScalarOnlyInceptionSiamese
 
 from .basics import BasicModel, BasicSiamese, BasicImageSiamese
