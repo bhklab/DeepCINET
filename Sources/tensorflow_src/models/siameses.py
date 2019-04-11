@@ -1371,7 +1371,7 @@ class ClinicalOnlySiamese3(BasicSiamese):
             x = self.x_scalar
             x = self._dense(
                 x,
-                80,
+                20,
                 "fc1"
             )
             y = self._dense(
@@ -1382,33 +1382,21 @@ class ClinicalOnlySiamese3(BasicSiamese):
 
             x = self._dense(
                 x,
-                50,
+                20,
                 "fc2"
             )
 
-            #      x = self._dense(
-            #          x,
-            #          100,
-            #          "fc3"
-            #      )
-
-            x = self._dense(
-                x,
-                20,
-                "fc4"
-            )
 
             # Out: [batch, 1]
             x = self._dense(
                 tf.concat([x, y], 1),
                 10,
-                "fc5",
-                activation=tf.nn.relu
+                "fc5"
             )
 
             x = self._dense(
                 x,
-                5,
+                3,
                 "fc6",
                 activation=tf.nn.relu
             )
@@ -1768,45 +1756,36 @@ class ClinicalVolumeSiamese3(BasicSiamese):
             x = self.x_scalar
             x = self._dense(
                 x,
-                20,
+                80,
                 "fc1"
             )
             y = self._dense(
                 x,
                 5,
-                "fcY"
+                "fc1y"
             )
 
             x = self._dense(
                 x,
-                50,
+                40,
                 "fc2"
             )
-
-            x = self._dense(
+            x = tf.layers.dropout(
                 x,
-                100,
+                rate=self._dropout,
+                training=self.training
+            )
+            x = self._dense(
+                tf.concat([x, y], 1),
+                20,
                 "fc3"
             )
 
             x = self._dense(
                 x,
-                20,
-                "fc4"
-            )
-
-            # Out: [batch, 1]
-            x = self._dense(
-                tf.concat([x, y], 1),
                 10,
-                "fc5",
-            )
-
-            x = self._dense(
-                x,
-                5,
                 "fc6",
-                activation=tf.nn.relu
+                activation=tf.nn.relu6
             )
             return x
 
@@ -1833,3 +1812,246 @@ class ClinicalVolumeSiamese3(BasicSiamese):
             :return: :any:`False` since this model does not use images to work
             """
             return False
+
+
+
+
+
+
+class ScalarOnlyInceptionSiamese(BasicSiamese):
+    r"""
+    Model that uses only radiomic features as input to train
+
+    It has the same parameters as :class:`BasicSiamese`
+
+    It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+    **Attributes**:
+
+    Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
+
+    :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
+                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
+    """
+
+    def __init__(self,number_features, **kwargs):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+        #self.y_scalar = tf.placeholder(tf.float32, [None, settings.NUMBER_FEATURES])
+
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        y = self.x_scalar
+        z = y
+        x = self._dense(
+            x,
+            50,
+            "fc1"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+        x = self._dense(
+            x,
+            50,
+            "fc2"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+        x = self._dense(
+            x,
+            20,
+            "fc3"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        # Out: [batch, 200]
+        x = self._dense(
+            x,
+            10,
+            "fc4"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+        # Out: [batch, 200]
+        x = self._dense(
+            x,
+            10,
+            "fc5"
+        )
+        # Out: [batch, 200]
+        x = self._dense(
+            x,
+            5,
+            "fc6"
+        )
+
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        # Out: [batch, 50]
+        x = self._dense(
+            x,
+            10,
+            "f7"
+        )
+
+        z = self._dense(
+            z,
+            10,
+            "fc11",
+            # activation=tf.nn.relu
+        )
+        y = self._dense(
+            y,
+            10,
+            "f21",
+            #activation=tf.nn.relu
+        )
+        y = tf.layers.dropout(
+            y,
+            rate=self._dropout,
+            training=self.training
+        )
+        y = self._dense(
+            y+x,
+            10,
+            "fc22",
+            activation=tf.nn.relu
+        )
+        x = self._dense(
+            y + z,
+            10,
+            "fc31",
+            activation=tf.nn.relu
+        )
+        return z
+
+    def _myself(self):
+
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            500,
+            "fb1",
+            # activation=tf.nn.relu
+        )
+
+        x = self._dense(
+            x,
+            100,
+            "fb2",
+            #activation=tf.nn.relu
+        )
+        x = self._dense(
+            x,
+            10,
+            "fb3",
+            # activation=tf.nn.relu
+        )
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+
+        return {
+            **super().feed_dict(batch, training),
+            self.x_scalar: np.stack(batch.patients["features"]),
+        }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
+
+    def _model(self) -> tf.Tensor:
+        """
+        Implementation of :func:`BasicModel._model`
+
+        :return: Tensor where a Siamese network has been applied to the input with shape ``[batch, 1]``
+        """
+        myself_out = self._myself()
+        sister_out = self._sister()
+        return self._contrastive_loss(sister_out,myself_out)
+
+    def _contrastive_math(self):
+
+        weight1 = tf.Variable(1., name="c_weight")
+        weight2 = tf.Variable(10., name="sub_weight")
+
+        # sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
+        sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")
+        sub = tf.add(self.gathered_base, sub, name="contrastive_add")
+
+        if self._use_distance:
+            return weight1*tf.tanh(sub, name="contrastive_tanh")
+        else:
+            return tf.sigmoid(sub, name="contrastive_sigmoid")
+
+    def _contrastive_loss(self, sister_out: tf.Tensor, myself_out: tf.Tensor):
+        r"""
+        Implement the loss to compare the two sister networks. To get the pairs to be compared it uses the
+        :any:`BasicSiamese.pairs_a` and :any:`BasicSiamese.pairs_b`. In this case the contrastive loss is as follows:
+
+        .. math::
+            G_W(\boldsymbol{X_A}) &:= \text{Outputs for inputs A} \\
+            G_W(\boldsymbol{X_B}) &:= \text{Outputs for inputs B} \\
+                \sigma(x) &:= \frac{1}{1 + \exp(-x)} \\
+                \boldsymbol{\hat{y}} &= \sigma(G_W(\boldsymbol{X_A}) - G_W(\boldsymbol{X_B})) =
+                \frac{1}{1 + \exp(G_W(\boldsymbol{X_B}) - G_W(\boldsymbol{X_A}))}
+
+        :param sister_out: Sister's network output, then using the defined parameters  it selects the proper pairs to
+                               be compared.
+        :return: Tensor with the contrastive loss, comparing the two sister's output with shape ``[batch, 1]``
+        """
+        device = '/gpu:0' if self._gpu_level >= 3 else '/cpu:0'
+        self.logger.debug(f"Using device: {device} for contrastive loss")
+
+        with tf.device(device):
+            with tf.variable_scope("contrastive_loss"):
+                self.gathered_base = tf.gather(myself_out, self.pairs_b, name="gather_base")
+                self.gathered_a = tf.gather(sister_out, self.pairs_a, name="gather_a")
+                self.gathered_b = tf.gather(sister_out, self.pairs_b, name="gather_b")
+
+                self.gathered_base = tf.square(self.gathered_base, name="square_base")
+                self.gathered_a = tf.square(self.gathered_a, name="square_a")
+                self.gathered_b = tf.square(self.gathered_b, name="square_b")
+
+                self.gathered_base = tf.reduce_sum(self.gathered_base, 1, keepdims=True, name="reduce_basic")
+                self.gathered_a = tf.reduce_sum(self.gathered_a, 1, keepdims=True, name="reduce_b")
+                self.gathered_b = tf.reduce_sum(self.gathered_b, 1, keepdims=True, name="reduce_a")
+
+        return self._contrastive_math()
+
+
