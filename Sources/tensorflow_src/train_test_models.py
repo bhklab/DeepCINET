@@ -271,7 +271,9 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
     elif model_key == "ClinicalOnlySiamese3":
         return models.ClinicalOnlySiamese3(number_feature, **kwargs)
     elif model_key == "ClinicalVolumeSiamese3":
-        return models.ClinicalVolumeSiamese3(**kwargs)
+        return models.ClinicalVolumeSiamese3(number_feature, **kwargs)
+    elif model_key == "ScalarOnlyInceptionSiamese":
+        return models.ScalarOnlyInceptionSiamese(number_feature, **kwargs)
     elif model_key == "ClinicalRadiomicSiamese":
         return models.ClinicalRadiomicSiamese(**kwargs)
 
