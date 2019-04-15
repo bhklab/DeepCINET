@@ -267,7 +267,7 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
     elif model_key == "ClinicalOnlySiamese2":
         return models.ClinicalOnlySiamese2(number_feature, **kwargs)
     elif model_key == "ClinicalVolumeSiamese2":
-        return models.ClinicalVolumeSiamese2(**kwargs)
+        return models.ClinicalVolumeSiamese2(number_feature, **kwargs)
     elif model_key == "ClinicalOnlySiamese3":
         return models.ClinicalOnlySiamese3(number_feature, **kwargs)
     elif model_key == "ClinicalVolumeSiamese3":
@@ -385,8 +385,8 @@ def deepCinet(model: str,
                                                                                  random=random_labels)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
-                summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
-                summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
+                summaries_dir = os.path.join(results_path, f"split_{split:0>2}")
+                summaries_dir = os.path.join(summaries_dir, 'summaries', f'fold_{i:>2}')
                 logger.info(f"Saving results at: {summaries_dir}")
                 train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
                 batch_data = data.BatchData(df_features)
@@ -426,9 +426,9 @@ def deepCinet(model: str,
                                 f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
 
                 # Save each fold in a different directory
+                results_save_path = os.path.join(results_path, f"split_{split:0>2}")
+                results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
 
-                results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
-                results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
                 logger.info(f"Saving results at: {results_save_path}")
                 utils.save_results(sess, predictions, results_save_path, save_model)
                 logger.info("\r ")
