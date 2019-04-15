@@ -1,7 +1,8 @@
 import pandas as pd
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 import data
 import tensorflow_src.settings as settings
@@ -12,8 +13,9 @@ import os
 import argparse
 import pathlib
 from typing import Dict, Tuple, Any, Iterator
-from data.train_test import get_sets_generator,get_sets_reader
-#!/usr/bin/env python3
+from data.train_test import get_sets_generator, get_sets_reader
+
+# !/usr/bin/env python3
 """
 The train module is a script that trains cox model for clinical and radiomic data.
 
@@ -22,7 +24,6 @@ usage:
 
 """
 logger = utils.init_logger("start")
-
 
 
 ################
@@ -36,35 +37,35 @@ def del_low_var(df):
 
 
 from sklearn.feature_selection import VarianceThreshold
+
+
 def variance_threshold_selector(data, threshold=0.01):
     selector = VarianceThreshold(threshold)
     selector.fit(data)
     return data[data.columns[selector.get_support(indices=True)]]
 
 
-
-
 def coxModel(cv_folds: int = 1,
-              test_size: float = .25,
-              data_type: str = 'radiomic',
-              results_path: str = settings.SESSION_SAVE_PATH,
-              regularization: float = 0.01,
-              splitting_model: int = 0,
-              threshold: float = 3,
-              bin_number: int = 4,
-              log_device=False,
-              split=1,  # todo check if required to add split_seed and initial_seed to the argument
-              split_seed=None,
-              split_number=None,  # it is used for the time we are using the generated test and train sets
-              initial_seed=None,
-              mrmr_size=0,
-              read_splits=False):
+             test_size: float = .20,
+             data_type: str = 'radiomic',
+             results_path: str = settings.SESSION_SAVE_PATH,
+             regularization: float = 0.01,
+             splitting_model: int = 0,
+             threshold: float = 3,
+             bin_number: int = 4,
+             log_device=False,
+             split=1,  # todo check if required to add split_seed and initial_seed to the argument
+             split_seed=None,
+             split_number=None,  # it is used for the time we are using the generated test and train sets
+             initial_seed=None,
+             mrmr_size=0,
+             read_splits=False):
     """
     deepCient
     :param args: Command Line Arguments
     """
 
-    results_path = pathlib.Path(results_path)
+    results_path = pathlib.Path(os.path.join(results_path, "Cox"))
     results_path.mkdir(parents=True, exist_ok=True)
 
     logger = utils.init_logger(f'train_{0}', str(results_path))
@@ -108,46 +109,62 @@ def coxModel(cv_folds: int = 1,
         cv_path = os.path.join(input_path, f"cv_{cv_folds}")
         random_path = os.path.join(cv_path, f"random_seed_{split_number}")
         split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
-        enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size)
+        enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
         for i, (train_ids, test_ids, df_features) in enum_generator:
-            features = df_features.copy()
+            train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+            test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
             logger.info(f"New fold {i}, {len(train_ids)} train pairs, {len(test_ids)} test pairs")
             cph = CoxPHFitter()
-            clinical = clinical_df.iloc[train_ids]
-            radiomic_features_train = pd.merge(features.T, clinical[['id', 'event', 'time']], how='inner',
-                                         left_index=True, right_on='id')
-            radiomic_features_train.drop(['id'], axis='columns', inplace=True)
-            radiomic_features_train = radiomic_features_train.dropna()
-            del_low_var(radiomic_features_train)
-            cph.fit(radiomic_features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.11)
+            features_train = pd.merge(df_features.T,
+                                      train_data[['id', 'event', 'time']],
+                                      how='inner',
+                                      left_index=True,
+                                      right_on='id')
+            features_train.drop(['id'], axis='columns', inplace=True)
+            features_train = features_train.dropna()
+            del_low_var(features_train)
+            cph.fit(features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.05)
 
-            clinical = clinical_df.iloc[test_ids]
-            radiomic_features_test = pd.merge(features.T, clinical[['id', 'event', 'time']], how='inner',
-                                              left_index=True, right_on='id')
-            radiomic_features_test.drop(['id'], axis='columns', inplace=True)
+            features_test = pd.merge(df_features.T, test_data[['id', 'event', 'time']], how='inner',
+                                     left_index=True, right_on='id')
+            features_test.drop(['id'], axis='columns', inplace=True)
 
-            test_cindex = concordance_index(radiomic_features_test['time'],
-                                    -cph.predict_partial_hazard(radiomic_features_test).values,
-                                    radiomic_features_test['event'])
-            train_cindex = concordance_index(radiomic_features_test['time'],
-                                    -cph.predict_partial_hazard(radiomic_features_test).values,
-                                    radiomic_features_test['event'])
-            # print(cph.predict_survival_function(radiomic_features))
+            features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
+                                left_index=True, right_on='id')
 
+            features['predict'] = cph.predict_partial_hazard(features)
+            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=False)
 
-            counts['train']['c_index'].append((i, train_cindex))
-            counts['test']['c_index'].append((i, test_cindex))
+            predictions = {}
+            for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
+                logger.info(f"Computing {name} c-index")
+                result = pd.merge(features[['id', 'time', 'predict', 'event']], pairs, left_on='id',
+                                  right_on='pA', how='inner')
 
-            logger.info(f"{'test'} set c-index: {test_cindex}")
+                result = pd.merge(features[['id', 'time', 'predict', 'event']], result, left_on='id',
+                                  right_on='pB', suffixes=('_b', '_a'), how='inner')
 
-            # Save each fold in a different directory
+                result['predict_comp'] = result['predict_b'] < result['predict_a']
+                predictions[name] = result
+                correct = (result['predict_comp'] == result['comp']).sum()
+                total = (result['predict_comp'] == result['comp']).count()
+                c_index = correct / total
+                counts[name]['c_index'].append((i, c_index))
 
-            results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
-            results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
+            results_save_path = os.path.join(results_path, f"split_{split:0>2}")
+            results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
-            #utils.save_results(results_save_path)
+            # todo save
+            logger.info(f"result{counts}")
+            pathlib.Path(results_save_path).mkdir(parents=True, exist_ok=True)
+            # pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
+            logger.info("\r ")
+            logger.info(f"Saving results at: {results_save_path}")
+
+            utils.save_cox_results(predictions, results_save_path)
             logger.info(f"result{counts}")
             logger.info("\r ")
+            return counts, predictions
 
     else:
         enum_generator = get_sets_generator(dataset,
@@ -164,49 +181,52 @@ def coxModel(cv_folds: int = 1,
                 df_features = features.copy()
             train_data = dataset.clinical_data.iloc[train_idx]
             test_data = dataset.clinical_data.iloc[test_idx]
-            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,random=random_labels)
+            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
+                                                                             random=False)
             logger.info(f"New fold {i}, {len(train_idx)} train pairs, {len(test_idx)} test pairs")
-            cph = CoxPHFitter(penalizer=0.5,alpha=0.95)
-            #radiomic_features = pd.merge(df_features.T, dataset.clinical_data[['id', 'event', 'time']], how='inner',left_index=True, right_on='id')
+            cph = CoxPHFitter(penalizer=0.5, alpha=0.95)
+            # radiomic_features = pd.merge(df_features.T, dataset.clinical_data[['id', 'event', 'time']], how='inner',left_index=True, right_on='id')
 
             clinical_train = clinical_df.iloc[train_idx]
             radiomic_features_train = pd.merge(df_features.T, train_data[['id', 'event', 'time']], how='inner',
-                                         left_index=True, right_on='id')
+                                               left_index=True, right_on='id')
             radiomic_features_train.drop(['id'], axis='columns', inplace=True)
             radiomic_features_train = radiomic_features_train.dropna()
             radiomic_features_train = variance_threshold_selector(radiomic_features_train)
             radiomic_features_train.to_csv('test.csv')
-            #logger.info(radiomic_features.columns)
+            # logger.info(radiomic_features.columns)
 
-            #print(radiomic_features)
-            cph.fit(radiomic_features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.1)
-            #cph.print_summary()
+            # print(radiomic_features)
+            cph.fit(radiomic_features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.11)
+            # cph.print_summary()
 
-            #clinical = clinical_df.iloc[train_idx]
-            radiomic_features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',left_index=True, right_on='id')
+            # clinical = clinical_df.iloc[train_idx]
+            radiomic_features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
+                                         left_index=True, right_on='id')
 
             radiomic_features['predict'] = cph.predict_partial_hazard(radiomic_features)
+            predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                 logger.info(f"Computing {name} c-index")
                 result = pd.merge(radiomic_features[['id', 'time', 'predict', 'event']], pairs, left_on='id',
-                                       right_on='pA', how='inner')
+                                  right_on='pA', how='inner')
                 result = pd.merge(radiomic_features[['id', 'time', 'predict', 'event']], result, left_on='id',
-                                       right_on='pB', suffixes=('_pB', '_pA'), how='inner')
-                result['predict_comp'] = result['predict_pB'] < result['predict_pA']
+                                  right_on='pB', suffixes=('_b', '_a'), how='inner')
+                result['predict_comp'] = result['predict_b'] < result['predict_a']
+                predictions[name] = result
                 correct = (result['predict_comp'] == result['comp']).sum()
                 total = (result['predict_comp'] == result['comp']).count()
                 c_index = correct / total
                 counts[name]['c_index'].append((i, c_index))
-            results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
-            results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
+            results_save_path = os.path.join(results_path, f"split_{split:0>2}")
+            results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
-            #todo save
+            # todo save
             logger.info(f"result{counts}")
             pathlib.Path(results_save_path).mkdir(parents=True, exist_ok=True)
-            pd.DataFrame(counts).to_csv(os.path.join(results_save_path,'result.csv'))
+            pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
             logger.info("\r ")
-            return counts
-
+            return counts, predictions
 
 
 def main(args: Dict[str, Any]) -> None:
@@ -223,24 +243,23 @@ def main(args: Dict[str, Any]) -> None:
     test_size = args['test_size']
     splitting_model = args['splitting_model']
     threshold = args['threshold']
-    results_path=args['results_path']
+    results_path = args['results_path']
     read_splits = args['read_splits']
 
-    coxModel( cv_folds = cv_folds,
-              test_size = test_size,
-              data_type = data_type,
-              results_path = results_path,
-              regularization = regularization,
-              splitting_model = splitting_model,
-              threshold = threshold,
-              bin_number = 4,
-              log_device = log_device,
-              split = 1,
-              split_seed = None,
-              split_number = 1,
-              mrmr_size = mrmr_size,
-              read_splits = read_splits)
-
+    coxModel(cv_folds=cv_folds,
+             test_size=test_size,
+             data_type=data_type,
+             results_path=results_path,
+             regularization=regularization,
+             splitting_model=splitting_model,
+             threshold=threshold,
+             bin_number=4,
+             log_device=log_device,
+             split=1,
+             split_seed=None,
+             split_number=1,
+             mrmr_size=mrmr_size,
+             read_splits=read_splits)
 
 
 if __name__ == '__main__':
@@ -253,7 +272,6 @@ if __name__ == '__main__':
 
     required = parser.add_argument_group('required named arguments')
     optional = parser.add_argument_group('optional named arguments')
-
 
     # Optional arguments
     optional.add_argument(
@@ -331,18 +349,16 @@ if __name__ == '__main__':
     optional.add_argument(
         "--read-splits",
         help="The way that generate input for the model read split or read from the pre generated inputs",
-        action = "store_true",
-        default = False
+        action="store_true",
+        default=False
     )
 
     optional.add_argument(
         "--data-type",
         help="the type of data frame",
-        type= str,
+        type=str,
         default="radiomic"
     )
-
-
 
     # See if we are running in a SLURM task array
     array_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
@@ -370,29 +386,3 @@ if __name__ == '__main__':
         logger.info("\r----------------------------------")
         logger.info("\rStopping due to keyboard interrupt")
         logger.info("\rTHANKS FOR THE RIDE 😀")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
