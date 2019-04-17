@@ -1660,7 +1660,7 @@ class ClinicalVolumeSiamese2(BasicSiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            80,
+            40,
             "fc1"
         )
         y = self._dense(
@@ -1671,7 +1671,7 @@ class ClinicalVolumeSiamese2(BasicSiamese):
 
         x = self._dense(
             x,
-            50,
+            20,
             "fc2"
         )
 
@@ -1683,7 +1683,7 @@ class ClinicalVolumeSiamese2(BasicSiamese):
 
         x = self._dense(
             x,
-            20,
+            10,
             "fc4"
         )
 
@@ -1697,7 +1697,7 @@ class ClinicalVolumeSiamese2(BasicSiamese):
 
         x = self._dense(
             x,
-            5,
+            1,
             "fc6",
             activation=tf.nn.relu
         )
