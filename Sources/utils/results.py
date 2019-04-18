@@ -145,7 +145,7 @@ def save_results(sess: tf.Session, results: Dict[str, pd.DataFrame], path: str, 
         merged.to_csv(os.path.join(path, f"{name}_results.csv"))
 
 
-def _select_time_age(clinical_info: pd.DataFrame, results_df: pd.DataFrame) -> pd.DataFrame:
+def  _select_time_age(clinical_info: pd.DataFrame, results_df: pd.DataFrame) -> pd.DataFrame:
     merge = pd.merge(clinical_info, results_df, left_on='id', right_on='pA')
     merge = merge[['age', 'time', 'pA', 'pB', 'labels', 'predictions', 'probabilities', 'gather_a',
                    'gather_b']]
@@ -180,3 +180,18 @@ def df_results(results: Dict[str, pd.DataFrame])-> Dict:
     for name, result in results.items():
         merged[name] = _select_time_age(clinical_info, result)
     return merged
+
+
+def save_cox_results(results: Dict[str, pd.DataFrame], path: str):
+    """
+    Save the cox results to disk. It creates a CSV file with the pairs and its values. Keeping in
+    mind that the results are pairs it uses the suffixes ``_a`` and ``_b`` to denote each member of the pair
+
+    """
+
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    os.makedirs(path)
+    for name, result in results.items():
+        result = result[['pA','pB', 'distance', 'predict_a','predict_b','time_a','time_b','comp' ,'predict_comp']]
+        result.to_csv(os.path.join(path, f"{name}_results.csv"))
