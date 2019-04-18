@@ -64,7 +64,7 @@ def coxModel(cv_folds: int = 1,
     deepCient
     :param args: Command Line Arguments
     """
-
+    print(cv_folds)
     results_path = pathlib.Path(os.path.join(results_path, "Cox"))
     results_path.mkdir(parents=True, exist_ok=True)
 
@@ -80,7 +80,7 @@ def coxModel(cv_folds: int = 1,
 
     logger.info(f"Results path: {results_path}")
 
-    logger.info("Script to train a siamese neural network model")
+    logger.info("Script to train a Cox model")
 
     logger.info(f"Data type is {data_type}")
     # read features and clinical data frame the path is defined in the settings.py
@@ -110,6 +110,7 @@ def coxModel(cv_folds: int = 1,
         random_path = os.path.join(cv_path, f"random_seed_{split_number}")
         split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
         enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
+        logger.info(enum_generator)
         for i, (train_ids, test_ids, df_features) in enum_generator:
             train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
             test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
@@ -154,17 +155,16 @@ def coxModel(cv_folds: int = 1,
             results_save_path = os.path.join(results_path, f"split_{split:0>2}")
             results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
-            # todo save
+                # todo save
             logger.info(f"result{counts}")
             pathlib.Path(results_save_path).mkdir(parents=True, exist_ok=True)
             # pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
             logger.info("\r ")
             logger.info(f"Saving results at: {results_save_path}")
-
             utils.save_cox_results(predictions, results_save_path)
             logger.info(f"result{counts}")
             logger.info("\r ")
-            return counts, predictions
+
 
     else:
         enum_generator = get_sets_generator(dataset,
@@ -226,7 +226,7 @@ def coxModel(cv_folds: int = 1,
             pathlib.Path(results_save_path).mkdir(parents=True, exist_ok=True)
             pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
             logger.info("\r ")
-            return counts, predictions
+    return counts, predictions
 
 
 def main(args: Dict[str, Any]) -> None:
