@@ -1,0 +1,40 @@
+
+# Change this line to your root directory location
+# ${Home}
+ROOT_DIR: ${HOME}/Documents/Projects/
+
+
+DATA: ${DATA}
+
+# Original data variables (before pre-processing)
+DATA_RAW:
+  ROOT: ${DATA}/HNK_raw
+  CLINICAL: 'clinical_info.csv'
+  RADIOMIC: 'radiomic_features.csv'
+
+
+DATA_CACHE: ${DATA}/.cache
+
+# Pre-processed files location
+DATA_PROCESSED:
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
+  CLINICAL_INFO: clinical_info.csv
+  RADIOMIC: OPC1_radiomic_features_mad.csv
+  VOLUME_CLINIC: VolumeAndClinic_OPC1_subsite.csv
+  CLINIC: Clinic_OPC1.csv
+  INPUT_TEST_TRAIN: train_test
+  SPLIT: Split.csv
+
+# Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
+LOG:
+  DIR:
+  LEVEL_CONSOLE:
+  LEVEL_FILE: 10
+
+
+# Rotations for X, Y and Z axes
+# At least there should be a rotation for each axisIMAGE_ROTATIONS: [1,1,4]
+
+
+LOG_LEVEL_CONSOLE: 10
+LOG_LEVEL_FILE: 10
