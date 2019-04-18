@@ -19,8 +19,6 @@ with open("modelConf.yml", 'r') as cfg_file:
 #the number of times which should run a model
 running_times = cfg['running_times']
 
-models = cfg['hyper_param']['model']
-print(models)
 #randomly feed random state.
 random_states = list(range(running_times* 2))
 random.seed(1)
@@ -51,7 +49,7 @@ def trainDeepCInet(hparams):
                                                           mrmr_size = hparams.mrmr_size,
                                                           read_splits = True,
                                                           split_number=i,
-                                                          cv_folds=1
+                                                          cv_folds=5
                                                           )
 
         counts['train']['c_index'] = sum([v[1] for v in counts['train']['c_index']]) / float(
@@ -99,9 +97,9 @@ parser.add_argument('--log_path', default=cfg['log_path'])
 parser.opt_list('--model', default='ClinicalOnlySiamese', options=cfg['hyper_param']['model'], tunable=True)
 parser.opt_list('--mrmr_size', default=0, options= cfg['hyper_param']['mrmr_size'], tunable=True)
 parser.opt_list('--num_epochs', default=100, options=cfg['hyper_param']['num_epochs'], tunable=True)
-parser.opt_list('--batch_size', default=250, options=cfg['hyper_param']['batch_size'], tunable=True)
+parser.opt_list('--batch_size', default=100, options=cfg['hyper_param']['batch_size'], tunable=True)
 parser.opt_list('--regularization', default=0.5, options=cfg['hyper_param']['regularization'], tunable=True)
-parser.opt_list('--learningRate', default=0.0001, options=cfg['hyper_param']['learningRate'], tunable=True)
+parser.opt_list('--learningRate', default=0.0003, options=cfg['hyper_param']['learningRate'], tunable=True)
 
 hyperparams = parser.parse_args()
 
