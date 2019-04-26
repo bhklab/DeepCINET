@@ -92,6 +92,7 @@ GENERATOR['INPUT_FEATURES'] = os.path.join(GENERATOR['ROOT'], GENERATOR['INPUT_F
 COX = cfg['COX']
 
 HYPER_PARAM = cfg['HYPER_PARAM']
+HYPER_PARAM['log_path'] = os.path.expandvars(HYPER_PARAM['log_path'])
 
 #: The total number of features that are provided by the CSV of radiomic features
 NUMBER_FEATURES = 724

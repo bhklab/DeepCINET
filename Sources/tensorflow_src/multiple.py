@@ -4,7 +4,7 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-import settings
+import config as settings
 
 # import STprediction
 from tensorflow_src import train_test_models

@@ -2,7 +2,7 @@ import tensorflow as tf
 from test_tube import Experiment, HyperOptArgumentParser
 import pandas as pd
 import random
-import yaml
+import config
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
@@ -13,11 +13,10 @@ from tensorflow_src import train_test_models
 
 mixed_c_index, train_c_index, test_c_index = [], [], []
 
-with open("modelConf.yml", 'r') as cfg_file:
-    cfg = yaml.load(cfg_file)
+cfg = config.HYPER_PARAM
 
 #the number of times which should run a model
-running_times = cfg['hyper_param']['running_times']
+running_times = cfg['running_times']
 
 #randomly feed random state.
 random_states = list(range(running_times* 2))
@@ -82,7 +81,7 @@ def trainDeepCInet(hparams):
         #if (i % 3 == 0):
             #os.path.join(cfg['mixed_result_path'], f"epoch{hparams.num_epochs}",.csv"
             #results1.to_csv(pd.read_csv()))
-    path = os.path.join(cfg['mixed_result_path'], f"epoch{hparams.num_epochs}", f"batch{hparams.batch_size}", f"regularization{hparams.regularization}",f"learningRate{hparams.learningRate}",f"mrmr{hparams.mrmr_size}")
+    #path = os.path.join(cfg['mixed_result_path'], f"epoch{hparams.num_epochs}", f"batch{hparams.batch_size}", f"regularization{hparams.regularization}",f"learningRate{hparams.learningRate}",f"mrmr{hparams.mrmr_size}")
     #print(results1)
     #results1.to_csv(os.path.join(path,"result.csv"), index=False)
     exp.save()
@@ -92,14 +91,14 @@ def trainDeepCInet(hparams):
 # Use either random_search or grid_search for tuning
 parser = HyperOptArgumentParser(strategy='random_search')
 parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese9')
-parser.add_argument('--log_path', default=cfg['hyper_param']['log_path'])
+parser.add_argument('--log_path', default=cfg['log_path'])
 
-parser.opt_list('--model', default='ClinicalOnlySiamese', options=cfg['hyper_param']['model'], tunable=True)
-parser.opt_list('--mrmr_size', default=0, options= cfg['hyper_param']['mrmr_size'], tunable=True)
-parser.opt_list('--num_epochs', default=100, options=cfg['hyper_param']['num_epochs'], tunable=True)
-parser.opt_list('--batch_size', default=100, options=cfg['hyper_param']['batch_size'], tunable=True)
-parser.opt_list('--regularization', default=0.5, options=cfg['hyper_param']['regularization'], tunable=True)
-parser.opt_list('--learningRate', default=0.0003, options=cfg['hyper_param']['learningRate'], tunable=True)
+parser.opt_list('--model', default='ClinicalOnlySiamese', options=cfg['model'], tunable=True)
+parser.opt_list('--mrmr_size', default=0, options= cfg['mrmr_size'], tunable=True)
+parser.opt_list('--num_epochs', default=100, options=cfg['num_epochs'], tunable=True)
+parser.opt_list('--batch_size', default=100, options=cfg['batch_size'], tunable=True)
+parser.opt_list('--regularization', default=0.5, options=cfg['regularization'], tunable=True)
+parser.opt_list('--learningRate', default=0.0003, options=cfg['learningRate'], tunable=True)
 
 hyperparams = parser.parse_args()
 

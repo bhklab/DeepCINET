@@ -5,7 +5,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 import data
-import tensorflow_src.settings as settings
+import tensorflow_src.config as settings
 import utils
 from lifelines import CoxPHFitter
 from lifelines.utils import concordance_index

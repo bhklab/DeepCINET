@@ -27,14 +27,74 @@ DATA_PROCESSED:
 
 # Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 LOG:
-  DIR:
-  LEVEL_CONSOLE:
+  DIR: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/log
+  LEVEL_CONSOLE: 20
   LEVEL_FILE: 10
 
 
 # Rotations for X, Y and Z axes
 # At least there should be a rotation for each axisIMAGE_ROTATIONS: [1,1,4]
-
+ROTATION:
+  x: 1
+  y: 1
+  z: 4
 
 LOG_LEVEL_CONSOLE: 10
 LOG_LEVEL_FILE: 10
+
+DATA_BATCH_SIZE: 2
+
+# Default path to save the results
+SESSION_SAVE_PATH: ${DATA_PROCESSED}/Result/Model
+# Default path to save the summaries
+SUMMARIES_DIR:
+RANDOM_SEED:
+
+
+CATEGORY: 5
+
+#: The total number of features that are provided by the CSV of radiomic features
+NUMBER_FEATURES: 724
+VOLUME_FEATURE_INDEX: 26
+
+COX:
+  RESULT_PATH: ${Home}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/Cox
+
+
+#These parameter are used for hyper parameter selection in cpu and gpu hyper parameter selection
+HYPER_PARAM:
+  model:
+  - ClinicalOnlySiamese
+  - ClinicalOnlySiamese2
+  - ClinicalOnlySiamese3
+  - ClinicalVolumeSiamese
+  - ClinicalVolumeSiamese2
+  - ClinicalVolumeSiamese3
+  cv_folds:
+  - 5
+  test_size: .25
+  mrmr_size:
+  - 0
+  num_epochs:
+  - 100
+  batch_size:
+  - 100
+  regularization:
+  - 0.5
+  - 0.8
+  learningRate:
+  - 0.0003
+  running_time: 5
+  log_path: ${Home}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/HYPERPARAM
+
+#These parameter are used for generating inputs in "train_test_generators.py"
+GENERATOR:
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
+  MRMR: [20]
+  CV_FOLDS: [1,5]
+  TEST_SIZE: 0.20
+  SPLIT_NUMBER: 100
+  SPLITING_MODEL: [1]
+  OUTPUT_PATH: 'train_test'
+  INPUT_CLINICAL: 'clinical_info.csv'
+  INPUT_FEATURES: 'OPC1_radiomic_features_mad.csv'

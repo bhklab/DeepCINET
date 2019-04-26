@@ -97,7 +97,7 @@ import data
 from data.train_test import get_sets_generator, get_sets_reader
 import tensorflow_src.models as models
 import tensorflow_src.models.basics
-import tensorflow_src.settings as settings
+import tensorflow_src.config as settings
 import utils
 
 from tensorflow.core.protobuf import config_pb2
