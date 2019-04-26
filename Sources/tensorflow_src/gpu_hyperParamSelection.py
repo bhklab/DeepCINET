@@ -13,13 +13,12 @@ from tensorflow_src import train_test_models
 
 mixed_c_index, train_c_index, test_c_index = [], [], []
 
-with open(os.path.join(os.path.dirname(__file__),"modelConf.yml"), 'r') as cfg_file:
-    cfg = yaml.load(cfg_file)
+cfg = config.HYPER_PARAM
 
 # the number of times which should run a model
 running_times = cfg['running_times']
 
-models = cfg['hyper_param']['model']
+models = cfg['model']
 print(models)
 # randomly feed random state.
 random_states = list(range(running_times * 2))
@@ -98,12 +97,12 @@ parser = HyperOptArgumentParser(strategy='random_search')
 parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese7')
 parser.add_argument('--log_path', default=cfg['log_path'])
 
-parser.opt_list('--model', default='ScalarOnlySiamese', options=cfg['hyper_param']['model'], tunable=True)
-parser.opt_list('--mrmr_size', default=0, options=cfg['hyper_param']['mrmr_size'], tunable=True)
-parser.opt_list('--num_epochs', default=100, options=cfg['hyper_param']['num_epochs'], tunable=True)
-parser.opt_list('--batch_size', default=250, options=cfg['hyper_param']['batch_size'], tunable=True)
-parser.opt_list('--regularization', default=0.5, options=cfg['hyper_param']['regularization'], tunable=True)
-parser.opt_list('--learningRate', default=0.0001, options=cfg['hyper_param']['learningRate'], tunable=True)
+parser.opt_list('--model', default='ScalarOnlySiamese', options=cfg['model'], tunable=True)
+parser.opt_list('--mrmr_size', default=0, options=cfg['mrmr_size'], tunable=True)
+parser.opt_list('--num_epochs', default=100, options=cfg['num_epochs'], tunable=True)
+parser.opt_list('--batch_size', default=250, options=cfg['batch_size'], tunable=True)
+parser.opt_list('--regularization', default=0.5, options=cfg['regularization'], tunable=True)
+parser.opt_list('--learningRate', default=0.0001, options=cfg['learningRate'], tunable=True)
 
 hyperparams = parser.parse_args()
 

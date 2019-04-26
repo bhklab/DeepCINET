@@ -17,7 +17,7 @@ with open("modelConf.yml", 'r') as cfg_file:
     cfg = yaml.load(cfg_file)
 
 #the number of times which should run a model
-running_times = cfg['running_times']
+running_times = cfg['hyper_param']['running_times']
 
 #randomly feed random state.
 random_states = list(range(running_times* 2))
@@ -92,7 +92,7 @@ def trainDeepCInet(hparams):
 # Use either random_search or grid_search for tuning
 parser = HyperOptArgumentParser(strategy='random_search')
 parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese9')
-parser.add_argument('--log_path', default=cfg['log_path'])
+parser.add_argument('--log_path', default=cfg['hyper_param']['log_path'])
 
 parser.opt_list('--model', default='ClinicalOnlySiamese', options=cfg['hyper_param']['model'], tunable=True)
 parser.opt_list('--mrmr_size', default=0, options= cfg['hyper_param']['mrmr_size'], tunable=True)

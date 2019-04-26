@@ -1,8 +1,0 @@
-mrmr: [50,100,250,500]
-cv_folds: [1,5]
-test_size: 0.25
-split_numbers: 100
-splitting_models: [1]
-output_path: '/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/train_test'
-input_clinical: '/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/clinical_info.csv'
-input_features: '/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/OPC1_radiomic_features.csv'

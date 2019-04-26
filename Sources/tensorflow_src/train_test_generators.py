@@ -11,9 +11,9 @@ import pandas as pd
 import utils
 import settings
 from data import pair_data, mrmrpy
-import yaml
 import random
 import shutil
+import config
 
 
 def get_sets_generator(dataset: pair_data.SplitPairs,
@@ -69,23 +69,23 @@ def main(args: Dict[str, Any]) -> None:
     files = os.listdir(cwd)  # Get all the files in that directory
     print("Files in '%s': %s" % (cwd, files))
 
-    with open("splitTestTrainConf.yml", 'r') as cfg_file:
-        cfg = yaml.load(cfg_file)
-    #cfg = settings.CFG
+
+    cfg = config.GENERATOR
+
 
     # Numbers of train and test spliting
-    split_numbers = cfg['split_numbers']
+    split_numbers = cfg['SPLIT_NUMBER']
     # The output path is refer to the folder that all the output are in
-    output_path = cfg['output_path']
+    output_path = cfg['OUTPUT_PATH']
     logger.info("output path: {output_path}".format(output_path=output_path))
 
     # we randomly select a number to generate split based on the seed
     random.seed(1)
     random_states = random.sample(range(1, 100000), split_numbers)
 
-    mrmr_sizes = cfg['mrmr']
-    features = pd.read_csv(cfg['input_features'], index_col=0)
-    clinical_info = pd.read_csv(cfg['input_clinical'], index_col=0)
+    mrmr_sizes = cfg['MRMR']
+    features = pd.read_csv(cfg['INPUT_FEATURES'], index_col=0)
+    clinical_info = pd.read_csv(cfg['INPUT_CLINICAL'], index_col=0)
     train_test_columns = ['cv_folds', 'spliting_models', 'random_seed', 'test_train_path', 'feature_path', 'mrmr_size']
     trains_tests_description = pd.DataFrame(columns=train_test_columns)
 
@@ -98,16 +98,16 @@ def main(args: Dict[str, Any]) -> None:
     dataset = pair_data.SplitPairs()
     dataset.clinical_data = clinical_info
     logger.info("read Feature DataFrame")
-    for cv_folds in cfg['cv_folds']:
+    for cv_folds in cfg['CV_FOLDS']:
         cv_path = os.path.join("", f"cv_{cv_folds}")
         for n, random_seed in enumerate(random_states):
             random_path = os.path.join(cv_path, f"random_seed_{n}")
-            for splitting_model in cfg['splitting_models']:
+            for splitting_model in cfg['SPLITING_MODEL']:
                 logger.info('splitting_model')
                 split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
                 enum_generator = get_sets_generator(dataset,
                                                     cv_folds,
-                                                    cfg['test_size'],
+                                                    cfg['TEST_SIZE'],
                                                     False,
                                                     splitting_model,
                                                     random_seed

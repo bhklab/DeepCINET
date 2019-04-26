@@ -8,15 +8,14 @@ import testCoxModel
 #import STprediction
 import seaborn as sns
 import random
-import yaml
+import config
 import pathlib
 
 import multiprocessing
 
 sns.set()
 
-with open("modelConf.yml", 'r') as cfg_file:
-    cfg = yaml.load(cfg_file)
+cfg = config.COX
 
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
@@ -48,9 +47,9 @@ for i in range(running_times):
     result['random state'] = random_states[i]
     result['number'] = i
     results = results.append(result)
-    pathlib.Path(cfg['cox_result_path']).mkdir(parents=True, exist_ok=True)
-    results.to_csv(os.path.join(cfg['cox_result_path'],'result.csv'))
-results.to_csv(cfg['mixed_result_path'], index = False)
+    pathlib.Path(cfg['RESULT_PATH']).mkdir(parents=True, exist_ok=True)
+    results.to_csv(os.path.join(cfg['RESULT_PATH'],'result.csv'))
+results.to_csv(cfg['RESULT_PATH'], index = False)
 
 
 
