@@ -17,7 +17,7 @@ import multiprocessing
 sns.set()
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
-running_times = 20
+running_times = 100
 random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)

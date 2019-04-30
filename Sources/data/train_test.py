@@ -72,8 +72,8 @@ def get_sets_reader(cv_folds: int,
                         pass
     """
     for i in range(0, cv_folds):
-        train_df = pd.read_csv(os.path.join(split_path, "train_fold{i}.csv".format(i=i)), index_col=0)
-        test_df = pd.read_csv(os.path.join(split_path, "test_fold{i}.csv".format(i=i)), index_col=0)
+        train_df = pd.read_csv(os.path.join(split_path, f"train_fold{i}.csv"), index_col=0)
+        test_df = pd.read_csv(os.path.join(split_path, f"test_fold{i}.csv"), index_col=0)
         train_ids = train_df
         test_ids = test_df
         if mrmr_size == 0:
@@ -84,7 +84,7 @@ def get_sets_reader(cv_folds: int,
             elif data_type == "clinicalVolume":
                 path = settings.DATA_PATH_VOLUME_CLINIC_PROCESSED
         else:
-            path = os.path.join(split_path, "features_fold{i}".format(i=i),
-                                "radiomic{mrmr_size}.csv".format(mrmr_size=mrmr_size))
+            path = os.path.join(split_path, f"features_fold{i}",
+                                f"radiomic{mrmr_size}.csv")
         features = pd.read_csv(path, index_col=0)
         yield (i, (train_ids, test_ids, features))

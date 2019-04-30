@@ -25,9 +25,9 @@ class SplitPairs:
     It can also be used to create the Cross Validation folds
     """
 
-    def __init__(self):
+    def __init__(self, clinical_path: str = DATA_PATH_CLINICAL_PROCESSED):
         # To divide into test and validation sets we only need the clinical data
-        self.clinical_data = pd.read_csv(DATA_PATH_CLINICAL_PROCESSED, index_col=0)
+        self.clinical_data = pd.read_csv(clinical_path, index_col=0)
 
         self.total_x = self.clinical_data['id'].values
         self.total_y = self.clinical_data['event'].values
