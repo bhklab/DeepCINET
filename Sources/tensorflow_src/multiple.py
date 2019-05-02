@@ -17,27 +17,27 @@ import multiprocessing
 sns.set()
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
-running_times = 100
+running_times = 1
 random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
 
 for i in range(running_times):
     counts, predictions = train_test_models.deepCinet(model='ClinicalVolumeSiamese3',
-                                                      num_epochs=25,
+                                                      num_epochs=20,
                                                       batch_size=80,
                                                       splitting_model=1,
                                                       learning_rate=0.0003,
                                                       dropout=.2,
                                                       threshold=4,
                                                       split=i, save_model=True,
-                                                      regularization=0.08,
+                                                      regularization=0.2,
                                                       split_seed=random_states[i],
                                                       initial_seed=None,
                                                       mrmr_size=0,
                                                       read_splits=True,
                                                       full_summary=True,
-                                                      cv_folds=5,
+                                                      cv_folds=1,
                                                       split_number=i,
                                                       data_type="clinicalVolume")
 

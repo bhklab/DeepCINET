@@ -2,7 +2,7 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-import tensorflow_src.settings as settings
+import tensorflow_src.config as settings
 import data
 import utils
 import pandas as pd

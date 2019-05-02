@@ -378,9 +378,16 @@ def deepCinet(model: str,
             split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
             enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
             clinical_data = dataset.clinical_data.copy()
+
             for i, (train_ids, test_ids, df_features) in enum_generator:
+
+                test_ids['id'] = test_ids['id'].astype(str)
+                train_ids['id'] = train_ids['id'].astype(str)
                 train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
                 test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
+                logger.info(f"train_ids:{train_data}")
+                logger.info(f"test_ids:{test_data}")
+                logger.info(f"clinical:{df_features}")
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
                 # Initialize all the variables

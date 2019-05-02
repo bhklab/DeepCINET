@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
-from tensorflow_src.settings import \
+from tensorflow_src.config import \
     DATA_PATH_CLINICAL_PROCESSED, \
     DATA_PATH_PROCESSED, \
     DATA_PATH_RADIOMIC_PROCESSED, \
@@ -149,6 +149,7 @@ class SplitPairs:
 
         self.logger.debug("Generating mixed pairs")
         test_mix_pairs = self._get_compare_train(train_data, test_data, random)
+
 
         train_pairs = self._normalize(train_pairs)
         test_pairs = self._normalize(test_pairs, train=False)
