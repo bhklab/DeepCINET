@@ -16,6 +16,7 @@ DATA_RAW:
 DATA_CACHE: ${DATA}/.cache
 
 # Pre-processed files location
+
 DATA_PROCESSED:
   ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
   CLINICAL_INFO: clinical_info.csv
@@ -24,6 +25,15 @@ DATA_PROCESSED:
   CLINIC: Clinic_OPC1.csv
   INPUT_TEST_TRAIN: train_test
   SPLIT: Split.csv
+
+#DATA_PROCESSED:
+#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs
+#  CLINICAL_INFO: clinical_infos.csv
+#  RADIOMIC: OPC1_radiomic_features_mad.csv
+#  VOLUME_CLINIC: VolumeAndClinic_OPCs.csv
+#  CLINIC: Clinic_OPC1.csv
+#  INPUT_TEST_TRAIN: train_test
+#  SPLIT: Split.csv
 
 # Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 LOG:
@@ -45,7 +55,7 @@ LOG_LEVEL_FILE: 10
 DATA_BATCH_SIZE: 2
 
 # Default path to save the results
-SESSION_SAVE_PATH: ${DATA_PROCESSED}/Result/Model
+SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/Result/Model
 # Default path to save the summaries
 SUMMARIES_DIR:
 RANDOM_SEED:

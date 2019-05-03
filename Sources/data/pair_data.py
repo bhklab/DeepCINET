@@ -202,6 +202,8 @@ class SplitPairs:
         """
         # Create the pairs where test_elem > train_elem
         pairs = SplitPairs._get_inner_pairs(test_df, train_df, random, censoring=False)
+        pairs = pairs.append(SplitPairs._get_inner_pairs(train_df, test_df,  random, censoring=False), ignore_index=True, sort=False)
+
         return pairs.sample(frac=1).reset_index(drop=True)
 
     @staticmethod
@@ -210,11 +212,11 @@ class SplitPairs:
                          random: bool,
                          censoring: bool = True) -> pd.DataFrame:
         """
-        Generate pairs where the survival time of ``df`` is bigger than the survival time of ``df_comp``
+        Generate pairs  where the survival time of ``df`` is bigger than the survival time of ``df_comp``
 
         :param df: :class:`DataFrame` that will be iterated
         :param df_comp: :class:`DataFrame` that will be compared against and if its values are smaller than the compared
-                        value a pair will be created
+                        value a pair will be created /todo write the description for this part
         :return: List with all the generated pairs. **Note**: The pairs are **not** in a random order
         """
         df_comp = df_comp[df_comp['event'] == 1]
@@ -223,10 +225,10 @@ class SplitPairs:
         for _, row in df.iterrows():
             # For mixed pairs only compare against the uncensored elements to avoid problems when predicting
             # Survival time
-            if not censoring or row['event'] == 1:
-                temp_df = df_comp.loc[df_comp['id'] != row['id'], ['id', 'time']]
-            else:
-                temp_df = df_comp.loc[(df_comp['time'] < row['time']), ['id', 'time']]
+            #if not censoring or row['event'] == 1:
+            #    temp_df = df_comp.loc[df_comp['id'] != row['id'], ['id', 'time']]
+            #else: /todo take a look at this code again
+            temp_df = df_comp.loc[(df_comp['time'] < row['time']), ['id', 'time']]
             row_pairs = pd.DataFrame()
             row_pairs['pA'] = temp_df['id']
             row_pairs['pB'] = row['id']
@@ -307,6 +309,7 @@ class BatchData:
 
         total_ids = np.append(pairs["pA"].values, pairs["pB"].values)
         total_ids = list(set(total_ids))  # To avoid repetitions
+        print(self.radiomic_df)
         features: pd.DataFrame = self.radiomic_df[total_ids]
 
         if train:

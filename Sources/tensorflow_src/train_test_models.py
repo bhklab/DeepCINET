@@ -385,11 +385,16 @@ def deepCinet(model: str,
                 train_ids['id'] = train_ids['id'].astype(str)
                 train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
                 test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
-                logger.info(f"train_ids:{train_data}")
-                logger.info(f"test_ids:{test_data}")
-                logger.info(f"clinical:{df_features}")
+                train_data.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/train.csv")
+                test_data.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/test.csv")
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
+                train_pairs.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/train_pairs.csv")
+                test_pairs.to_csv(
+                    "/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/test_pairs.csv")
+                mixed_pairs.to_csv(
+                    "/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/mixed_pairs.csv")
+
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, f"split_{split:0>2}")

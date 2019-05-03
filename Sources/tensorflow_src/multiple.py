@@ -24,7 +24,7 @@ random.shuffle(random_states)
 
 for i in range(running_times):
     counts, predictions = train_test_models.deepCinet(model='ClinicalVolumeSiamese3',
-                                                      num_epochs=20,
+                                                      num_epochs=15,
                                                       batch_size=80,
                                                       splitting_model=1,
                                                       learning_rate=0.0003,
@@ -34,12 +34,12 @@ for i in range(running_times):
                                                       regularization=0.2,
                                                       split_seed=random_states[i],
                                                       initial_seed=None,
-                                                      mrmr_size=0,
-                                                      read_splits=True,
+                                                      mrmr_size=20,
+                                                      read_splits=False,
                                                       full_summary=True,
                                                       cv_folds=1,
                                                       split_number=i,
-                                                      data_type="clinicalVolume")
+                                                      data_type="radiomic")
 
     print(f"test{[v[1] for v in counts['test']['c_index']]}")
     print(f"test{len([v[1] for v in counts['test']['c_index']])}")

@@ -112,6 +112,9 @@ def coxModel(cv_folds: int = 1,
         enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
         logger.info(enum_generator)
         for i, (train_ids, test_ids, df_features) in enum_generator:
+
+            test_ids['id'] = test_ids['id'].astype(str)
+            train_ids['id'] = train_ids['id'].astype(str)
             train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
             test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
             logger.info(f"New fold {i}, {len(train_ids)} train pairs, {len(test_ids)} test pairs")
