@@ -71,8 +71,8 @@ args = argparse.Namespace()
 DATA_BATCH_SIZE = int(cfg['DATA_BATCH_SIZE'])
 assert DATA_BATCH_SIZE >= 2
 
-SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './Model')
-SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', './Summaries')
+SESSION_SAVE_PATH = os.path.expandvars(cfg['SESSION_SAVE_PATH'])
+SUMMARIES_DIR = os.path.expandvars(cfg['SUMMARIES_DIR'])
 
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', 0))
 if RANDOM_SEED < 0:

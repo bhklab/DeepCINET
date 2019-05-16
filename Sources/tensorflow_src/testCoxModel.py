@@ -127,7 +127,9 @@ def coxModel(cv_folds: int = 1,
             features_train.drop(['id'], axis='columns', inplace=True)
             features_train = features_train.dropna()
             del_low_var(features_train)
-            cph.fit(features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.05)
+
+
+            cph.fit(features_train, duration_col='time', event_col='event', show_progress=True, step_size=1)
 
             features_test = pd.merge(df_features.T, test_data[['id', 'event', 'time']], how='inner',
                                      left_index=True, right_on='id')
@@ -135,8 +137,9 @@ def coxModel(cv_folds: int = 1,
 
             features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
                                 left_index=True, right_on='id')
-
             features['predict'] = cph.predict_partial_hazard(features)
+            print(cph.predict_survival_function(features,times=[1.0]))
+            
             train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=False)
 
             predictions = {}

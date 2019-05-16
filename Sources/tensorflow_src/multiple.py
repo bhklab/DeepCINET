@@ -11,6 +11,7 @@ from tensorflow_src import train_test_models
 import seaborn as sns
 import random
 import yaml
+import utils
 
 import multiprocessing
 
@@ -21,7 +22,7 @@ running_times = 1
 random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
-
+logger = utils.init_logger("multiple run")
 for i in range(running_times):
     counts, predictions = train_test_models.deepCinet(model='ClinicalVolumeSiamese3',
                                                       num_epochs=15,
@@ -31,19 +32,19 @@ for i in range(running_times):
                                                       dropout=.2,
                                                       threshold=4,
                                                       split=i, save_model=True,
-                                                      regularization=0.2,
+                                                      regularization=0.3,
                                                       split_seed=random_states[i],
                                                       initial_seed=None,
-                                                      mrmr_size=20,
-                                                      read_splits=False,
+                                                      mrmr_size=0,
+                                                      read_splits=True,
                                                       full_summary=True,
                                                       cv_folds=1,
                                                       split_number=i,
-                                                      data_type="radiomic")
+                                                      data_type="clinicalVolume")
 
-    print(f"test{[v[1] for v in counts['test']['c_index']]}")
-    print(f"test{len([v[1] for v in counts['test']['c_index']])}")
-    print(counts)
+    logger.info(f"test{[v[1] for v in counts['test']['c_index']]}")
+    logger.info(f"test{len([v[1] for v in counts['test']['c_index']])}")
+    logger.info(counts)
     counts['train']['c_index'] = sum([v[1] for v in counts['train']['c_index']]) / float(
         len(counts['train']['c_index']))
     counts['test']['c_index'] = sum([v[1] for v in counts['test']['c_index']]) / float(len(counts['test']['c_index']))

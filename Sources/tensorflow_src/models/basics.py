@@ -84,7 +84,7 @@ class BasicModel:
                  regularization: float = .001,
                  dropout: float = .2,
                  learning_rate: float = 0.001,
-                 threshold: float = .5,
+                 threshold: float = .51,
                  use_distance: bool = False,
                  full_summary: bool = False,
                  seed: int = None,
