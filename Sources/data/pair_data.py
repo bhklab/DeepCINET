@@ -129,7 +129,7 @@ class SplitPairs:
     def create_train_test(self,
                           train_data: pd.DataFrame,
                           test_data: pd.DataFrame,
-                          random: bool) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+                          random: bool, distance: float = 0) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
         for each set
@@ -142,10 +142,10 @@ class SplitPairs:
         """
 
         self.logger.debug("Generating train pairs")
-        train_pairs = self._get_pairs(train_data, random)
+        train_pairs = self._get_pairs(train_data, random, distance=distance)
 
         self.logger.debug("Generating test pairs")
-        test_pairs = self._get_pairs(test_data, random)
+        test_pairs = self._get_pairs(test_data, random, distance=distance)
 
         self.logger.debug("Generating mixed pairs")
         test_mix_pairs = self._get_compare_train(train_data, test_data, random)
@@ -175,7 +175,7 @@ class SplitPairs:
         return task_list
 
     @staticmethod
-    def _get_pairs(df: pd.DataFrame, random: bool) -> pd.DataFrame:
+    def _get_pairs(df: pd.DataFrame, random: bool, distance: float=0) -> pd.DataFrame:
         """
         Get all the possible pairs for a DataFrame containing the clinical data, keeping in mind the censored
         data
@@ -183,7 +183,7 @@ class SplitPairs:
         :param df: DataFrame containing all the clinical data
         :return: Iterator over PairComp with all the generated pairs
         """
-        pairs = SplitPairs._get_inner_pairs(df, df, random)
+        pairs = SplitPairs._get_inner_pairs(df, df, random, distance=distance)
 
         if len(pairs) <= 0:
             return pairs
@@ -192,7 +192,7 @@ class SplitPairs:
     @staticmethod
     def _get_compare_train(train_df: pd.DataFrame,
                            test_df: pd.DataFrame,
-                           random: bool) -> pd.DataFrame:
+                           random: bool, distance: float = 0) -> pd.DataFrame:
         """
         Create the pairs by having one member belonging to the train dataset and the other to the test dataset
 
@@ -201,8 +201,8 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         # Create the pairs where test_elem > train_elem
-        pairs = SplitPairs._get_inner_pairs(test_df, train_df, random, censoring=False)
-        pairs = pairs.append(SplitPairs._get_inner_pairs(train_df, test_df,  random, censoring=False), ignore_index=True, sort=False)
+        pairs = SplitPairs._get_inner_pairs(test_df, train_df, random, censoring=False,distance=distance)
+        pairs = pairs.append(SplitPairs._get_inner_pairs(train_df, test_df,  random, censoring=False,distance=distance), ignore_index=True, sort=False)
 
         return pairs.sample(frac=1).reset_index(drop=True)
 
@@ -210,7 +210,7 @@ class SplitPairs:
     def _get_inner_pairs(df: pd.DataFrame,
                          df_comp: pd.DataFrame,
                          random: bool,
-                         censoring: bool = True) -> pd.DataFrame:
+                         censoring: bool = True, distance: float = 0) -> pd.DataFrame:
         """
         Generate pairs  where the survival time of ``df`` is bigger than the survival time of ``df_comp``
 
@@ -228,7 +228,10 @@ class SplitPairs:
             #if not censoring or row['event'] == 1:
             #    temp_df = df_comp.loc[df_comp['id'] != row['id'], ['id', 'time']]
             #else: /todo take a look at this code again
-            temp_df = df_comp.loc[(df_comp['time'] < row['time']), ['id', 'time']]
+            if(distance > 0):
+                temp_df = df_comp.loc[(row['time'] - df_comp['time']) > distance, ['id', 'time']]
+            else:
+                temp_df = df_comp.loc[(df_comp['time'] < row['time']), ['id', 'time']]
             row_pairs = pd.DataFrame()
             row_pairs['pA'] = temp_df['id']
             row_pairs['pB'] = row['id']
@@ -309,7 +312,6 @@ class BatchData:
 
         total_ids = np.append(pairs["pA"].values, pairs["pB"].values)
         total_ids = list(set(total_ids))  # To avoid repetitions
-        print(self.radiomic_df)
         features: pd.DataFrame = self.radiomic_df[total_ids]
 
         if train:
