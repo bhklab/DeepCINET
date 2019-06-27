@@ -11,7 +11,7 @@ APP_ROOT = os.path.join(os.path.dirname(__file__), "../../")
 
 dotenv.load_dotenv(os.path.join(APP_ROOT, ".env"), verbose=True)
 
-with open(os.path.join(APP_ROOT, "environment.yml")) as cfg_file:
+with open(os.path.join(APP_ROOT, "environment_Pharma.yml")) as cfg_file:
     cfg = yaml.load(cfg_file)
 
 # todo config required variables
@@ -28,8 +28,8 @@ required_vars = [
     'IMAGE_ROTATIONS'
 ]
 
-for v in cfg.keys():
-    print(v)
+#for v in cfg.keys():
+#    print(v)
 
 for var in required_vars:
     if var not in os.environ:
@@ -62,7 +62,6 @@ LOG_LEVEL_FILE = int(cfg['LOG']['LEVEL_FILE'])
 rotations_list = [int(x) for x in os.getenv('IMAGE_ROTATIONS').split(',')]
 IMAGE_ROTATIONS = cfg['ROTATION']
 
-print(IMAGE_ROTATIONS)
 
 TOTAL_ROTATIONS = IMAGE_ROTATIONS['x'] * IMAGE_ROTATIONS['y'] * IMAGE_ROTATIONS['z']
 
@@ -89,7 +88,11 @@ GENERATOR['OUTPUT_PATH'] = os.path.join(GENERATOR['ROOT'], GENERATOR['OUTPUT_PAT
 GENERATOR['INPUT_CLINICAL'] = os.path.join(GENERATOR['ROOT'], GENERATOR['INPUT_CLINICAL'])
 GENERATOR['INPUT_FEATURES'] = os.path.join(GENERATOR['ROOT'], GENERATOR['INPUT_FEATURES'])
 
+cfg['COX']['RESULT_PATH'] = os.path.expandvars(cfg['COX']['RESULT_PATH'])
 COX = cfg['COX']
+
+cfg['ML']['RESULT_PATH'] = os.path.expandvars(cfg['ML']['RESULT_PATH'])
+ML = cfg['ML']
 
 HYPER_PARAM = cfg['HYPER_PARAM']
 HYPER_PARAM['log_path'] = os.path.expandvars(HYPER_PARAM['log_path'])
