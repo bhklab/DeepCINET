@@ -4,6 +4,7 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
 import testCoxModel
+import testRegid
 
 #import STprediction
 import seaborn as sns
@@ -26,7 +27,7 @@ random.shuffle(random_states)
 for i in range(running_times):
     counts,predicts = testCoxModel.coxModel(data_type='clinicalVolume',
                                    mrmr_size=0,
-                                   read_splits=True,
+                                   read_splits=False,
                                    splitting_model=1,
                                    split_seed=random_states[i],
                                    split=i,
@@ -49,7 +50,7 @@ for i in range(running_times):
     results = results.append(result)
     pathlib.Path(cfg['RESULT_PATH']).mkdir(parents=True, exist_ok=True)
     results.to_csv(os.path.join(cfg['RESULT_PATH'],'result.csv'))
-results.to_csv(cfg['RESULT_PATH'], index = False)
+results.to_csv(os.path.join(cfg['RESULT_PATH'],'result.csv'), index = False)
 
 
 

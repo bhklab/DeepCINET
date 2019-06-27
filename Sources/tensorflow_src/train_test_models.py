@@ -89,7 +89,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
 
 import pathlib
 
-
+import inspect
 import tensorflow as tf
 import pandas as pd
 
@@ -310,7 +310,8 @@ def deepCinet(model: str,
               split_number=None,  # it is used for the time we are using the generated test and train sets
               initial_seed=None,
               mrmr_size=0,
-              read_splits=False):
+              read_splits=False,
+              distance = 0):
     """
     deepCient
     :param args: Command Line Arguments
@@ -318,9 +319,7 @@ def deepCinet(model: str,
     tf.reset_default_graph()
     results_path = pathlib.Path(results_path)
     results_path.mkdir(parents=True, exist_ok=True)
-
     logger = utils.init_logger(f'train_{0}', str(results_path))
-
     logger.debug("Script starts")
     # logger.info(f"Results path: {results_path}")
     logger.info("Results path: {_results_path}".format(_results_path=results_path))
@@ -385,17 +384,9 @@ def deepCinet(model: str,
                 train_ids['id'] = train_ids['id'].astype(str)
                 train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
                 test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
-                train_data.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/train.csv")
-                test_data.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/test.csv")
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
-                                                                                 random=random_labels)
-                train_pairs.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/train_pairs.csv")
-                test_pairs.to_csv(
-                    "/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/test_pairs.csv")
-                mixed_pairs.to_csv(
-                    "/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/mixed_pairs.csv")
-
-                # Initialize all the variables
+                                                                                 random=random_labels,  distance=distance)
+                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, f"split_{split:0>2}")
                 summaries_dir = os.path.join(summaries_dir, 'summaries', f'fold_{i:>2}')
@@ -463,7 +454,7 @@ def deepCinet(model: str,
                 train_data = dataset.clinical_data.iloc[train_idx]
                 test_data = dataset.clinical_data.iloc[test_idx]
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
-                                                                                 random=random_labels)
+                                                                                 random=random_labels, distance=distance)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
@@ -553,6 +544,7 @@ def main(args: Dict[str, Any]) -> None:
     results_path = args['results_path']
     save_model = args['save_model']
     read_splits = args['read_splits']
+    distance = args['distance']
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
     deepCinet(model=model,
@@ -577,7 +569,8 @@ def main(args: Dict[str, Any]) -> None:
               split_seed=None,
               split_number=None,
               mrmr_size=mrmr_size,
-              read_splits=read_splits)
+              read_splits=read_splits,
+              distance = distance)
 
 
 if __name__ == '__main__':
@@ -740,6 +733,13 @@ if __name__ == '__main__':
     optional.add_argument(
         "--read_splits",
         help="The way that generate input for the model read split or read from the pre generated inputs",
+        action="store_true",
+        default=False
+    )
+
+    optional.add_argument(
+        "--distance",
+        help="This is used to consider rCI when generating pairs only the pairs with dis > distance would be selected ",
         action="store_true",
         default=False
     )

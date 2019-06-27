@@ -977,7 +977,7 @@ class ScalarOnlySiamese(BasicSiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            300,
+            500,
             "fc1"
         )
         x = tf.layers.dropout(
@@ -1020,14 +1020,21 @@ class ScalarOnlySiamese(BasicSiamese):
             #tf.concat([x , y],1),
             x,
             10,
-            "fc5",
-            activation=tf.nn.relu
+            "fc5"
         )
 
         x = self._dense(
             x ,
             20,
             "fc6",
+            activation=tf.nn.selu
+        )
+        return x
+
+        x = self._dense(
+            x ,
+            1,
+            "fc7",
             activation=tf.nn.relu
         )
         return x
@@ -1086,39 +1093,61 @@ class ScalarOnlySiamese1(BasicSiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            80,
+            1000,
+            "fc1"
+        )
+        x = self._dense(
+            x,
+            500,
             "fc1"
         )
         y = self._dense(
             x,
-            5,
+            20,
             "fcY"
         )
 
         x = self._dense(
             x,
-            50,
+            300,
             "fc2"
         )
 
         x = self._dense(
             x,
-            20,
+            200,
             "fc4"
-        )
-
-        # Out: [batch, 1]
-        x = self._dense(
-            tf.concat([x , y],1),
-            10,
-            "fc5",
-            activation=tf.nn.relu
         )
 
         x = self._dense(
             x,
-            5,
-            "fc6",
+            100,
+            "fc5"
+        )
+
+        x = self._dense(
+            x,
+            20,
+            "fc6"
+        )
+        x = self._dense(
+            x,
+            20,
+            "fc7"
+        )
+
+        # Out: [batch, 1]
+#        x = self._dense(
+ #           tf.concat([x , y],1),
+ #           10,
+ #           "fcjoin",
+ #           activation=tf.nn.relu
+ #       )
+
+        x = self._dense(
+            x,
+            1,
+            "fc8",
             activation=tf.nn.relu
         )
         return x
