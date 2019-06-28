@@ -229,7 +229,7 @@ class SplitPairs:
             #    temp_df = df_comp.loc[df_comp['id'] != row['id'], ['id', 'time']]
             #else: /todo take a look at this code again
             if(distance > 0):
-                temp_df = df_comp.loc[(row['time'] - df_comp['time']) > distance, ['id', 'time']]
+                temp_df = df_comp.loc[((row['time'] - df_comp['time']) > distance) & (row['dataSet'] == df_comp['dataSet']), ['id', 'time']]
             else:
                 temp_df = df_comp.loc[(df_comp['time'] < row['time']), ['id', 'time']]
             row_pairs = pd.DataFrame()

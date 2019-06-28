@@ -28,16 +28,16 @@ DATA_CACHE: ${DATA}/.cache
 #
 #DATA_PROCESSED:
 #  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData
-#  CLINICAL_INFO: CTRPv2_paclitaxel.csv
-#  RADIOMIC: L100_gene_expression_CTRPv2_paclitaxel.csv
-#  VOLUME_CLINIC: L100_gene_expression_CTRPv2_paclitaxel.csv
-#  CLINIC: CTRPv2_paclitaxel.csv
-#  INPUT_TEST_TRAIN: train_test_paclitaxel
+#  CLINICAL_INFO: CTRPv2_lapatinib.csv
+#  RADIOMIC: L100_gene_expression_CTRPv2_lapatinib.csv
+#  VOLUME_CLINIC: L100_gene_expression_CTRPv2_lapatinib.csv
+#  CLINIC: CTRPv2_lapatinib.csv
+#  INPUT_TEST_TRAIN: train_test_lapatinib
 #  SPLIT: Split.csv
 #
-#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/Result/paclitaxel
+#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/Result/lapatinib
 ## Default path to save the summaries
-#SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/Summaries/paclitaxel
+#SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/Summaries/lapatinib
 #RANDOM_SEED:
 #
 ## Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
@@ -47,33 +47,65 @@ DATA_CACHE: ${DATA}/.cache
 #  LEVEL_FILE: 10
 #
 #ML:
-#   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/Result_ML/paclitaxel
+#   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/Result_ML/lapatinib
+
+#DATA_PROCESSED:
+#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/
+#  CLINICAL_INFO: train_test_response_lapatinib.csv
+#  RADIOMIC: train_test_expression_lapatinib.csv
+#  VOLUME_CLINIC: train_test_expression_lapatinib.csv
+#  CLINIC: CTRPv2_lapatinib.csv
+#  INPUT_TEST_TRAIN: train_test_lapatinib
+#  SPLIT: Split.csv
+#
+#
+#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result/lapatinib
+## Default path to save the summaries
+#SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Summaries/lapatinib
+#RANDOM_SEED:
+#
+#
+#
+## Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
+#LOG:
+#  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/log
+#  LEVEL_CONSOLE: 20
+#  LEVEL_FILE: 10
+#
+#ML:
+#   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_ML/lapatinib
+
 
 DATA_PROCESSED:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/
-  CLINICAL_INFO: train_test_response_paclitaxel.csv
-  RADIOMIC: train_test_expression_paclitaxel.csv
-  VOLUME_CLINIC: train_test_expression_paclitaxel.csv
-  CLINIC: CTRPv2_paclitaxel.csv
-  INPUT_TEST_TRAIN: train_test_paclitaxel
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/
+  CLINICAL_INFO: train_test_response_lapatinib.csv
+  RADIOMIC: train_test_expression_lapatinib.csv
+  VOLUME_CLINIC: train_test_expression_lapatinib.csv
+  CLINIC: CTRPv2_lapatinib.csv
+  INPUT_TEST_TRAIN: train_test_lapatinib
   SPLIT: Split.csv
 
 
-SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result/paclitaxel
+SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/Result/lapatinib
 # Default path to save the summaries
-SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Summaries/paclitaxel
+SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/Summaries/lapatinib
 RANDOM_SEED:
 
 
 
 # Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 LOG:
-  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/log
+  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/log
   LEVEL_CONSOLE: 20
   LEVEL_FILE: 10
 
 ML:
-   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_ML/paclitaxel
+   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/Result_ML/lapatinib
+
+
+
+
+
 
 # Rotations for X, Y and Z axes
 # At least there should be a rotation for each axisIMAGE_ROTATIONS: [1,1,4]
@@ -136,6 +168,6 @@ GENERATOR:
   TEST_SIZE: 0.20
   SPLIT_NUMBER: 10
   SPLITING_MODEL: [1]
-  OUTPUT_PATH: 'train_test_paclitaxel'
-  INPUT_CLINICAL: 'CTRPv2_paclitaxel.csv'
-  INPUT_FEATURES: 'L100_gene_expression_CTRPv2_paclitaxel.csv'
+  OUTPUT_PATH: 'train_test_lapatinib'
+  INPUT_CLINICAL: 'CTRPv2_lapatinib.csv'
+  INPUT_FEATURES: 'L100_gene_expression_CTRPv2_lapatinib.csv'

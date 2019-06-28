@@ -26,10 +26,10 @@ logger = utils.init_logger("multiple run")
 
 for i in range(running_times):
     parameters = dict(model='ScalarOnlySiamese',
-                      num_epochs=20,
-                      batch_size=200,
+                      num_epochs=14,
+                      batch_size=100,
                       splitting_model=1,
-                      learning_rate=0.0005,
+                      learning_rate=0.0001,
                       dropout=.3,
                       threshold=4,
                       split=i, save_model=True,
@@ -42,7 +42,8 @@ for i in range(running_times):
                       cv_folds=1,
                       split_number=i,
                       data_type="clinicalVolume",
-                      distance=0.2)
+                      distance=0.2,
+                     )
     counts, predictions = train_test_models.deepCinet(**parameters)
     logger.info(f"Parameters: {parameters}")
     logger.info(f"test{[v[1] for v in counts['test']['c_index']]}")
