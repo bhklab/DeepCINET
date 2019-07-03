@@ -49,7 +49,7 @@ for i in range(running_times):
     results = results.append(result)
     pathlib.Path(cfg['RESULT_PATH']).mkdir(parents=True, exist_ok=True)
     results.to_csv(os.path.join(cfg['RESULT_PATH'],'result.csv'))
-results.to_csv(cfg['RESULT_PATH'], index = False)
+results.to_csv(os.path.join(cfg['RESULT_PATH'],'result.csv'), index = False)
 
 
 
