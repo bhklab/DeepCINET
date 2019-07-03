@@ -127,7 +127,9 @@ def coxModel(cv_folds: int = 1,
             features_train.drop(['id'], axis='columns', inplace=True)
             features_train = features_train.dropna()
             del_low_var(features_train)
-            cph.fit(features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.05)
+            cph.fit(features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.02)
+
+            print(concordance_index(features_train['time'], -cph.predict_partial_hazard(features_train), features_train['event']))
 
             features_test = pd.merge(df_features.T, test_data[['id', 'event', 'time']], how='inner',
                                      left_index=True, right_on='id')
@@ -137,6 +139,7 @@ def coxModel(cv_folds: int = 1,
                                 left_index=True, right_on='id')
 
             features['predict'] = cph.predict_partial_hazard(features)
+            print(concordance_index(features['time'], -cph.predict_partial_hazard(features), features['event']))
             train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=False)
 
             predictions = {}
@@ -148,7 +151,7 @@ def coxModel(cv_folds: int = 1,
                 result = pd.merge(features[['id', 'time', 'predict', 'event']], result, left_on='id',
                                   right_on='pB', suffixes=('_b', '_a'), how='inner')
 
-                result['predict_comp'] = result['predict_b'] < result['predict_a']
+                result['predict_comp'] =  result['predict_a'] > result['predict_b']
                 predictions[name] = result
                 correct = (result['predict_comp'] == result['comp']).sum()
                 total = (result['predict_comp'] == result['comp']).count()
@@ -187,7 +190,7 @@ def coxModel(cv_folds: int = 1,
             train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                              random=False)
             logger.info(f"New fold {i}, {len(train_idx)} train pairs, {len(test_idx)} test pairs")
-            cph = CoxPHFitter(penalizer=0.5, alpha=0.95)
+            cph = CoxPHFitter(penalizer=0.5, alpha=0.99)
             # radiomic_features = pd.merge(df_features.T, dataset.clinical_data[['id', 'event', 'time']], how='inner',left_index=True, right_on='id')
 
             clinical_train = clinical_df.iloc[train_idx]
