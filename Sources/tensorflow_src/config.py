@@ -71,7 +71,7 @@ args = argparse.Namespace()
 DATA_BATCH_SIZE = int(cfg['DATA_BATCH_SIZE'])
 assert DATA_BATCH_SIZE >= 2
 
-SESSION_SAVE_PATH = os.getenv('SESSION_SAVE_PATH', './Model')
+SESSION_SAVE_PATH =os.path.expandvars(cfg['SESSION_SAVE_PATH'])
 SUMMARIES_DIR = os.getenv('SUMMARIES_DIR', './Summaries')
 
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', 0))
@@ -89,6 +89,7 @@ GENERATOR['OUTPUT_PATH'] = os.path.join(GENERATOR['ROOT'], GENERATOR['OUTPUT_PAT
 GENERATOR['INPUT_CLINICAL'] = os.path.join(GENERATOR['ROOT'], GENERATOR['INPUT_CLINICAL'])
 GENERATOR['INPUT_FEATURES'] = os.path.join(GENERATOR['ROOT'], GENERATOR['INPUT_FEATURES'])
 
+cfg['COX']['RESULT_PATH'] = os.path.expandvars(cfg['COX']['RESULT_PATH'])
 COX = cfg['COX']
 
 HYPER_PARAM = cfg['HYPER_PARAM']
