@@ -25,7 +25,7 @@ random.shuffle(random_states)
 logger = utils.init_logger("multiple run")
 
 for i in range(running_times):
-    parameters = dict(model='ScalarOnlySiamese',
+    parameters = dict(model='ClinicalOnlySiamese',
                       num_epochs=14,
                       batch_size=100,
                       splitting_model=1,
@@ -33,7 +33,7 @@ for i in range(running_times):
                       dropout=.3,
                       threshold=4,
                       split=i, save_model=True,
-                      regularization=20.0,
+                      regularization=10.0,
                       split_seed=random_states[i],
                       initial_seed=None,
                       mrmr_size=0,

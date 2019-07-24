@@ -35,7 +35,6 @@ def del_low_var(df):
     df.drop(low_variance, axis=1, inplace=True)
     logger.info(df.columns)
 
-
 from sklearn.feature_selection import VarianceThreshold
 
 
