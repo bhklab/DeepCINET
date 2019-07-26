@@ -18,7 +18,7 @@ import multiprocessing
 sns.set()
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
-running_times = 1
+running_times = 5
 random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
@@ -26,6 +26,10 @@ logger = utils.init_logger("multiple run")
 
 for i in range(running_times):
     parameters = dict(model='ClinicalOnlySiamese',
+                      target_path=settings.DATA_PATH_CLINICAL_PROCESSED,
+                      feature_path=settings.DATA_PATH_RADIOMIC_PROCESSED,
+                      input_path=settings.DATA_PATH_INPUT_TEST_TRAIN,
+                      results_path=settings.SESSION_SAVE_PATH,
                       num_epochs=14,
                       batch_size=100,
                       splitting_model=1,
@@ -41,7 +45,6 @@ for i in range(running_times):
                       full_summary=True,
                       cv_folds=1,
                       split_number=i,
-                      data_type="clinicalVolume",
                       distance=0.2,
                      )
     counts, predictions = train_test_models.deepCinet(**parameters)

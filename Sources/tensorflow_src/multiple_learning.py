@@ -4,8 +4,8 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-import testCoxModel
-import testRegid
+
+import learning_models
 
 # import STprediction
 import seaborn as sns
@@ -26,14 +26,16 @@ random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
 for i in range(running_times):
-    counts, predicts = testRegid.learningModel(data_type='clinicalVolume',
-                                               mrmr_size=0,
-                                               read_splits=True,
-                                               splitting_model=1,
-                                               split_seed=random_states[i],
-                                               split=i,
-                                               split_number=i,
-                                               cv_folds=1)
+    counts, predicts = learning_models.learningModel(mrmr_size=0,
+                                                     read_splits=False,
+                                                     splitting_model=1,
+                                                     split_seed=random_states[i],
+                                                     split=i,
+                                                     split_number=i,
+                                                     cv_folds=1,
+                                                     feature_path=config.DATA_PATH_FEATURE,
+                                                     target_path=config.DATA_PATH_TARGET,
+                                                     result_path = config.SESSION_SAVE_PATH)
     print(f"test{[v[1] for v in counts['test']['c_index']]}")
     print(f"test{len([v[1] for v in counts['test']['c_index']])}")
     print(counts)

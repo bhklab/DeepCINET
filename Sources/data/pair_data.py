@@ -8,10 +8,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
-from tensorflow_src.config import \
-    DATA_PATH_CLINICAL_PROCESSED, \
-    DATA_PATH_PROCESSED, \
-    DATA_PATH_RADIOMIC_PROCESSED, \
+from tensorflow_src.config import DATA_PATH_PROCESSED, \
     TOTAL_ROTATIONS, \
     RANDOM_SEED
 
@@ -25,12 +22,15 @@ class SplitPairs:
     It can also be used to create the Cross Validation folds
     """
 
-    def __init__(self, clinical_path: str = DATA_PATH_CLINICAL_PROCESSED):
+    def __init__(self, target_path, survival):
         # To divide into test and validation sets we only need the clinical data
-        self.clinical_data = pd.read_csv(clinical_path, index_col=0)
+        self.target_data = pd.read_csv(target_path, index_col=0)
+        if ~survival:
+            self.target_data['even'] = 1
+            self.target_data['time']
 
-        self.total_x = self.clinical_data['id'].values
-        self.total_y = self.clinical_data['event'].values
+        self.total_x = self.target_data['id'].values
+        self.total_y = self.target_data['event'].values
         self.mean = 0
         self.std = 1
         self.logger = logging.getLogger(__name__)
@@ -78,21 +78,21 @@ class SplitPairs:
          :param threshold: the threshold that is used in the second model for spliting data
          :param number of bins that is used for distribution
          """
-        self.clinical_data['category'] = self.clinical_data['event']
+        self.target_data['category'] = self.target_data['event']
         if models == 1:
-            clinic_time = self.clinical_data['time'].copy()
+            clinic_time = self.target_data['time'].copy()
             clinic_time.sort_values(inplace=True)
             clinic_time = clinic_time.reset_index(drop=True)
             block = int(clinic_time.size / category)
             for i in range(0, category):
-                self.clinical_data.loc[self.clinical_data['time'] > clinic_time[
+                self.target_data.loc[self.target_data['time'] > clinic_time[
                     i * block], 'category'] = i  # +(self.clinical_data['event']) * category
-            self.category = self.clinical_data['category'].values
+            self.category = self.target_data['category'].values
         if models == 2:
-            self.clinical_data.loc[self.clinical_data['time'] > threshold, 'category'] = 2 + self.clinical_data['event']
-            self.clinical_data.loc[self.clinical_data['time'] <= threshold, 'category'] = 0 + self.clinical_data[
+            self.target_data.loc[self.target_data['time'] > threshold, 'category'] = 2 + self.target_data['event']
+            self.target_data.loc[self.target_data['time'] <= threshold, 'category'] = 0 + self.target_data[
                 'event']
-            self.category = self.clinical_data['category'].values
+            self.category = self.target_data['category'].values
 
     def train_test_split(self,
                          test_size: float = .25,
@@ -135,6 +135,7 @@ class SplitPairs:
         for each set
 
 
+        :param distance:
         :param train_data: dataFrame containing train data``
         :param test_data: dataFrame containging test data``
         :param random:
@@ -149,7 +150,6 @@ class SplitPairs:
 
         self.logger.debug("Generating mixed pairs")
         test_mix_pairs = self._get_compare_train(train_data, test_data, random)
-
 
         train_pairs = self._normalize(train_pairs)
         test_pairs = self._normalize(test_pairs, train=False)
@@ -175,7 +175,7 @@ class SplitPairs:
         return task_list
 
     @staticmethod
-    def _get_pairs(df: pd.DataFrame, random: bool, distance: float=0) -> pd.DataFrame:
+    def _get_pairs(df: pd.DataFrame, random: bool, distance: float = 0) -> pd.DataFrame:
         """
         Get all the possible pairs for a DataFrame containing the clinical data, keeping in mind the censored
         data
@@ -201,8 +201,9 @@ class SplitPairs:
         :return: Iterator over PairComp with all the generated pairs
         """
         # Create the pairs where test_elem > train_elem
-        pairs = SplitPairs._get_inner_pairs(test_df, train_df, random, censoring=False,distance=distance)
-        pairs = pairs.append(SplitPairs._get_inner_pairs(train_df, test_df,  random, censoring=False,distance=distance), ignore_index=True, sort=False)
+        pairs = SplitPairs._get_inner_pairs(test_df, train_df, random, censoring=False, distance=distance)
+        pairs = pairs.append(SplitPairs._get_inner_pairs(train_df, test_df, random, censoring=False, distance=distance),
+                             ignore_index=True, sort=False)
 
         return pairs.sample(frac=1).reset_index(drop=True)
 
@@ -225,11 +226,12 @@ class SplitPairs:
         for _, row in df.iterrows():
             # For mixed pairs only compare against the uncensored elements to avoid problems when predicting
             # Survival time
-            #if not censoring or row['event'] == 1:
+            # if not censoring or row['event'] == 1:
             #    temp_df = df_comp.loc[df_comp['id'] != row['id'], ['id', 'time']]
-            #else: /todo take a look at this code again
-            if(distance > 0):
-                temp_df = df_comp.loc[((row['time'] - df_comp['time']) > distance) & (row['dataSet'] == df_comp['dataSet']), ['id', 'time']]
+            # else: /todo take a look at this code again
+            if (distance > 0):
+                #temp_df = df_comp.loc[((row['time'] - df_comp['time']) > distance) & (row['dataSet'] == df_comp['dataSet']), ['id','time']]
+                temp_df = df_comp.loc[((row['time'] -df_comp['time']) > distance),['id','time']]
             else:
                 temp_df = df_comp.loc[(df_comp['time'] < row['time']), ['id', 'time']]
             row_pairs = pd.DataFrame()

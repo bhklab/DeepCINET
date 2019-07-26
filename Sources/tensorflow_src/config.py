@@ -28,7 +28,7 @@ required_vars = [
     'IMAGE_ROTATIONS'
 ]
 
-#for v in cfg.keys():
+# for v in cfg.keys():
 #    print(v)
 
 for var in required_vars:
@@ -45,6 +45,10 @@ DATA_PATH_RADIOMIC = os.path.expandvars(cfg['DATA_RAW']['RADIOMIC'])
 DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
 
 DATA_PATH_PROCESSED = os.path.expandvars(cfg['DATA_PROCESSED']['ROOT'])
+DATA_PATH_TARGET = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINICAL_INFO'])
+DATA_PATH_FEATURE = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['RADIOMIC'])
+DATA_PATH_INPUT_TEST_TRAIN = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['INPUT_TEST_TRAIN'])
+
 DATA_PATH_CLINICAL_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINICAL_INFO'])
 DATA_PATH_RADIOMIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['RADIOMIC'])
 DATA_PATH_CLINIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINIC'])
@@ -61,7 +65,6 @@ LOG_LEVEL_FILE = int(cfg['LOG']['LEVEL_FILE'])
 # At least there should be a rotation for each axis
 rotations_list = [int(x) for x in os.getenv('IMAGE_ROTATIONS').split(',')]
 IMAGE_ROTATIONS = cfg['ROTATION']
-
 
 TOTAL_ROTATIONS = IMAGE_ROTATIONS['x'] * IMAGE_ROTATIONS['y'] * IMAGE_ROTATIONS['z']
 

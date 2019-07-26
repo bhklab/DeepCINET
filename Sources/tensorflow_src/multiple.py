@@ -40,7 +40,6 @@ for i in range(running_times):
                                                       full_summary=True,
                                                       cv_folds=1,
                                                       split_number=i,
-                                                      data_type="clinicalVolume",
                                                       )
 
     logger.info(f"test{[v[1] for v in counts['test']['c_index']]}")

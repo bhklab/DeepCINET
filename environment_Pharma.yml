@@ -76,9 +76,9 @@ DATA_CACHE: ${DATA}/.cache
 #   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_ML/lapatinib
 
 DATA_PROCESSED:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Biomarker
-  CLINICAL_INFO: CTRPv2_lapatinib_Bio.csv
-  RADIOMIC: Bio_gene_expression_CTRPv2_lapatinib.csv
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData
+  CLINICAL_INFO: CTRPv2_lapatinib.csv
+  RADIOMIC: L100_gene_expression_CTRPv2_lapatinib.csv
   VOLUME_CLINIC: Bio_gene_expression_CTRPv2_lapatinib.csv
   CLINIC: CTRPv2_lapatinib_Bio.csv
   INPUT_TEST_TRAIN: train_test_lapatinib

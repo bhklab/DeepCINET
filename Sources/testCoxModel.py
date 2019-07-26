@@ -44,6 +44,7 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
     """
     Get the generator that creates the train/test sets and the folds if Cross Validation is used
 
+    :param dataset:
     :param cv_folds: Number of Cross Validation folds
     :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
                       whole set
@@ -85,16 +86,16 @@ def main(args: Dict[str, Any]) -> None:
     :param args: Command Line Arguments
     """
     logger.info("Script to train a cox model")
-    dataset = data.pair_data.SplitPairs()
+    data_set = data.pair_data.SplitPairs(target_path=args['target_path'],survival=True)
     mrmr_size = args['mrmr_size']
     features_df  = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED,index_col=0 )
 
-    clinical_info = dataset.clinical_data
+    clinical_info = data_set.target_data
     #clinical_info.set_index('id', inplace=True)
 
     logger.info("read Feature DataFrame")
 
-    enum_generator = get_sets_generator(dataset,
+    enum_generator = get_sets_generator(data_set,
                                         args['cv_folds'],
                                         args['test_size'],
                                         False,
@@ -206,6 +207,14 @@ if __name__ == '__main__':
         default=0,
         type=int
     )
+
+    optional.add_argument(
+        "--target_path",
+        help="The path to the target_data",
+        default=0,
+        type=int
+    )
+
 
 
 

@@ -46,8 +46,10 @@ def variance_threshold_selector(data, threshold=0.01):
 
 def coxModel(cv_folds: int = 1,
              test_size: float = .20,
-             data_type: str = 'radiomic',
-             results_path: str = settings.SESSION_SAVE_PATH,
+             feature_path: str = settings.DATA_PATH_RADIOMIC_PROCESSED,
+             target_path: str = settings.DATA_PATH_CLINICAL_PROCESSED,
+             input_path: str = settings.DATA_PATH_INPUT_TEST_TRAIN,
+             result_path: str = settings.SESSION_SAVE_PATH,
              regularization: float = 0.01,
              splitting_model: int = 0,
              threshold: float = 3,
@@ -61,19 +63,34 @@ def coxModel(cv_folds: int = 1,
              read_splits=False):
     """
     deepCient
+    :param input_path:
+    :param target_path:
+    :param read_splits:
+    :param mrmr_size:
+    :param split_number:
+    :param split_seed:
+    :param split:
+    :param log_device:
+    :param bin_number:
+    :param threshold:
+    :param splitting_model:
+    :param regularization:
+    :param result_path:
+    :param feature_path:
+    :param test_size:
     :param args: Command Line Arguments
     """
     print(cv_folds)
-    results_path = pathlib.Path(os.path.join(results_path, "Cox"))
-    results_path.mkdir(parents=True, exist_ok=True)
+    result_path = pathlib.Path(os.path.join(result_path, "Cox"))
+    result_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger(f'train_{0}', str(results_path))
+    logger = utils.init_logger(f'train_{0}', str(result_path))
 
     logger.debug("Script starts")
     logger.info(f"Results path: {results_path}")
-    results_path.mkdir(parents=True, exist_ok=True)
+    result_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger(f'train_{0}', str(results_path))
+    logger = utils.init_logger(f'train_{0}', str(result_path))
 
     logger.debug("Script starts")
 
@@ -81,21 +98,15 @@ def coxModel(cv_folds: int = 1,
 
     logger.info("Script to train a Cox model")
 
-    logger.info(f"Data type is {data_type}")
+    logger.info(f"Data type is {feature_path}")
     # read features and clinical data frame the path is defined in the settings.py
-    if data_type == "radiomic":
-        features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
-    elif data_type == "clinical":
-        features = pd.read_csv(settings.DATA_PATH_CLINIC_PROCESSED, index_col=0)
-    elif data_type == "clinicalVolume":
-        features = pd.read_csv(settings.DATA_PATH_VOLUME_CLINIC_PROCESSED, index_col=0)
+    features =  pd.read_csv( os.path.expandvars(feature_path), index_col=0)
 
     logger.info(f"number of features is {len(features.index)}")
-    clinical_df = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
+    clinical_df = pd.read_csv(os.path.expandvars(target_path), index_col=0)
     logger.info("read Feature DataFrame")
 
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
-    input_path = settings.DATA_PATH_INPUT_TEST_TRAIN
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
     counts = {}
@@ -103,19 +114,19 @@ def coxModel(cv_folds: int = 1,
         counts[key] = {
             'c_index': []
         }
-    dataset = data.pair_data.SplitPairs()
+    data_set = data.pair_data.SplitPairs(target_path=target_path,survival=True)
     if (read_splits):
         cv_path = os.path.join(input_path, f"cv_{cv_folds}")
         random_path = os.path.join(cv_path, f"random_seed_{split_number}")
         split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
-        enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
+        enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, feature_path)
         logger.info(enum_generator)
         for i, (train_ids, test_ids, df_features) in enum_generator:
 
             test_ids['id'] = test_ids['id'].astype(str)
             train_ids['id'] = train_ids['id'].astype(str)
-            train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
-            test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
+            train_data = data_set.target_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+            test_data = data_set.target_data.merge(test_ids, left_on="id", right_on="id", how="inner")
             logger.info(f"New fold {i}, {len(train_ids)} train pairs, {len(test_ids)} test pairs")
             cph = CoxPHFitter()
             features_train = pd.merge(df_features.T,
@@ -139,7 +150,7 @@ def coxModel(cv_folds: int = 1,
             features['predict'] = cph.predict_partial_hazard(features)
             print(cph.predict_survival_function(features,times=[1.0]))
             
-            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=False)
+            train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data, test_data, random=False)
 
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
@@ -157,7 +168,7 @@ def coxModel(cv_folds: int = 1,
                 c_index = correct / total
                 counts[name]['c_index'].append((i, c_index))
 
-            results_save_path = os.path.join(results_path, f"split_{split:0>2}")
+            results_save_path = os.path.join(result_path, f"split_{split:0>2}")
             results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
                 # todo save
@@ -172,7 +183,7 @@ def coxModel(cv_folds: int = 1,
 
 
     else:
-        enum_generator = get_sets_generator(dataset,
+        enum_generator = get_sets_generator(data_set,
                                             cv_folds,
                                             test_size,
                                             False,
@@ -184,9 +195,9 @@ def coxModel(cv_folds: int = 1,
                 df_features = data.select_mrmr_features(features, clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
             else:
                 df_features = features.copy()
-            train_data = dataset.clinical_data.iloc[train_idx]
-            test_data = dataset.clinical_data.iloc[test_idx]
-            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
+            train_data = data_set.target_data.iloc[train_idx]
+            test_data = data_set.target_data.iloc[test_idx]
+            train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data, test_data,
                                                                              random=False)
             logger.info(f"New fold {i}, {len(train_idx)} train pairs, {len(test_idx)} test pairs")
             cph = CoxPHFitter(penalizer=0.5, alpha=0.95)
@@ -223,7 +234,7 @@ def coxModel(cv_folds: int = 1,
                 total = (result['predict_comp'] == result['comp']).count()
                 c_index = correct / total
                 counts[name]['c_index'].append((i, c_index))
-            results_save_path = os.path.join(results_path, f"split_{split:0>2}")
+            results_save_path = os.path.join(result_path, f"split_{split:0>2}")
             results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
             # todo save
@@ -240,7 +251,6 @@ def main(args: Dict[str, Any]) -> None:
     :param args: Command Line Arguments
     """
     logger.info("Script to train a siamese neural network model")
-    data_type = args['data_type']
     mrmr_size = args['mrmr_size']
     regularization = args['regularization']
     log_device = args['log_device']
@@ -250,11 +260,17 @@ def main(args: Dict[str, Any]) -> None:
     threshold = args['threshold']
     results_path = args['results_path']
     read_splits = args['read_splits']
+    feature_path = args['feature_path']
+    input_path = args['input_path']
+    target_path = args['target_path']
+
 
     coxModel(cv_folds=cv_folds,
              test_size=test_size,
-             data_type=data_type,
-             results_path=results_path,
+             feature_path=feature_path,
+             target_path=target_path,
+             input_path=input_path,
+             result_path=results_path,
              regularization=regularization,
              splitting_model=splitting_model,
              threshold=threshold,
@@ -297,6 +313,24 @@ if __name__ == '__main__':
         help="Size of the test set as a float between 0 and 1",
         default=.25,
         type=float
+    )
+    optional.add_argument(
+        "--feature-path",
+        help="Path where the feature values are stored",
+        default=settings.DATA_PATH_RADIOMIC_PROCESSED,
+        type=str
+    )
+    optional.add_argument(
+        "--target-path",
+        help="Path where the target values are stored",
+        default=settings.DATA_PATH_CLINICAL_PROCESSED,
+        type=str
+    )
+    optional.add_argument(
+        "--input-path",
+        help="Path where the splitted input(train and tests) are stored",
+        default=settings.DATA_PATH_INPUT_TEST_TRAIN,
+        type=str
     )
     optional.add_argument(
         "--results-path",
