@@ -17,27 +17,39 @@ DATA_CACHE: ${DATA}/.cache
 
 # Pre-processed files location
 
+#DATA_PROCESSED:
+#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
+#  CLINICAL_INFO: clinical_info.csv
+#  RADIOMIC: OPC1_radiomic_features_mad.csv
+#  VOLUME_CLINIC: VolumeAndClinic_OPC1_subsite.csv
+#  CLINIC: Clinic_OPC1.csv
+#  INPUT_TEST_TRAIN: train_test
+#  SPLIT: Split.csv
+
 DATA_PROCESSED:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
-  CLINICAL_INFO: clinical_info.csv
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs
+  CLINICAL_INFO: clinical_infos.csv
   RADIOMIC: OPC1_radiomic_features_mad.csv
-  VOLUME_CLINIC: VolumeAndClinic_OPC1_subsite.csv
+  VOLUME_CLINIC: VolumeAndClinic_OPCs.csv
   CLINIC: Clinic_OPC1.csv
   INPUT_TEST_TRAIN: train_test
   SPLIT: Split.csv
 
 #DATA_PROCESSED:
-#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs
-#  CLINICAL_INFO: clinical_infos.csv
-#  RADIOMIC: OPC1_radiomic_features_mad.csv
-#  VOLUME_CLINIC: VolumeAndClinic_OPCs.csv
-#  CLINIC: Clinic_OPC1.csv
-#  INPUT_TEST_TRAIN: train_test
+#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/
+#  CLINICAL_INFO: train_test_response_Erlotinib.csv
+#  RADIOMIC: train_test_expression_Erlotinib.csv
+#  VOLUME_CLINIC: train_test_expression_Erlotinib.csv
+#  CLINIC: CTRPv2_Erlotinib.csv
+#  INPUT_TEST_TRAIN: train_test_Erlotinib
 #  SPLIT: Split.csv
+
+
+
 
 # Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 LOG:
-  DIR: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/log
+  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/log
   LEVEL_CONSOLE: 20
   LEVEL_FILE: 10
 
@@ -55,9 +67,11 @@ LOG_LEVEL_FILE: 10
 DATA_BATCH_SIZE: 2
 
 # Default path to save the results
-SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/Result/Model
+SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/Result
+
+#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result/Erlotinib
 # Default path to save the summaries
-SUMMARIES_DIR:
+SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Summaries/Erlotinib
 RANDOM_SEED:
 
 
@@ -70,6 +84,8 @@ VOLUME_FEATURE_INDEX: 26
 COX:
   RESULT_PATH: ${Home}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/Cox
 
+ML:
+   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result/ML/Erlotinib
 
 #These parameter are used for hyper parameter selection in cpu and gpu hyper parameter selection
 HYPER_PARAM:
@@ -99,12 +115,12 @@ HYPER_PARAM:
 
 #These parameter are used for generating inputs in "train_test_generators.py"
 GENERATOR:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
-  MRMR: [20]
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData
+  MRMR: []
   CV_FOLDS: [1,5]
   TEST_SIZE: 0.20
-  SPLIT_NUMBER: 100
+  SPLIT_NUMBER: 50
   SPLITING_MODEL: [1]
-  OUTPUT_PATH: 'train_test'
-  INPUT_CLINICAL: 'clinical_info.csv'
-  INPUT_FEATURES: 'OPC1_radiomic_features_mad.csv'
+  OUTPUT_PATH: 'train_test_Erlotinib'
+  INPUT_CLINICAL: 'CTRPv2_Erlotinib.csv'
+  INPUT_FEATURES: 'L100_gene_expression_CTRPv2_Erlotinib.csv'

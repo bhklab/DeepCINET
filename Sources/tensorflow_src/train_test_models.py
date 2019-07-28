@@ -85,11 +85,10 @@ optional named arguments:
 import argparse
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 import pathlib
-
-
 import tensorflow as tf
 import pandas as pd
 
@@ -101,7 +100,7 @@ import tensorflow_src.config as settings
 import utils
 
 from tensorflow.core.protobuf import config_pb2
-from typing import Iterator, Tuple, Dict, Any
+from typing import Tuple, Dict, Any
 
 logger = utils.init_logger("start")
 
@@ -286,13 +285,15 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
 #     MAIN     #
 ################
 def deepCinet(model: str,
+              survival: bool = False,
               cv_folds: int = 1,
               test_size: float = .2,
               gpu_level: int = 0,
               gpu_allow_growth=False,
               num_epochs: int = 1,
               batch_size: int = 20,
-              data_type: str = 'radiomic',
+              target_path: str = settings.DATA_PATH_CLINICAL_PROCESSED,
+              feature_path: str = settings.DATA_PATH_RADIOMIC_PROCESSED,
               results_path: str = settings.SESSION_SAVE_PATH,
               learning_rate: int = 0.001,
               regularization: float = 0.01,
@@ -310,7 +311,9 @@ def deepCinet(model: str,
               split_number=None,  # it is used for the time we are using the generated test and train sets
               initial_seed=None,
               mrmr_size=0,
-              read_splits=False):
+              read_splits=False,
+              input_path=settings.DATA_PATH_INPUT_TEST_TRAIN,
+              distance=0):
     """
     deepCient
     :param args: Command Line Arguments
@@ -318,9 +321,7 @@ def deepCinet(model: str,
     tf.reset_default_graph()
     results_path = pathlib.Path(results_path)
     results_path.mkdir(parents=True, exist_ok=True)
-
     logger = utils.init_logger(f'train_{0}', str(results_path))
-
     logger.debug("Script starts")
     # logger.info(f"Results path: {results_path}")
     logger.info("Results path: {_results_path}".format(_results_path=results_path))
@@ -336,20 +337,17 @@ def deepCinet(model: str,
     logger.info(f"Using batch size: {batch_size}")
     features = pd.DataFrame()
     # read features and clinical data frame the path is defined in the settings.py
-    logger.info(f"data type: {data_type}")
-    if data_type == "radiomic":
-        features = pd.read_csv(settings.DATA_PATH_RADIOMIC_PROCESSED, index_col=0)
-    elif data_type == "clinical":
-        features = pd.read_csv(settings.DATA_PATH_CLINIC_PROCESSED, index_col=0)
-    elif data_type == "clinicalVolume":
-        features = pd.read_csv(settings.DATA_PATH_VOLUME_CLINIC_PROCESSED, index_col=0)
+    logger.info(f"feature path: {feature_path}")
+    features = pd.read_csv(os.path.expandvars(feature_path), index_col=0)
 
     logger.info(f"number of features is {len(features.index)}")
-    clinical_df = pd.read_csv(settings.DATA_PATH_CLINICAL_PROCESSED, index_col=0)
+
+    logger.info(f"target path: {target_path}")
+    clinical_df = pd.read_csv(os.path.expandvars(target_path), index_col=0)
     logger.info("read Feature DataFrame")
 
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
-    input_path = settings.DATA_PATH_INPUT_TEST_TRAIN
+
     number_feature = mrmr_size if mrmr_size > 0 else len(features.index)
     siamese_model = select_model(model,
                                  number_feature=number_feature,
@@ -371,30 +369,23 @@ def deepCinet(model: str,
                 'correct': 0,
                 'c_index': []
             }
-        dataset = data.pair_data.SplitPairs()
-        if(read_splits):
+        data_set = data.pair_data.SplitPairs(target_path=target_path, survival=survival)
+        if read_splits:
             cv_path = os.path.join(input_path, f"cv_{cv_folds}")
             random_path = os.path.join(cv_path, f"random_seed_{split_number}")
             split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
-            enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
-            clinical_data = dataset.clinical_data.copy()
+            enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, feature_path)
 
             for i, (train_ids, test_ids, df_features) in enum_generator:
 
                 test_ids['id'] = test_ids['id'].astype(str)
                 train_ids['id'] = train_ids['id'].astype(str)
-                train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
-                test_data = dataset.clinical_data.merge(test_ids, left_on="id", right_on="id", how="inner")
-                train_data.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/train.csv")
-                test_data.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/test.csv")
-                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
-                                                                                 random=random_labels)
-                train_pairs.to_csv("/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/train_pairs.csv")
-                test_pairs.to_csv(
-                    "/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/test_pairs.csv")
-                mixed_pairs.to_csv(
-                    "/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/test/mixed_pairs.csv")
-
+                train_data = data_set.target_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+                test_data = data_set.target_data.merge(test_ids, left_on="id", right_on="id", how="inner")
+                train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,
+                                                                                  test_data,
+                                                                                  random=random_labels,
+                                                                                  distance=distance)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, f"split_{split:0>2}")
@@ -442,11 +433,15 @@ def deepCinet(model: str,
                 results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
 
                 logger.info(f"Saving results at: {results_save_path}")
-                utils.save_results(sess, predictions, results_save_path, save_model)
+                utils.save_results(sess=sess, results=predictions,
+                                   path=results_save_path,
+                                   save_model=save_model,
+                                   survival=survival,
+                                   target_path=target_path)
                 logger.info("\r ")
 
         else:
-            enum_generator = get_sets_generator(dataset,
+            enum_generator = get_sets_generator(data_set,
                                                 cv_folds,
                                                 test_size,
                                                 random_labels,
@@ -460,10 +455,12 @@ def deepCinet(model: str,
                                                             mrmr_size).copy()
                 else:
                     df_features = features.copy()
-                train_data = dataset.clinical_data.iloc[train_idx]
-                test_data = dataset.clinical_data.iloc[test_idx]
-                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
-                                                                                 random=random_labels)
+                train_data = data_set.target_data.iloc[train_idx]
+                test_data = data_set.target_data.iloc[test_idx]
+                train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,
+                                                                                  test_data,
+                                                                                  random=random_labels,
+                                                                                  distance=distance)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
@@ -507,14 +504,17 @@ def deepCinet(model: str,
                     logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
                                 f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
 
-
-
                 # Save each fold in a different directory
 
                 results_save_path = os.path.join(results_path, f"fold_{i:0>2}")
                 results_save_path = os.path.join(results_save_path, f"split_{split:0>2}")
                 logger.info(f"Saving results at: {results_save_path}")
-                utils.save_results(sess, predictions, results_save_path, save_model)
+                utils.save_results(sess = sess,
+                                   results=predictions,
+                                   path=results_save_path,
+                                   save_model=save_model,
+                                   target_path= target_path,
+                                   survival=survival)
                 logger.info("\r ")
 
         for key in counts:
@@ -531,7 +531,6 @@ def main(args: Dict[str, Any]) -> None:
     """
     logger.info("Script to train a siamese neural network model")
     logger.info(f"Using batch size: {args['batch_size']}")
-    data_type = args['data_type']
     mrmr_size = args['mrmr_size']
     random_labels = args['random_labels']
     model = args['model']
@@ -553,15 +552,22 @@ def main(args: Dict[str, Any]) -> None:
     results_path = args['results_path']
     save_model = args['save_model']
     read_splits = args['read_splits']
+    input_path = args['input_path']
+    distance = args['distance']
+    feature_path = args['feature_path']
+    target_path = args['target_path']
+    survival = args['survival']
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
     deepCinet(model=model,
+              survival=survival,
               cv_folds=cv_folds,
               test_size=test_size,
               gpu_level=gpu_level,
               num_epochs=num_epochs,
               batch_size=batch_size,
-              data_type=data_type,
+              feature_path=feature_path,
+              target_path=target_path,
               results_path=results_path,
               learning_rate=learning_rate,
               regularization=regularization,
@@ -577,7 +583,9 @@ def main(args: Dict[str, Any]) -> None:
               split_seed=None,
               split_number=None,
               mrmr_size=mrmr_size,
-              read_splits=read_splits)
+              read_splits=read_splits,
+              input_path=input_path,
+              distance=distance)
 
 
 if __name__ == '__main__':
@@ -675,11 +683,18 @@ if __name__ == '__main__':
         type=int
     )
     optional.add_argument(
-        "--data_type",
-        help="The threshold for splitting ",
-        default="radiomic",
+        "--feature-path",
+        help="The type of the data ",
+        default=settings.DATA_PATH_FEATURE,
         type=str
     )
+    optional.add_argument(
+        "--target-path",
+        help=" ",
+        default=settings.DATA_PATH_TARGET,
+        type=str
+    )
+
     optional.add_argument(
         "--threshold",
         help="The threshold for splitting ",
@@ -738,8 +753,27 @@ if __name__ == '__main__':
     )
 
     optional.add_argument(
-        "--read_splits",
+        "--read-splits",
         help="The way that generate input for the model read split or read from the pre generated inputs",
+        action="store_true",
+        default=False
+    )
+    optional.add_argument(
+        "--input-path",
+        help="when read from pre generated inputs, input-path showes the path to that location",
+        type=str,
+        required=False
+    )
+
+    optional.add_argument(
+        "--distance",
+        help="This is used to consider rCI when generating pairs only the pairs with dis > distance would be selected ",
+        action="store_true",
+        default=False
+    )
+    optional.add_argument(
+        "--survival",
+        help="This is used to show that the data which you want to work with is survival data",
         action="store_true",
         default=False
     )

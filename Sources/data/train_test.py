@@ -52,18 +52,15 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
 
 
 def get_sets_reader(cv_folds: int,
-                    split_path, mrmr_size, data_type
+                    split_path, mrmr_size, feature_path
                     ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
     """
     Get the read the train/test sets which has been generated before ahead by train_test_generator.py ans is in the folders
 
+    :param feature_path: path to the features which is a csv file
+    :param mrmr_size: the size of mrmr which we want to chose
+    :param split_path: path to the folder which the generated train test data are stored
     :param cv_folds: Number of Cross Validation folds (currently we only consider the number of folds which has been generated)
-    :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
-                      whole set (currently it is 0.25 but it can be change in yml file)
-    :param random_labels: Whether to randomize or not the labels. To be used ONLY when validating the model
-    :param model: This parameter use for selecting the model for spliting data 0 censored, 1 target distribution, 2 based on threshold
-    :param threshold: this is a threshold which is used in the model spliting
-    :param random_seed that is used for model spliting
     :return: The sets generator then it can be used in a ``for`` loop to get the sets
 
                 >>> folds = get_sets_generator(...)
@@ -77,14 +74,9 @@ def get_sets_reader(cv_folds: int,
         train_ids = train_df
         test_ids = test_df
         if mrmr_size == 0:
-            if data_type == "radiomic":
-                path = settings.DATA_PATH_RADIOMIC_PROCESSED
-            elif data_type == "clinical":
-                path = settings.DATA_PATH_CLINIC_PROCESSED
-            elif data_type == "clinicalVolume":
-                path = settings.DATA_PATH_VOLUME_CLINIC_PROCESSED
+            path = feature_path
         else:
             path = os.path.join(split_path, f"features_fold{i}",
-                                f"radiomic{mrmr_size}.csv")
+                                f"feature{mrmr_size}.csv")
         features = pd.read_csv(path, index_col=0)
         yield (i, (train_ids, test_ids, features))

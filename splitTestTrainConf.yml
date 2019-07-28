@@ -1,6 +1,6 @@
-mrmr: [,50,100,250,500]
+mrmr: []
 cv_folds: [1,5]
-test_size: 0.25
+test_size: 0.20
 split_numbers: 100
 splitting_models: [1]
 output_path: '/Users/farnoosh/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/train_test'

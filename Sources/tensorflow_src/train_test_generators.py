@@ -16,7 +16,7 @@ import shutil
 import config
 
 
-def get_sets_generator(dataset: pair_data.SplitPairs,
+def get_sets_generator(data_set: pair_data.SplitPairs,
                        cv_folds: int,
                        test_size: int,
                        random_labels: bool,
@@ -27,6 +27,7 @@ def get_sets_generator(dataset: pair_data.SplitPairs,
     """
     Get the generator that creates the train/test sets and the folds if Cross Validation is used
 
+    :param data_set:
     :param dataset: data contain SplitPairs
     :param cv_folds: Number of Cross Validation folds
     :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
@@ -44,13 +45,16 @@ def get_sets_generator(dataset: pair_data.SplitPairs,
     """
     # Decide whether to use CV or only a single test/train sets
     if 0 < cv_folds < 2:
-        train_ids, test_ids = dataset.train_test_split(test_size, random=random_labels, models=model,
-                                                       threshold=threshold, random_seed=random_seed)
+        train_ids, test_ids = data_set.train_test_split(test_size,
+                                                        random=random_labels,
+                                                        models=model,
+                                                        threshold=threshold,
+                                                        random_seed=random_seed)
         enum_generator = [(0, (train_ids, test_ids))]
         logger.info("1 fold")
     else:
-        dataset.survival_categorizing(model, threshold, category=settings.CATEGORY)
-        enum_generator = dataset.folds(cv_folds, random=random_labels, random_seed=random_seed)
+        data_set.survival_categorizing(model, threshold, category=settings.CATEGORY)
+        enum_generator = data_set.folds(cv_folds, random=random_labels, random_seed=random_seed)
     logger.debug("Folds created")
 
     return enum_generator
@@ -84,8 +88,10 @@ def main(args: Dict[str, Any]) -> None:
     random_states = random.sample(range(1, 100000), split_numbers)
 
     mrmr_sizes = cfg['MRMR']
+    target_path = cfg["TARGET_PATH"]
     features = pd.read_csv(cfg['INPUT_FEATURES'], index_col=0)
-    clinical_info = pd.read_csv(cfg['INPUT_CLINICAL'], index_col=0)
+    survival = cfg['SURVIVAL']
+    test_size = cfg['TEST_SIZE']
     train_test_columns = ['cv_folds', 'spliting_models', 'random_seed', 'test_train_path', 'feature_path', 'mrmr_size']
     trains_tests_description = pd.DataFrame(columns=train_test_columns)
 
@@ -95,8 +101,7 @@ def main(args: Dict[str, Any]) -> None:
     os.makedirs(output_path)
 
     # results_path.mkdir(parents=True, exist_ok=True)
-    dataset = pair_data.SplitPairs()
-    dataset.clinical_data = clinical_info
+    data_set = pair_data.SplitPairs(target_path=target_path,survival=survival)
     logger.info("read Feature DataFrame")
     for cv_folds in cfg['CV_FOLDS']:
         cv_path = os.path.join("", f"cv_{cv_folds}")
@@ -105,17 +110,17 @@ def main(args: Dict[str, Any]) -> None:
             for splitting_model in cfg['SPLITING_MODEL']:
                 logger.info('splitting_model')
                 split_path = os.path.join(random_path, f"splitting_models_{splitting_model}")
-                enum_generator = get_sets_generator(dataset,
-                                                    cv_folds,
-                                                    cfg['TEST_SIZE'],
-                                                    False,
-                                                    splitting_model,
-                                                    random_seed
+                enum_generator = get_sets_generator(data_set=data_set,
+                                                    cv_folds=cv_folds,
+                                                    test_size=test_size,
+                                                    random_labels=False,
+                                                    splitting_model=splitting_model,
+                                                    random_seed=random_seed
                                                     )
                 for i, (train_idx, test_idx) in enum_generator:
                     pathlib.Path(os.path.join(output_path, split_path)).mkdir(parents=True, exist_ok=True)
-                    train_ids = clinical_info.iloc[train_idx]['id']
-                    test_ids = clinical_info.iloc[test_idx]['id']
+                    train_ids = data_set.target_data.iloc[train_idx]['id']
+                    test_ids = data_set.target_data.iloc[test_idx]['id']
                     #logger.info(f'test{i}:', test_ids)
                     #logger.info(f'train{i}:', train_ids)
                     pd.DataFrame(train_ids).to_csv(os.path.join(output_path, split_path, f"train_fold{i}.csv"))
@@ -123,7 +128,7 @@ def main(args: Dict[str, Any]) -> None:
                     path = os.path.join(split_path, f"features_fold{i}")
                     for mrmr_size in mrmr_sizes:
                         logger.info(f'mrmr{mrmr_size}created\n')
-                        features_path = os.path.join(output_path, path, f"radiomic{mrmr_size}.csv")
+                        features_path = os.path.join(output_path, path, f"feature{mrmr_size}.csv")
                         trains_tests_description.append(pd.DataFrame({'cv_folds': cv_folds,
                                                                       'spliting_models': splitting_model,
                                                                       'random_seed': random_seed,
@@ -133,7 +138,8 @@ def main(args: Dict[str, Any]) -> None:
                                                                       }, index=[0]))
                         pathlib.Path(os.path.join(output_path, path)).mkdir(parents=True, exist_ok=True)
                         if mrmr_size > 0:
-                            df_features = mrmrpy.select_mrmr_features(features, clinical_info.iloc[train_idx],
+                            df_features = mrmrpy.select_mrmr_features(features,
+                                                                      clinical_info.iloc[train_idx],
                                                                       mrmr_size).copy()
                             df_features.to_csv(features_path, index=False)
                         else:

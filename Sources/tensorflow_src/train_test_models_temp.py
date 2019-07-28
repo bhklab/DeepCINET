@@ -375,10 +375,10 @@ def deepCinet(model: str,
             split_path = os.path.join(random_path,
                                       "splitting_models_{_splitting_model}".format(_splitting_model=splitting_model))
             enum_generator = get_sets_reader(cv_folds, split_path, mrmr_size, data_type)
-            clinical_data = dataset.clinical_data.copy()
+            clinical_data = dataset.target_data.copy()
             for i, (train_ids, test_ids, df_features) in enum_generator:
-                train_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
-                test_data = dataset.clinical_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+                train_data = dataset.target_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+                test_data = dataset.target_data.merge(train_ids, left_on="id", right_on="id", how="inner")
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
                                                                                  random=random_labels)
                 # Initialize all the variables
@@ -453,8 +453,8 @@ def deepCinet(model: str,
                     logger.info("to use mrmr you need run train_test_moduls.py this file is just for using in H4H")
                 else:
                     df_features = features.copy()
-                train_data = dataset.clinical_data.iloc[train_idx]
-                test_data = dataset.clinical_data.iloc[test_idx]
+                train_data = dataset.target_data.iloc[train_idx]
+                test_data = dataset.target_data.iloc[test_idx]
                 train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=random_labels)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
