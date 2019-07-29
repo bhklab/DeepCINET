@@ -139,7 +139,7 @@ def main(args: Dict[str, Any]) -> None:
                         pathlib.Path(os.path.join(output_path, path)).mkdir(parents=True, exist_ok=True)
                         if mrmr_size > 0:
                             df_features = mrmrpy.select_mrmr_features(features,
-                                                                      clinical_info.iloc[train_idx],
+                                                                      data_set.target_data.iloc[train_idx],
                                                                       mrmr_size).copy()
                             df_features.to_csv(features_path, index=False)
                         else:

@@ -8,14 +8,11 @@ import config as settings
 
 # import STprediction
 from tensorflow_src import train_test_models
-import seaborn as sns
 import random
 import yaml
 import utils
 
 import multiprocessing
-
-sns.set()
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
 running_times = 5
@@ -23,11 +20,11 @@ random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
 logger = utils.init_logger("multiple run")
-
+results_path = settings.SESSION_SAVE_PATH
 for i in range(running_times):
     parameters = dict(model='ClinicalOnlySiamese',
-                      target_path=settings.DATA_PATH_CLINICAL_PROCESSED,
-                      feature_path=settings.DATA_PATH_RADIOMIC_PROCESSED,
+                      target_path=settings.DATA_PATH_TARGET,
+                      feature_path=settings.DATA_PATH_FEATURE,
                       input_path=settings.DATA_PATH_INPUT_TEST_TRAIN,
                       results_path=settings.SESSION_SAVE_PATH,
                       num_epochs=14,
@@ -68,6 +65,6 @@ for i in range(running_times):
     result['random state'] = random_states[i]
     result['number'] = i
     results = results.append(result)
-    results.to_csv(os.path.join(settings.SESSION_SAVE_PATH, "result.csv"))
-    pd.DataFrame.from_dict(parameters, orient='index').to_csv(os.path.join(settings.SESSION_SAVE_PATH, "config.csv"))
-results.to_csv(os.path.join(settings.SESSION_SAVE_PATH, "result.csv"), index=False)
+    results.to_csv(os.path.join(results_path, "result.csv"))
+    pd.DataFrame.from_dict(parameters, orient='index').to_csv(os.path.join(results_path, "config.csv"))
+results.to_csv(os.path.join(results_path, "result.csv"), index=False)

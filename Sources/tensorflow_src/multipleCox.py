@@ -2,11 +2,12 @@
 import pandas as pd
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 import testCoxModel
 import testRegid
 
-#import STprediction
+# import STprediction
 import seaborn as sns
 import random
 import config
@@ -25,14 +26,14 @@ random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
 for i in range(running_times):
-    counts,predicts = testCoxModel.coxModel(data_type='clinicalVolume',
-                                   mrmr_size=0,
-                                   read_splits=False,
-                                   splitting_model=1,
-                                   split_seed=random_states[i],
-                                   split=i,
-                                   split_number=i,
-                                   cv_folds=1)
+    counts, predicts = testCoxModel.cox_model(data_type='clinicalVolume',
+                                              mrmr_size=0,
+                                              read_splits=False,
+                                              splitting_model=1,
+                                              split_seed=random_states[i],
+                                              split=i,
+                                              split_number=i,
+                                              cv_folds=1)
     print(f"test{[v[1] for v in counts['test']['c_index']]}")
     print(f"test{len([v[1] for v in counts['test']['c_index']])}")
     print(counts)
@@ -49,8 +50,5 @@ for i in range(running_times):
     result['number'] = i
     results = results.append(result)
     pathlib.Path(cfg['RESULT_PATH']).mkdir(parents=True, exist_ok=True)
-    results.to_csv(os.path.join(cfg['RESULT_PATH'],'result.csv'))
-results.to_csv(os.path.join(cfg['RESULT_PATH'],'result.csv'), index = False)
-
-
-
+    results.to_csv(os.path.join(cfg['RESULT_PATH'], 'result.csv'))
+results.to_csv(os.path.join(cfg['RESULT_PATH'], 'result.csv'), index=False)

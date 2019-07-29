@@ -8,8 +8,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
-from tensorflow_src.config import DATA_PATH_PROCESSED, \
-    TOTAL_ROTATIONS, \
+from tensorflow_src.config import TOTAL_ROTATIONS, \
     RANDOM_SEED
 
 

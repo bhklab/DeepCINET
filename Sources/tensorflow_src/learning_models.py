@@ -16,6 +16,12 @@ from typing import Dict, Tuple, Any, Iterator
 from data.train_test import get_sets_generator, get_sets_reader
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import Ridge
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
 
 # !/usr/bin/env python3
 """
@@ -47,23 +53,26 @@ def variance_threshold_selector(data, threshold=0.0001):
     return data[data.columns[selector.get_support(indices=True)]]
 
 
-def learningModel(cv_folds: int = 1,
-                  test_size: float = .20,
-                  feature_path: str = settings.DATA_PATH_FEATURE,
-                  target_path: str = settings.DATA_PATH_TARGET,
-                  input_path: str = settings.DATA_PATH_INPUT_TEST_TRAIN,
-                  result_path: str = settings.SESSION_SAVE_PATH,
-                  regularization: float = 0.01,
-                  splitting_model: int = 0,
-                  threshold: float = 3,
-                  bin_number: int = 4,
-                  log_device=False,
-                  split=1,  # todo check if required to add split_seed and initial_seed to the argument
-                  split_seed=None,
-                  split_number=None,  # it is used for the time we are using the generated test and train sets
-                  initial_seed=None,
-                  mrmr_size=0,
-                  read_splits=False):
+def learning_models(cv_folds: int = 1,
+                    test_size: float = .20,
+                    feature_path: str = settings.DATA_PATH_FEATURE,
+                    target_path: str = settings.DATA_PATH_TARGET,
+                    input_path: str = settings.DATA_PATH_INPUT_TEST_TRAIN,
+                    result_path: str = settings.SESSION_SAVE_PATH,
+                    regularization: float = 0.01,
+                    splitting_model: int = 0,
+                    threshold: float = 3,
+                    bin_number: int = 4,
+                    log_device=False,
+                    split=1,  # todo check if required to add split_seed and initial_seed to the argument
+                    split_seed=None,
+                    split_number=None,  # it is used for the time we are using the generated test and train sets
+                    initial_seed=None,
+                    mrmr_size=0,
+                    read_splits=False,
+                    model_type: str = "ElasticNet",
+                    l1_ratio=0.01,
+                    alpha=0.9):
     """
     deepCient
     :param initial_seed:
@@ -110,13 +119,20 @@ def learningModel(cv_folds: int = 1,
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
 
     number_feature = mrmr_size if mrmr_size > 0 else len(features.index)
-
+    logger.info(f"number of the features:{features.index}")
     counts = {}
     for key in ['train', 'test', 'mixed']:
         counts[key] = {
             'c_index': []
         }
-    dataset = data.pair_data.SplitPairs()
+    data_set = data.pair_data.SplitPairs()
+    models = {'LR', LogisticRegression(solver='liblinear', multi_class='ovr'),
+              'ElasticNet', ElasticNet(l1_ratio=l1_ratio, alpha=alpha),
+              'LDA', LinearDiscriminantAnalysis(),
+              'KNN', KNeighborsClassifier(),
+              'CART', DecisionTreeClassifier(),
+              'NB', GaussianNB(),
+              'SVM', SVC(gamma='auto')}
     if read_splits:
         cv_path = os.path.join(input_path, f"cv_{cv_folds}")
         random_path = os.path.join(cv_path, f"random_seed_{split_number}")
@@ -127,11 +143,10 @@ def learningModel(cv_folds: int = 1,
 
             test_ids['id'] = test_ids['id'].astype(str)
             train_ids['id'] = train_ids['id'].astype(str)
-            train_data = dataset.target_data.merge(train_ids, left_on="id", right_on="id", how="inner")
-            test_data = dataset.target_data.merge(test_ids, left_on="id", right_on="id", how="inner")
+            train_data = data_set.target_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+            test_data = data_set.target_data.merge(test_ids, left_on="id", right_on="id", how="inner")
             logger.info(f"New fold {i}, {len(train_ids)} train pairs, {len(test_ids)} test pairs")
-            elastic = ElasticNet(l1_ratio=0.01, alpha=0.9)
-            rigid = Ridge(alpha=200)
+            model = models[model_type]
             features_train = pd.merge(df_features.T,
                                       train_data[['id', 'event', 'time']],
                                       how='inner',
@@ -141,20 +156,21 @@ def learningModel(cv_folds: int = 1,
             # features_train = features_train.dropna()
             # del_low_var(features_train)
 
-            elastic.fit(features_train[df_features.T.columns], features_train['time'])
-            rigid.fit(features_train[df_features.T.columns], features_train['time'])
+            model.fit(features_train[df_features.T.columns], features_train['time'])
             features_test = pd.merge(df_features.T, test_data[['id', 'event', 'time']], how='inner',
                                      left_index=True, right_on='id')
             # features_test.drop(['id'], axis='columns', inplace=True)
 
             features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
                                 left_index=True, right_on='id')
-            features['predict'] = elastic.predict(features[df_features.T.columns])
+            features['predict'] = model.predict(features[df_features.T.columns])
             # features['predict'] = rigid.predict(features[df_features.T.columns])
             # print(elastic.predict(features))
 
-            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=False,
-                                                                             distance=0.2)
+            train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,
+                                                                              test_data,
+                                                                              random=False,
+                                                                              distance=0.2)
 
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
@@ -187,7 +203,7 @@ def learningModel(cv_folds: int = 1,
 
 
     else:
-        enum_generator = get_sets_generator(dataset,
+        enum_generator = get_sets_generator(data_set,
                                             cv_folds,
                                             test_size,
                                             False,
@@ -199,17 +215,18 @@ def learningModel(cv_folds: int = 1,
                 df_features = data.select_mrmr_features(features, clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
             else:
                 df_features = features.copy()
-            train_data = dataset.target_data.iloc[train_idx]
-            test_data = dataset.target_data.iloc[test_idx]
-            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
-                                                                             random=False)
-            elastic = ElasticNet(l1_ratio=0.01, alpha=0.9)
+            train_data = data_set.target_data.iloc[train_idx]
+            test_data = data_set.target_data.iloc[test_idx]
+            train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data, test_data,
+                                                                              random=False)
+
+            model = models[model_type]
             features_train = pd.merge(df_features.T,
                                       train_data[['id', 'event', 'time']],
                                       how='inner',
                                       left_index=True,
                                       right_on='id')
-            elastic.fit(features_train[df_features.T.columns], features_train['time'])
+            model.fit(features_train[df_features.T.columns], features_train['time'])
             features_test = pd.merge(df_features.T, test_data[['id', 'event', 'time']], how='inner',
                                      left_index=True, right_on='id')
             # features_test.drop(['id'], axis='columns', inplace=True)
@@ -222,14 +239,14 @@ def learningModel(cv_folds: int = 1,
             # logger.info(radiomic_features.columns)
 
             # print(radiomic_features)
-            #cph.fit(radiomic_features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.11)
+            # cph.fit(radiomic_features_train, duration_col='time', event_col='event', show_progress=True, step_size=0.11)
             # cph.print_summary()
 
             # clinical = clinical_df.iloc[train_idx]
             radiomic_features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
                                          left_index=True, right_on='id')
 
-            #radiomic_features['predict'] = cph.predict_partial_hazard(radiomic_features)
+            # radiomic_features['predict'] = cph.predict_partial_hazard(radiomic_features)
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                 logger.info(f"Computing {name} c-index")
@@ -280,22 +297,23 @@ def main(args: Dict[str, Any]) -> None:
     target_path = args['target_path']
     input_path = args['input_path']
 
-    learningModel(cv_folds=cv_folds,
-                  test_size=test_size,
-                  feature_path=feature_path,
-                  target_path=target_path,
-                  input_path=input_path,
-                  result_path=results_path,
-                  regularization=regularization,
-                  splitting_model=splitting_model,
-                  threshold=threshold,
-                  bin_number=4,
-                  log_device=log_device,
-                  split=1,
-                  split_seed=None,
-                  split_number=1,
-                  mrmr_size=mrmr_size,
-                  read_splits=read_splits)
+    learning_models(cv_folds=cv_folds,
+                    test_size=test_size,
+                    feature_path=feature_path,
+                    target_path=target_path,
+                    input_path=input_path,
+                    result_path=results_path,
+                    regularization=regularization,
+                    splitting_model=splitting_model,
+                    threshold=threshold,
+                    bin_number=4,
+                    log_device=log_device,
+                    split=1,
+                    split_seed=None,
+                    split_number=1,
+                    mrmr_size=mrmr_size,
+                    read_splits=read_splits,
+                    model_type="ElasticNet")
 
 
 if __name__ == '__main__':

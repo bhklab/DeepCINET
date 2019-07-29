@@ -12,6 +12,8 @@ import seaborn as sns
 import random
 import config
 import pathlib
+import argparse
+import utils
 
 import multiprocessing
 
@@ -35,7 +37,8 @@ for i in range(running_times):
                                                      cv_folds=1,
                                                      feature_path=config.DATA_PATH_FEATURE,
                                                      target_path=config.DATA_PATH_TARGET,
-                                                     result_path = config.SESSION_SAVE_PATH)
+                                                     result_path = config.SESSION_SAVE_PATH,
+                                                     data_type = "ElasticNet")
     print(f"test{[v[1] for v in counts['test']['c_index']]}")
     print(f"test{len([v[1] for v in counts['test']['c_index']])}")
     print(counts)
@@ -55,3 +58,4 @@ for i in range(running_times):
     pathlib.Path(cfg['RESULT_PATH']).mkdir(parents=True, exist_ok=True)
     results.to_csv(os.path.join(cfg['RESULT_PATH'], 'result.csv'))
 results.to_csv(os.path.join(cfg['RESULT_PATH'], 'result.csv'), index=False)
+

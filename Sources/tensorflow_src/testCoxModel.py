@@ -35,6 +35,7 @@ def del_low_var(df):
     df.drop(low_variance, axis=1, inplace=True)
     logger.info(df.columns)
 
+
 from sklearn.feature_selection import VarianceThreshold
 
 
@@ -44,25 +45,26 @@ def variance_threshold_selector(data, threshold=0.01):
     return data[data.columns[selector.get_support(indices=True)]]
 
 
-def coxModel(cv_folds: int = 1,
-             test_size: float = .20,
-             feature_path: str = settings.DATA_PATH_RADIOMIC_PROCESSED,
-             target_path: str = settings.DATA_PATH_CLINICAL_PROCESSED,
-             input_path: str = settings.DATA_PATH_INPUT_TEST_TRAIN,
-             result_path: str = settings.SESSION_SAVE_PATH,
-             regularization: float = 0.01,
-             splitting_model: int = 0,
-             threshold: float = 3,
-             bin_number: int = 4,
-             log_device=False,
-             split=1,  # todo check if required to add split_seed and initial_seed to the argument
-             split_seed=None,
-             split_number=None,  # it is used for the time we are using the generated test and train sets
-             initial_seed=None,
-             mrmr_size=0,
-             read_splits=False):
+def cox_model(cv_folds: int = 1,
+              test_size: float = .20,
+              feature_path: str = settings.DATA_PATH_RADIOMIC_PROCESSED,
+              target_path: str = settings.DATA_PATH_CLINICAL_PROCESSED,
+              input_path: str = settings.DATA_PATH_INPUT_TEST_TRAIN,
+              result_path: str = settings.SESSION_SAVE_PATH,
+              regularization: float = 0.01,
+              splitting_model: int = 0,
+              threshold: float = 3,
+              bin_number: int = 4,
+              log_device=False,
+              split=1,  # todo check if required to add split_seed and initial_seed to the argument
+              split_seed=None,
+              split_number=None,  # it is used for the time we are using the generated test and train sets
+              initial_seed=None,
+              mrmr_size=0,
+              read_splits=False):
     """
     deepCient
+    :param cv_folds:
     :param input_path:
     :param target_path:
     :param read_splits:
@@ -100,7 +102,7 @@ def coxModel(cv_folds: int = 1,
 
     logger.info(f"Data type is {feature_path}")
     # read features and clinical data frame the path is defined in the settings.py
-    features =  pd.read_csv( os.path.expandvars(feature_path), index_col=0)
+    features = pd.read_csv(os.path.expandvars(feature_path), index_col=0)
 
     logger.info(f"number of features is {len(features.index)}")
     clinical_df = pd.read_csv(os.path.expandvars(target_path), index_col=0)
@@ -114,7 +116,7 @@ def coxModel(cv_folds: int = 1,
         counts[key] = {
             'c_index': []
         }
-    data_set = data.pair_data.SplitPairs(target_path=target_path,survival=True)
+    data_set = data.pair_data.SplitPairs(target_path=target_path, survival=True)
     if (read_splits):
         cv_path = os.path.join(input_path, f"cv_{cv_folds}")
         random_path = os.path.join(cv_path, f"random_seed_{split_number}")
@@ -138,7 +140,6 @@ def coxModel(cv_folds: int = 1,
             features_train = features_train.dropna()
             del_low_var(features_train)
 
-
             cph.fit(features_train, duration_col='time', event_col='event', show_progress=True, step_size=1)
 
             features_test = pd.merge(df_features.T, test_data[['id', 'event', 'time']], how='inner',
@@ -148,8 +149,8 @@ def coxModel(cv_folds: int = 1,
             features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
                                 left_index=True, right_on='id')
             features['predict'] = cph.predict_partial_hazard(features)
-            print(cph.predict_survival_function(features,times=[1.0]))
-            
+            print(cph.predict_survival_function(features, times=[1.0]))
+
             train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data, test_data, random=False)
 
             predictions = {}
@@ -171,7 +172,7 @@ def coxModel(cv_folds: int = 1,
             results_save_path = os.path.join(result_path, f"split_{split:0>2}")
             results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
-                # todo save
+            # todo save
             logger.info(f"result{counts}")
             pathlib.Path(results_save_path).mkdir(parents=True, exist_ok=True)
             # pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
@@ -198,7 +199,7 @@ def coxModel(cv_folds: int = 1,
             train_data = data_set.target_data.iloc[train_idx]
             test_data = data_set.target_data.iloc[test_idx]
             train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data, test_data,
-                                                                             random=False)
+                                                                              random=False)
             logger.info(f"New fold {i}, {len(train_idx)} train pairs, {len(test_idx)} test pairs")
             cph = CoxPHFitter(penalizer=0.5, alpha=0.95)
             # radiomic_features = pd.merge(df_features.T, dataset.clinical_data[['id', 'event', 'time']], how='inner',left_index=True, right_on='id')
@@ -263,7 +264,6 @@ def main(args: Dict[str, Any]) -> None:
     feature_path = args['feature_path']
     input_path = args['input_path']
     target_path = args['target_path']
-
 
     coxModel(cv_folds=cv_folds,
              test_size=test_size,
