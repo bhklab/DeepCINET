@@ -77,6 +77,7 @@ assert DATA_BATCH_SIZE >= 2
 SESSION_SAVE_PATH = os.path.expandvars(cfg['SESSION_SAVE_PATH'])
 SUMMARIES_DIR = os.path.expandvars(cfg['SUMMARIES_DIR'])
 
+
 RANDOM_SEED = int(os.getenv('RANDOM_SEED', 0))
 if RANDOM_SEED < 0:
     RANDOM_SEED = random.randint(0, 1000)

@@ -153,6 +153,8 @@ def cox_model(cv_folds: int = 1,
 
             train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data, test_data, random=False)
 
+            print(concordance_index(features['time'], -cph.predict_partial_hazard(features), features['event']))
+            train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=False)
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                 logger.info(f"Computing {name} c-index")
@@ -172,7 +174,7 @@ def cox_model(cv_folds: int = 1,
             results_save_path = os.path.join(result_path, f"split_{split:0>2}")
             results_save_path = os.path.join(results_save_path, f"fold_{i:0>2}")
             logger.info(f"Saving results at: {results_save_path}")
-            # todo save
+                # todo save
             logger.info(f"result{counts}")
             pathlib.Path(results_save_path).mkdir(parents=True, exist_ok=True)
             # pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
@@ -199,7 +201,7 @@ def cox_model(cv_folds: int = 1,
             train_data = data_set.target_data.iloc[train_idx]
             test_data = data_set.target_data.iloc[test_idx]
             train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data, test_data,
-                                                                              random=False)
+                                                                             random=False)
             logger.info(f"New fold {i}, {len(train_idx)} train pairs, {len(test_idx)} test pairs")
             cph = CoxPHFitter(penalizer=0.5, alpha=0.95)
             # radiomic_features = pd.merge(df_features.T, dataset.clinical_data[['id', 'event', 'time']], how='inner',left_index=True, right_on='id')
@@ -264,6 +266,7 @@ def main(args: Dict[str, Any]) -> None:
     feature_path = args['feature_path']
     input_path = args['input_path']
     target_path = args['target_path']
+
 
     coxModel(cv_folds=cv_folds,
              test_size=test_size,
