@@ -33,7 +33,7 @@ for i in range(running_times):
                       results_path=results_path,
                       model='SimpleImageSiamese',
                       num_epochs=17,
-                      batch_size=40,
+                      batch_size=2,
                       splitting_model=1,
                       learning_rate=0.0003,
                       dropout=.002,
