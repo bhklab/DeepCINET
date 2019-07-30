@@ -27,8 +27,9 @@ DATA_CACHE: ${DATA}/.cache
 #  SPLIT: Split.csv
 
 DATA_PROCESSED:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs
-  CLINICAL_INFO: clinical_infos.csv
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
+  IMAGE_PATH: images
+  CLINICAL_INFO: clinical_info_images.csv
   RADIOMIC: OPC1_radiomic_features_mad.csv
   VOLUME_CLINIC: VolumeAndClinic_OPCs.csv
   CLINIC: Clinic_OPC1.csv

@@ -295,6 +295,7 @@ def deepCinet(model: str,
               target_path: str = settings.DATA_PATH_CLINICAL_PROCESSED,
               feature_path: str = settings.DATA_PATH_RADIOMIC_PROCESSED,
               results_path: str = settings.SESSION_SAVE_PATH,
+              image_path: str = settings.DATA_PATH_IMAGE,
               learning_rate: int = 0.001,
               regularization: float = 0.01,
               splitting_model: int = 0,
@@ -392,7 +393,7 @@ def deepCinet(model: str,
                 summaries_dir = os.path.join(summaries_dir, 'summaries', f'fold_{i:>2}')
                 logger.info(f"Saving results at: {summaries_dir}")
                 train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
-                batch_data = data.BatchData(df_features)
+                batch_data = data.BatchData(df_features,image_path=image_path)
                 train_summary.add_graph(sess.graph)
                 # Epoch iterations
                 train_iterations(sess,
@@ -467,7 +468,7 @@ def deepCinet(model: str,
                 summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
                 logger.info(f"Saving results at: {summaries_dir}")
                 train_summary = tf.summary.FileWriter(summaries_dir, sess.graph)
-                batch_data = data.BatchData(df_features)
+                batch_data = data.BatchData(df_features,image_path=image_path)
                 train_summary.add_graph(sess.graph)
 
                 # Epoch iterations
@@ -556,6 +557,7 @@ def main(args: Dict[str, Any]) -> None:
     distance = args['distance']
     feature_path = args['feature_path']
     target_path = args['target_path']
+    image_path = args['image_path']
     survival = args['survival']
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
@@ -568,6 +570,7 @@ def main(args: Dict[str, Any]) -> None:
               batch_size=batch_size,
               feature_path=feature_path,
               target_path=target_path,
+              image_path=image_path,
               results_path=results_path,
               learning_rate=learning_rate,
               regularization=regularization,
@@ -692,6 +695,12 @@ if __name__ == '__main__':
         "--target-path",
         help=" ",
         default=settings.DATA_PATH_TARGET,
+        type=str
+    )
+    optional.add_argument(
+        "--image-path",
+        help=" ",
+        default=settings.DATA_PATH_IMAGE,
         type=str
     )
 

@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, LeaveOneOut, BaseCrossValidator
 
 from data.data_structures import PairBatch
-from tensorflow_src.config import TOTAL_ROTATIONS, \
+from tensorflow_src.config import TOTAL_ROTATIONS, IMAGE_ROTATIONS, \
     RANDOM_SEED
 
 
@@ -38,6 +38,7 @@ class SplitPairs:
               random: bool = False, ) -> Iterator[Tuple[int, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]]:
         """
         Creates different folds of data for use with CV
+        :param random_seed:
         :param n_folds: Number of folds to be created, if negative, the number of folds will be created using
                         Leave One Out
         :param random: Whether to create random pairs, use this to verify the model, **Never** to train a real model
@@ -283,11 +284,12 @@ class BatchData:
     Useful methods for working with batch data
     """
 
-    def __init__(self, radiomic_df):
+    def __init__(self, radiomic_df,image_path:str = "IMAGE_PATH"):
         self.radiomic_df = radiomic_df
         self.logger = logging.getLogger(__name__)
         self.norm_mean = 0.
         self.norm_std = 1.
+        self.image_path = image_path
 
     def batches(self, pairs: pd.DataFrame,
                 batch_size: int = 64,
@@ -298,6 +300,7 @@ class BatchData:
         """
         Generates batches based on all the pairs and the batch size
 
+        :param image_path: this is the path to the images
         :param pairs: Pairs to create the batch from
         :param batch_size: Size of the batch that it's going to be created. The final size will depend on the
                            ``group_by`` parameter
@@ -443,20 +446,34 @@ class BatchData:
         for i, idx in enumerate(ids_list):
             ids_map[idx] = i * total_rotations
             final_ids += [idx] * total_rotations
-            file_path = os.path.join(DATA_PATH_PROCESSED, idx, idx + ".npz")
+            file_path = os.path.join(self.image_path, idx + ".npy")
 
             # Check if the file exists, so the data has been preprocessed
             if load_images and not os.path.exists(file_path):
                 self.logger.error(f"The file {file_path} could not be found. Have you pre-processed the data?")
 
             if load_images:
-                loaded_npz = np.load(file_path)
-                assert len(loaded_npz.files) == total_rotations
-                for item in loaded_npz:
-                    loaded_array = loaded_npz[item]
-                    assert loaded_array.shape == (64, 64, 64)
-                    images.append(loaded_array.reshape(64, 64, 64, 1))
-                loaded_npz.close()
+                # loaded_npz = np.load(file_path)
+                # assert len(loaded_npz.files) == total_rotations
+                # for item in loaded_npz:
+                #     loaded_array = loaded_npz[item]
+                #     assert loaded_array.shape == (64, 64, 64)
+                #     images.append(loaded_array.reshape(64, 64, 64, 1))
+                # loaded_npz.close()
+                image = np.load(file_path)
+                temp_dict = {}
+                for i in range(IMAGE_ROTATIONS['x']):
+                    for j in range(IMAGE_ROTATIONS['y']):
+                        for k in range(IMAGE_ROTATIONS['z']):
+                            name = "{:03}_{:03}_{:03}".format(i * 90, j * 90, k * 90)
+                            print(image.shape )
+                            images.append(image.copy().reshape(50, 50, 50, 1))
+                            image = np.rot90(image, axes=(0, 1))
+                        image = np.rot90(image, axes=(2, 0))
+                    image = np.rot90(image, axes=(0, 1))
+                #     images.append(loaded_array.reshape(64, 64, 64, 1))
+
+
             else:
                 images += [np.array([])] * total_rotations
 

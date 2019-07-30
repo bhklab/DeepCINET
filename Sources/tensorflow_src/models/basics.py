@@ -359,13 +359,13 @@ class BasicImageSiamese(BasicSiamese):
 
     Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
 
-    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 256, 256, 256, 1]``
+    :var BasicImageSiamese.x_image: Batch of input images, has shape ``[batch, 50, 50, 50, 1]``
     :vartype BasicImageSiamese.x_image: tf.Tensor
     """
 
     def __init__(self, **kwargs):
-        #: **Attribute**: Placeholder for the image input, it has shape ``[batch, 256, 256, 256, 1]``
-        self.x_image = tf.placeholder(tf.float32, [None, 256, 256, 256, 1], name="X")
+        #: **Attribute**: Placeholder for the image input, it has shape ``[batch, 50, 50, 50, 1]``
+        self.x_image = tf.placeholder(tf.float32, [None, 50, 50, 50, 1], name="X")
 
         super().__init__(**kwargs)
 
@@ -375,7 +375,7 @@ class BasicImageSiamese(BasicSiamese):
 
         :return: Tensor of shape ``[batch, 1]``
         """
-        # In: [batch, 256, 256, 256, 1]
+        # In: [batch, 50, 50, 50, 1]
         # Out: [batch, 25, 25, 25, 50]
         x = self._conv_layers(self.x_image)
 
@@ -390,7 +390,7 @@ class BasicImageSiamese(BasicSiamese):
         """
         Implement this method to create the tensors for the Convolutional layers of the network
 
-        :param x: Network's input images with shape ``[batch, 256, 256, 256, 1]``
+        :param x: Network's input images with shape ``[batch, 50, 50, 50, 1]``
         :return: Filtered image with the convolutions applied
         """
 
