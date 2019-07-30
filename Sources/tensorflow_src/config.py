@@ -54,7 +54,7 @@ DATA_PATH_RADIOMIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCE
 DATA_PATH_CLINIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINIC'])
 DATA_PATH_VOLUME_CLINIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['VOLUME_CLINIC'])
 DATA_PATH_INPUT_TEST_TRAIN = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['INPUT_TEST_TRAIN'])
-DATA_PATH_IMAGE = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['IMAGE_PATH'])
+DATA_PATH_IMAGE = os.path.join(cfg['DATA_PROCESSED']['IMAGE_PATH'])
 
 LOG_DIR = os.path.join(cfg['LOG']['DIR'])
 # Log dir, fallback to current directory or we can specify it in the batch file or in the yaml file
