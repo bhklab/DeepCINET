@@ -465,8 +465,6 @@ class BatchData:
                 for i in range(IMAGE_ROTATIONS['x']):
                     for j in range(IMAGE_ROTATIONS['y']):
                         for k in range(IMAGE_ROTATIONS['z']):
-                            name = "{:03}_{:03}_{:03}".format(i * 90, j * 90, k * 90)
-                            print(image.shape )
                             images.append(image.copy().reshape(50, 50, 50, 1))
                             image = np.rot90(image, axes=(0, 1))
                         image = np.rot90(image, axes=(2, 0))
