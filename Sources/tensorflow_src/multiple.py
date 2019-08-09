@@ -48,6 +48,7 @@ for i in range(running_times):
                       full_summary=True,
                       cv_folds=1,
                       split_number=i,
+                      survival=True,
                      )
     counts, predictions = train_test_models.deepCinet(**parameters)
     logger.info(f"Parameters: {parameters}")
