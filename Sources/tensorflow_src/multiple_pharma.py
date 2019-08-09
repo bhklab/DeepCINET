@@ -38,11 +38,12 @@ for i in range(running_times):
                       split_seed=random_states[i],
                       initial_seed=None,
                       mrmr_size=0,
-                      read_splits=True,
+                      read_splits=False,
                       full_summary=True,
                       cv_folds=1,
                       split_number=i,
                       distance=0.2,
+                      survival=False
                      )
     counts, predictions = train_test_models.deepCinet(**parameters)
     logger.info(f"Parameters: {parameters}")
