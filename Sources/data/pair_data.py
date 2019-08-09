@@ -24,9 +24,9 @@ class SplitPairs:
     def __init__(self, target_path, survival):
         # To divide into test and validation sets we only need the clinical data
         self.target_data = pd.read_csv(target_path, index_col=0)
-        if ~survival:
-            self.target_data['even'] = 1
-            self.target_data['time']
+        if not survival:
+            self.target_data['event'] = 1
+            self.target_data['time'] = self.target_data['target']
 
         self.total_x = self.target_data['id'].values
         self.total_y = self.target_data['event'].values
@@ -117,7 +117,7 @@ class SplitPairs:
         self.survival_categorizing(models, threshold, category)
         rs = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_seed)  # random_state=)
 
-        train_ids, test_ids = next(rs.split(self.total_x, self.total_y))
+        train_ids, test_ids = next(rs.split(self.total_x, self.category))
         return train_ids, test_ids  # self._create_train_test(train_ids, test_ids, random)
 
     @staticmethod
