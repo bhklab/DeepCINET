@@ -378,7 +378,7 @@ class SimpleImageSiamese(BasicImageSiamese):
             x = tf.layers.dense(
                 x,
                 100,
-                activation=tf.nn.relu,
+                activation=tf.nn.tanh,
                 name="fc1"
             )
 
@@ -386,7 +386,7 @@ class SimpleImageSiamese(BasicImageSiamese):
             x = tf.layers.dense(
                 x,
                 50,
-                activation=tf.nn.relu,
+                activation=tf.nn.tanh,
                 name="fc2"
             )
 
@@ -1066,22 +1066,6 @@ class ScalarOnlySiamese(BasicSiamese):
 
 
 class ScalarOnlySiamese1(BasicSiamese):
-    r"""
-    Model that uses only radiomic features as input to train
-
-    It has the same parameters as :class:`BasicSiamese`
-
-    It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
-
-    **Attributes**:
-
-    Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
-
-    :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
-                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
-    :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
-    """
-
     def __init__(self, number_features: int, **kwargs):
         #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
         self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
@@ -1093,13 +1077,13 @@ class ScalarOnlySiamese1(BasicSiamese):
         x = self.x_scalar
         x = self._dense(
             x,
-            1000,
-            "fc1"
-        )
-        x = self._dense(
-            x,
             500,
             "fc1"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
         )
         y = self._dense(
             x,
@@ -1109,45 +1093,54 @@ class ScalarOnlySiamese1(BasicSiamese):
 
         x = self._dense(
             x,
-            300,
+            100,
             "fc2"
         )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
 
         x = self._dense(
             x,
-            200,
+            50,
+            "fc3"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        x = self._dense(
+            x,
+            20,
             "fc4"
         )
-
-        x = self._dense(
+        x = tf.layers.dropout(
             x,
-            100,
-            "fc5"
-        )
-
-        x = self._dense(
-            x,
-            20,
-            "fc6"
-        )
-        x = self._dense(
-            x,
-            20,
-            "fc7"
+            rate=self._dropout,
+            training=self.training
         )
 
         # Out: [batch, 1]
-#        x = self._dense(
- #           tf.concat([x , y],1),
- #           10,
- #           "fcjoin",
- #           activation=tf.nn.relu
- #       )
+        x = self._dense(
+            # tf.concat([x , y],1),
+            x,
+            10,
+            "fc5"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
 
         x = self._dense(
             x,
             1,
-            "fc8",
+            "fc7",
             activation=tf.nn.relu
         )
         return x
@@ -1163,7 +1156,6 @@ class ScalarOnlySiamese1(BasicSiamese):
         )
 
     def feed_dict(self, batch: data.PairBatch, training: bool = True):
-
         return {
             **super().feed_dict(batch, training),
             self.x_scalar: np.stack(batch.patients["features"]),
@@ -1176,7 +1168,6 @@ class ScalarOnlySiamese1(BasicSiamese):
         :return: :any:`False` since this model does not use images to work
         """
         return False
-
 
 
 class ClinicalOnlySiamese(BasicSiamese):
