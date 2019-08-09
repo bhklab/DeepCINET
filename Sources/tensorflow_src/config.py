@@ -11,7 +11,7 @@ APP_ROOT = os.path.join(os.path.dirname(__file__), "../../")
 
 dotenv.load_dotenv(os.path.join(APP_ROOT, ".env"), verbose=True)
 
-with open(os.path.join(APP_ROOT, "environment_image.yml")) as cfg_file:
+with open(os.path.join(APP_ROOT, "environment_Pharma.yml")) as cfg_file:
     cfg = yaml.load(cfg_file)
 
 # todo config required variables
@@ -45,13 +45,13 @@ DATA_PATH_RADIOMIC = os.path.expandvars(cfg['DATA_RAW']['RADIOMIC'])
 DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
 
 DATA_PATH_PROCESSED = os.path.expandvars(cfg['DATA_PROCESSED']['ROOT'])
-DATA_PATH_TARGET = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINICAL_INFO'])
-DATA_PATH_FEATURE = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['RADIOMIC'])
+DATA_PATH_TARGET = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['TARGET'])
+DATA_PATH_FEATURE = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['FEATURE'])
 DATA_PATH_INPUT_TEST_TRAIN = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['INPUT_TEST_TRAIN'])
 
-DATA_PATH_CLINICAL_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINICAL_INFO'])
-DATA_PATH_RADIOMIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['RADIOMIC'])
-DATA_PATH_CLINIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINIC'])
+#DATA_PATH_CLINICAL_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINICAL_INFO'])
+#DATA_PATH_RADIOMIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['RADIOMIC'])
+#DATA_PATH_CLINIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINIC'])
 DATA_PATH_VOLUME_CLINIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['VOLUME_CLINIC'])
 DATA_PATH_INPUT_TEST_TRAIN = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['INPUT_TEST_TRAIN'])
 DATA_PATH_IMAGE = os.path.join(cfg['DATA_PROCESSED']['IMAGE_PATH'])
