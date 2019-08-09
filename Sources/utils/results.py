@@ -172,15 +172,15 @@ def _select_time(target_data_frame: pd.DataFrame, results_df: pd.DataFrame) -> p
 
 def _select_target(target_data_frame: pd.DataFrame, results_df: pd.DataFrame) -> pd.DataFrame:
     merge = pd.merge(target_data_frame, results_df, left_on='id', right_on='pA')
-    merge = merge[['time', 'pA', 'pB', 'labels', 'predictions', 'probabilities', 'gather_a',
+    merge = merge[['target', 'pA', 'pB', 'labels', 'predictions', 'probabilities', 'gather_a',
                    'gather_b']]
-    merge = merge.rename(index=str, columns={'time': 'time_a'})
+    merge = merge.rename(index=str, columns={'target': 'target_a'})
 
     merge = pd.merge(target_data_frame, merge, left_on='id', right_on='pB')
-    merge = merge[['time_a', 'time', 'pA', 'pB', 'labels', 'predictions', 'probabilities',
+    merge = merge[['target_a', 'target', 'pA', 'pB', 'labels', 'predictions', 'probabilities',
                    'gather_a', 'gather_b']]
-    merge = merge.rename(index=str, columns={'time': 'target_value_b',
-                                             'time_a': 'target_value_a',
+    merge = merge.rename(index=str, columns={'target': 'target_value_b',
+                                             'target_a': 'target_value_a',
                                              'gather_a':'predict_value_a',
                                              'gather_b':'predict_value_b'})
     merge['real_dist'] = merge['target_value_b'] - merge['target_value_a']
