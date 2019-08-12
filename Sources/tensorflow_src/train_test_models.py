@@ -463,7 +463,8 @@ def deepCinet(model: str,
                 train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,
                                                                                   test_data,
                                                                                   random=random_labels,
-                                                                                  distance=distance)
+                                                                                  train_distance=train_distance,
+                                                                                  test_distance=test_distance)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')

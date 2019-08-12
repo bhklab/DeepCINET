@@ -16,37 +16,27 @@ import multiprocessing
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
 
-for drug in []:
-    running_times = 5
-    random_states = list(range(running_times * 2))
-    random.seed(1)
-    random.shuffle(random_states)
-    logger = utils.init_logger("multiple run")
-    results_path = settings.SESSION_SAVE_PATH
+for drug,iter in [('lapatinib',48)]:
+    for random_size in [50,100,200,250,300,400]:
+        epoch = int(iter * 50 / random_size)
+        running_times = 20
+        random_states = list(range(running_times * 2))
+        #random.seed(1)
+        #random.shuffle(random_states)
+        results_path = f"{settings.SESSION_SAVE_PATH}/{drug}"
+        target_path = f"{settings.DATA_PATH_TARGET}train_test_response_{drug}.csv"
+        feature_path = f"{settings.DATA_PATH_FEATURE}train_test_expression_{drug}.csv"
+        input_train_test = f"{settings.DATA_PATH_INPUT_TEST_TRAIN}_{drug}/rand{random_size}"
+        logger = utils.init_logger("multiple run random")
+
     for i in range(running_times):
-        parameters = dict(model='ClinicalOnlySiamese',
-                        target_path=settings.DATA_PATH_TARGET,
-                        feature_path=settings.DATA_PATH_FEATURE,
-                        input_path=settings.DATA_PATH_INPUT_TEST_TRAIN,
-                        results_path=settings.SESSION_SAVE_PATH,
-                         num_epochs=14,
-                        batch_size=100,
-                      splitting_model=1,
-                      learning_rate=0.0001,
-                      dropout=.3,
-                      threshold=4,
-                      split=i, save_model=True,
-                      regularization=10.0,
-                      split_seed=random_states[i],
-                      initial_seed=None,
-                      mrmr_size=0,
-                      read_splits=False,
-                      full_summary=True,
-                      cv_folds=1,
-                      split_number=i,
-                      distance=0.2,
-                      survival=False
-                     )
+        parameters = {'model': 'ScalarOnlySiamese', 'target_path': target_path,
+                      'feature_path': feature_path, 'input_path': input_train_test,
+                      'results_path': results_path, 'num_epochs': epoch, 'batch_size': 50,
+                      'splitting_model': 1, 'learning_rate': 0.0001, 'dropout': .3, 'threshold': 4, 'split': i,
+                      'save_model': True, 'regularization': 10.0, 'split_seed': random_states[i], 'initial_seed': None,
+                      'mrmr_size': 0, 'read_splits': True, 'full_summary': True, 'cv_folds': 1, 'split_number': i,
+                      'test_distance': 0.2, 'train_distance': 0.2 , 'survival': False}
         counts, predictions = train_test_models.deepCinet(**parameters)
         logger.info(f"Parameters: {parameters}")
         logger.info(f"test{[v[1] for v in counts['test']['c_index']]}")
