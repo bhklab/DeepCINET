@@ -129,12 +129,16 @@ class SplitPairs:
     def create_train_test(self,
                           train_data: pd.DataFrame,
                           test_data: pd.DataFrame,
-                          random: bool, distance: float = 0) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+                          random: bool,
+                          train_distance: float=0,
+                          test_distance: float=0) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Having the indices for the train and test sets, create the necessary List of PairComp
         for each set
 
 
+        :param test_distance:
+        :param train_distance:
         :param distance:
         :param train_data: dataFrame containing train data``
         :param test_data: dataFrame containging test data``
@@ -143,10 +147,10 @@ class SplitPairs:
         """
 
         self.logger.debug("Generating train pairs")
-        train_pairs = self._get_pairs(train_data, random, distance=distance)
+        train_pairs = self._get_pairs(train_data, random, distance=train_distance)
 
         self.logger.debug("Generating test pairs")
-        test_pairs = self._get_pairs(test_data, random, distance=distance)
+        test_pairs = self._get_pairs(test_data, random, distance=test_distance)
 
         self.logger.debug("Generating mixed pairs")
         test_mix_pairs = self._get_compare_train(train_data, test_data, random)

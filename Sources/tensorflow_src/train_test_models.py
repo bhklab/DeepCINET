@@ -314,7 +314,8 @@ def deepCinet(model: str,
               mrmr_size=0,
               read_splits=False,
               input_path=settings.DATA_PATH_INPUT_TEST_TRAIN,
-              distance=0):
+              train_distance=0,
+              test_distance=0):
     """
     deepCient
     :param args: Command Line Arguments
@@ -386,7 +387,8 @@ def deepCinet(model: str,
                 train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,
                                                                                   test_data,
                                                                                   random=random_labels,
-                                                                                  distance=distance)
+                                                                                  train_distance=train_distance,
+                                                                                  test_distance=test_distance)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, f"split_{split:0>2}")
@@ -554,7 +556,8 @@ def main(args: Dict[str, Any]) -> None:
     save_model = args['save_model']
     read_splits = args['read_splits']
     input_path = args['input_path']
-    distance = args['distance']
+    train_distance = args['train_distance']
+    test_distance = args['test_distance']
     feature_path = args['feature_path']
     target_path = args['target_path']
     image_path = args['image_path']
@@ -588,7 +591,8 @@ def main(args: Dict[str, Any]) -> None:
               mrmr_size=mrmr_size,
               read_splits=read_splits,
               input_path=input_path,
-              distance=distance)
+              train_distance=train_distance,
+              test_distance=test_distance)
 
 
 if __name__ == '__main__':
@@ -775,11 +779,18 @@ if __name__ == '__main__':
     )
 
     optional.add_argument(
-        "--distance",
+        "--train_distance",
         help="This is used to consider rCI when generating pairs only the pairs with dis > distance would be selected ",
-        action="store_true",
-        default=False
+        default=0,
+        type=int
     )
+    optional.add_argument(
+        "--test_distance",
+        help="This is used to consider rCI when generating pairs only the pairs with dis > distance would be selected ",
+        default=0,
+        type=int
+    )
+
     optional.add_argument(
         "--survival",
         help="This is used to show that the data which you want to work with is survival data",
