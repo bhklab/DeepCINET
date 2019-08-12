@@ -76,32 +76,55 @@ DATA_CACHE: ${DATA}/.cache
 #   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_ML/lapatinib
 
 
+#DATA_PROCESSED:
+#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/CTRPv2_gCSI/
+#  TARGET: drug_response/
+#  FEATURE: gene_expression/
+#  VOLUME_CLINIC: Bio_gene_expression_CTRPv2_lapatinib.csv
+#  CLINIC: drug_response/CTRPv2_lapatinib_Bio.csv
+#  INPUT_TEST_TRAIN: train_test
+#  SPLIT: Split.csv
+#  IMAGE_PATH: aa
+#
+#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/
+## Default path to save the summaries
+#SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/
+#RANDOM_SEED:
+#
+## Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
+#LOG:
+#  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/log
+#  LEVEL_CONSOLE: 20
+#  LEVEL_FILE: 10
+#
+#ML:
+#   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Biomarker/CTRPv2/Result_ML/lapatinib
+#
+
+
 DATA_PROCESSED:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/CTRPv2_gCSI/
-  TARGET: drug_response/
-  FEATURE: gene_expression/
-  VOLUME_CLINIC: Bio_gene_expression_CTRPv2_lapatinib.csv
-  CLINIC: drug_response/CTRPv2_lapatinib_Bio.csv
-  INPUT_TEST_TRAIN: train_test
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI
+  TARGET: drug_response/train_test_response_Erlotinib.csv
+  FEATURE: gene_expression/train_test_expression_Erlotinib.csv
+  VOLUME_CLINIC: Bio_gene_expression_CTRPv2_Erlotinib.csv
+  CLINIC: drug_response/train_test_response_Erlotinib.csv
+  INPUT_TEST_TRAIN: train_test_Erlotinib
   SPLIT: Split.csv
   IMAGE_PATH: aa
 
-SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/
+SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Result/DeepCINET/CTRPv2_gCSI/Erlotinib
 # Default path to save the summaries
-SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/
+SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Result/DeepCINET/CTRPv2_gCSI/Erlotinib
 RANDOM_SEED:
 
 # Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 LOG:
-  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/log
+  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Biomarker/CTRPv2/log_Distance
   LEVEL_CONSOLE: 20
   LEVEL_FILE: 10
 
 ML:
    RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Biomarker/CTRPv2/Result_ML/lapatinib
-
-
-
 
 
 #DATA_PROCESSED:

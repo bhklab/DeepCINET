@@ -15,7 +15,7 @@ import utils
 import multiprocessing
 results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
-running_times = 5
+running_times = 1
 random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
@@ -27,22 +27,23 @@ for i in range(running_times):
                       feature_path=settings.DATA_PATH_FEATURE,
                       input_path=settings.DATA_PATH_INPUT_TEST_TRAIN,
                       results_path=settings.SESSION_SAVE_PATH,
-                      num_epochs=14,
-                      batch_size=100,
+                      num_epochs=20,
+                      batch_size=200,
                       splitting_model=1,
-                      learning_rate=0.0001,
+                      learning_rate=0.0002,
                       dropout=.3,
                       threshold=4,
                       split=i, save_model=True,
-                      regularization=10.0,
+                      regularization=20.0,
                       split_seed=random_states[i],
                       initial_seed=None,
                       mrmr_size=0,
-                      read_splits=False,
+                      read_splits=True,
                       full_summary=True,
                       cv_folds=1,
                       split_number=i,
-                      distance=0.2,
+                      train_distance=0.2,
+                      test_distance=0.2,
                       survival=False
                      )
     counts, predictions = train_test_models.deepCinet(**parameters)
