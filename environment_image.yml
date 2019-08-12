@@ -28,7 +28,7 @@ DATA_CACHE: ${DATA}/.cache
 
 DATA_PROCESSED:
   ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
-  IMAGE_PATH: images
+  IMAGE_PATH: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/images
   CLINICAL_INFO: clinical_info_images.csv
   RADIOMIC: OPC1_radiomic_features_mad.csv
   VOLUME_CLINIC: VolumeAndClinic_OPCs.csv

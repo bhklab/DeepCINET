@@ -77,12 +77,13 @@ DATA_CACHE: ${DATA}/.cache
 
 DATA_PROCESSED:
   ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData
-  CLINICAL_INFO: CTRPv2_lapatinib.csv
-  RADIOMIC: L100_gene_expression_CTRPv2_lapatinib.csv
+  TARGET: drug_response/drug_CTRPv2_lapatinib.csv
+  FEATURE: L1000_gene_expression/gene_CTRPv2_lapatinib.csv
   VOLUME_CLINIC: Bio_gene_expression_CTRPv2_lapatinib.csv
-  CLINIC: CTRPv2_lapatinib_Bio.csv
+  CLINIC: drug_response/CTRPv2_lapatinib_Bio.csv
   INPUT_TEST_TRAIN: train_test_lapatinib
   SPLIT: Split.csv
+  IMAGE_PATH: aa
 
 SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Biomarker/CTRPv2/Result/lapatinib
 # Default path to save the summaries
