@@ -13,12 +13,18 @@ import yaml
 import utils
 
 import multiprocessing
-results = pd.DataFrame()
+#results = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
 
-for drug,iter,reg in [('Doxorubicin',30,10.),('Gemcitabine',30,4.)]:
+for drug, iter, reg, learning  in [('Doxorubicin',40,10.,0.0003),
+                                   ('Gemcitabine',30,4.,0.00021),
+                                   ('lapatinib',48,6.,0.0001),
+                                   ('Bortezomib',24,3.,0.0003),
+                                   ('Erlotinib',60,20.,0.0002),
+                                   ('Vorinostat',52,10.,0.0003)]:
     for random_size in [50,100,200,250,300,400]:
-        epoch = int(iter * 200 / random_size)
+        results = pd.DataFrame()
+        epoch = int(iter * 40 / random_size)
         running_times = 10
         random_states = list(range(running_times * 2))
         #random.seed(1)
@@ -32,8 +38,8 @@ for drug,iter,reg in [('Doxorubicin',30,10.),('Gemcitabine',30,4.)]:
         for i in range(running_times):
             parameters = {'model': 'ScalarOnlySiamese', 'target_path': target_path,
                           'feature_path': feature_path, 'input_path': input_train_test,
-                          'results_path': results_path, 'num_epochs': epoch, 'batch_size': 200,
-                          'splitting_model': 1, 'learning_rate': 0.0001, 'dropout': .3, 'threshold': 4, 'split': i,
+                          'results_path': results_path, 'num_epochs': epoch, 'batch_size': 40,
+                          'splitting_model': 1, 'learning_rate': learning, 'dropout': .3, 'threshold': 4, 'split': i,
                           'save_model': True, 'regularization': reg, 'split_seed': random_states[i], 'initial_seed': None,
                           'mrmr_size': 0, 'read_splits': True, 'full_summary': False, 'cv_folds': 1, 'split_number': i,
                           'test_distance': 0.2, 'train_distance': 0.2 , 'survival': False}

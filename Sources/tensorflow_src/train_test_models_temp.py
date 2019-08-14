@@ -79,23 +79,24 @@ optional named arguments:
 import argparse
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__),'../'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 import pathlib
 from typing import Any
 import tensorflow as tf
 import pandas as pd
-from data.train_test import get_sets_generator,get_sets_reader
+from data.train_test import get_sets_generator, get_sets_reader
 import data
 import tensorflow_src.models as models
 import tensorflow_src.models.basics
 import tensorflow_src.config as settings
 import utils
 
-
 from tensorflow.core.protobuf import config_pb2
 from typing import Iterator, Tuple, Dict
 
 logger = utils.init_logger("start")
+
 
 def train_iterations(sess: tf.Session,
                      model: tensorflow_src.models.basics.BasicSiamese,
@@ -128,7 +129,7 @@ def train_iterations(sess: tf.Session,
     sess.run(tf.global_variables_initializer(), options=config_pb2.RunOptions(
         report_tensor_allocations_upon_oom=True))
     for epoch in range(epochs):
-        total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
+        total_pairs = len(pairs) * (settings.TOTAL_ROTATIONS if model.uses_images() else 1)
         for i, batch in enumerate(batch_data.batches(pairs,
                                                      batch_size=batch_size,
                                                      load_images=model.uses_images(),
@@ -187,7 +188,7 @@ def test_iterations(sess: tf.Session,
     :return:
     """
     # After we iterate over all the data inspect the test error
-    total_pairs = len(pairs)*(settings.TOTAL_ROTATIONS if model.uses_images() else 1)
+    total_pairs = len(pairs) * (settings.TOTAL_ROTATIONS if model.uses_images() else 1)
     correct_count = 0  # To store correct predictions
     pairs_count = 0
     result_data = []
@@ -259,7 +260,7 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
     elif model_key == "VolumeOnlySiamese":
         return models.VolumeOnlySiamese(**kwargs)
     elif model_key == "ClinicalOnlySiamese":
-        return models.ClinicalOnlySiamese(number_feature,**kwargs)
+        return models.ClinicalOnlySiamese(number_feature, **kwargs)
     elif model_key == "ClinicalVolumeSiamese":
         return models.ClinicalVolumeSiamese(**kwargs)
     elif model_key == "ClinicalRadiomicSiamese":
@@ -268,10 +269,6 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
     else:
         logger.error(f"Unknown option for model {model_key}")
         exit(1)
-
-
-
-
 
 
 ################
@@ -446,16 +443,16 @@ def deepCinet(model: str,
                                                 threshold,
                                                 split_seed)
 
-
             for i, (train_idx, test_idx) in enum_generator:
                 if mrmr_size > 0:
-                    #df_features = data.select_mrmr_features(features.copy(), clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
+                    # df_features = data.select_mrmr_features(features.copy(), clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
                     logger.info("to use mrmr you need run train_test_moduls.py this file is just for using in H4H")
                 else:
                     df_features = features.copy()
                 train_data = dataset.target_data.iloc[train_idx]
                 test_data = dataset.target_data.iloc[test_idx]
-                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data, random=random_labels)
+                train_pairs, test_pairs, mixed_pairs = dataset.create_train_test(train_data, test_data,
+                                                                                 random=random_labels)
                 # Initialize all the variables
                 logger.info(f"New fold {i}, {len(train_pairs)} train pairs, {len(test_pairs)} test pairs")
                 summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
@@ -488,7 +485,7 @@ def deepCinet(model: str,
 
                     correct = int(correct)
 
-                    c_index = correct/total
+                    c_index = correct / total
 
                     counts[name]['total'] += total
                     counts[name]['correct'] += correct
@@ -498,8 +495,6 @@ def deepCinet(model: str,
 
                     logger.info(f"{name} set c-index: {c_index}, correct: {correct}, total: {total}, "
                                 f"temp c-index: {counts[name]['correct']/counts[name]['total']}")
-
-
 
                 # Save each fold in a different directory
 
@@ -542,35 +537,34 @@ def main(args: Dict[str, Any]) -> None:
     threshold = args['threshold']
     batch_size = args['batch_size']
     num_epochs = args['num_epochs']
-    results_path=args['results_path']
+    results_path = args['results_path']
     save_model = args['save_model']
     read_splits = args['read_splits']
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
-    deepCinet(model = model,
-              cv_folds = cv_folds,
-              test_size = test_size,
-              gpu_level = gpu_level,
-              num_epochs = num_epochs,
-              batch_size = batch_size,
-              data_type = data_type,
-              results_path = results_path,
-              learning_rate = learning_rate,
-              regularization = regularization,
-              splitting_model = splitting_model,
-              threshold = threshold,
-              bin_number = 4,
-              dropout = dropout,
-              log_device = log_device,
-              use_distance = use_distance,
-              random_labels = random_labels,
-              full_summary = full_summary,
-              split = 1,
-              split_seed = None,
-              split_number = None,
-              mrmr_size = mrmr_size,
-              read_splits = read_splits)
-
+    deepCinet(model=model,
+              cv_folds=cv_folds,
+              test_size=test_size,
+              gpu_level=gpu_level,
+              num_epochs=num_epochs,
+              batch_size=batch_size,
+              data_type=data_type,
+              results_path=results_path,
+              learning_rate=learning_rate,
+              regularization=regularization,
+              splitting_model=splitting_model,
+              threshold=threshold,
+              bin_number=4,
+              dropout=dropout,
+              log_device=log_device,
+              use_distance=use_distance,
+              random_labels=random_labels,
+              full_summary=full_summary,
+              split=1,
+              split_seed=None,
+              split_number=None,
+              mrmr_size=mrmr_size,
+              read_splits=read_splits)
 
 
 if __name__ == '__main__':
@@ -733,11 +727,9 @@ if __name__ == '__main__':
     optional.add_argument(
         "--read_splits",
         help="The way that generate input for the model read split or read from the pre generated inputs",
-        action = "store_true",
-        default = False
+        action="store_true",
+        default=False
     )
-
-
 
     # See if we are running in a SLURM task array
     array_id = os.getenv('SLURM_ARRAY_TASK_ID', 0)
