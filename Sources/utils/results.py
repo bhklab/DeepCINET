@@ -179,11 +179,10 @@ def _select_target(target_data_frame: pd.DataFrame, results_df: pd.DataFrame) ->
     merge = pd.merge(target_data_frame, merge, left_on='id', right_on='pB')
     merge = merge[['target_a', 'target', 'pA', 'pB', 'labels', 'predictions', 'probabilities',
                    'gather_a', 'gather_b']]
-    merge = merge.rename(index=str, columns={'target': 'target_value_b',
-                                             'target_a': 'target_value_a',
-                                             'gather_a':'predict_value_a',
-                                             'gather_b':'predict_value_b'})
-    merge['real_dist'] = merge['target_value_b'] - merge['target_value_a']
+    merge = merge.rename(index=str, columns={'target': 'target_b',
+                                             'gather_a':'predict_a',
+                                             'gather_b':'predict_b'})
+    merge['real_dist'] = merge['target_b'] - merge['target_a']
     return merge
 
 
@@ -223,4 +222,19 @@ def save_cox_results(results: Dict[str, pd.DataFrame], path: str):
     os.makedirs(path)
     for name, result in results.items():
         result = result[['pA', 'pB', 'distance', 'predict_a', 'predict_b', 'time_a', 'time_b', 'comp', 'predict_comp']]
+        result.to_csv(os.path.join(path, f"{name}_results.csv"))
+
+
+def save_ML_results(results: Dict[str, pd.DataFrame], path: str):
+    """
+    Save the cox results to disk. It creates a CSV file with the pairs and its values. Keeping in
+    mind that the results are pairs it uses the suffixes ``_a`` and ``_b`` to denote each member of the pair
+
+    """
+
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    os.makedirs(path)
+    for name, result in results.items():
+        result = result[['pA', 'pB', 'distance', 'predict_a', 'predict_b', 'target_a', 'target_b', 'comp', 'predict_comp']]
         result.to_csv(os.path.join(path, f"{name}_results.csv"))

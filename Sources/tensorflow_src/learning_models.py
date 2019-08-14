@@ -70,9 +70,11 @@ def learning_models(cv_folds: int = 1,
                     initial_seed=None,
                     mrmr_size=0,
                     read_splits=False,
-                    model_type: str = "ElasticNet",
+                    model_type: str="ElasticNet",
                     l1_ratio=0.01,
-                    alpha=0.9):
+                    alpha: float = 0.9,
+                    test_distance: float = 0,
+                    train_distance: float = 0):
     """
     deepCient
     :param initial_seed:
@@ -170,15 +172,16 @@ def learning_models(cv_folds: int = 1,
             train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,
                                                                               test_data,
                                                                               random=False,
-                                                                              distance=0.2)
+                                                                              train_distance=train_distance,
+                                                                              test_distance=test_distance)
 
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                 logger.info(f"Computing {name} c-index")
-                result = pd.merge(features[['id', 'time', 'predict', 'event']], pairs, left_on='id',
+                result = pd.merge(features[['id', 'target', 'predict']], pairs, left_on='id',
                                   right_on='pA', how='inner')
 
-                result = pd.merge(features[['id', 'time', 'predict', 'event']], result, left_on='id',
+                result = pd.merge(features[['id', 'target', 'predict']], result, left_on='id',
                                   right_on='pB', suffixes=('_b', '_a'), how='inner')
 
                 result['predict_comp'] = result['predict_b'] > result['predict_a']
@@ -197,7 +200,7 @@ def learning_models(cv_folds: int = 1,
             # pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
             logger.info("\r ")
             logger.info(f"Saving results at: {results_save_path}")
-            utils.save_cox_results(predictions, results_save_path)
+            utils.save_Ml_results(predictions, results_save_path)
             logger.info(f"result{counts}")
             logger.info("\r ")
 
