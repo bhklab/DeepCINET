@@ -13,7 +13,7 @@ import yaml
 import utils
 
 import multiprocessing
-#results = pd.DataFrame()
+results_all = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
 
 for drug, iter, reg, learning  in [('Doxorubicin',40,10.,0.0003),
@@ -25,7 +25,7 @@ for drug, iter, reg, learning  in [('Doxorubicin',40,10.,0.0003),
     for random_size in [50,100,200,250,300,400]:
         results = pd.DataFrame()
         epoch = int(iter * 40 / random_size)
-        running_times = 10
+        running_times = 40
         random_states = list(range(running_times * 2))
         #random.seed(1)
         #random.shuffle(random_states)
@@ -63,7 +63,11 @@ for drug, iter, reg, learning  in [('Doxorubicin',40,10.,0.0003),
             result = result.drop(['correct', 'total'])
             result['random state'] = random_states[i]
             result['number'] = i
+            result['drug'] = drug
+            result['random size'] = random_size
             results = results.append(result)
+            results_all = results_all.append(result)
             results.to_csv(os.path.join(results_path, "result.csv"))
             pd.DataFrame.from_dict(parameters, orient='index').to_csv(os.path.join(results_path, "config.csv"))
         results.to_csv(os.path.join(results_path, "result.csv"), index=False)
+    results_all.to_csv(os.path.join(results_path, "Allresult.csv"), index=False)
