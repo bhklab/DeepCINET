@@ -6,7 +6,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 import data
 import tensorflow_src.config as settings
+from utils.results import save_ml_results
 import utils
+
 from lifelines import CoxPHFitter
 from lifelines.utils import concordance_index
 import os
@@ -63,15 +65,15 @@ def learning_models(cv_folds: int = 1,
                     splitting_model: int = 0,
                     threshold: float = 3,
                     bin_number: int = 4,
-                    log_device=False,
-                    split=1,  # todo check if required to add split_seed and initial_seed to the argument
+                    log_device= False,
+                    split: int =1,  # todo check if required to add split_seed and initial_seed to the argument
                     split_seed=None,
                     split_number=None,  # it is used for the time we are using the generated test and train sets
                     initial_seed=None,
-                    mrmr_size=0,
+                    mrmr_size: int = 0,
                     read_splits=False,
                     model_type: str="ElasticNet",
-                    l1_ratio=0.01,
+                    l1_ratio: bool =0.01,
                     alpha: float = 0.9,
                     test_distance: float = 0,
                     train_distance: float = 0):
@@ -96,7 +98,7 @@ def learning_models(cv_folds: int = 1,
     :param feature_path:
     :param args: Command Line Arguments
     """
-    print(cv_folds)
+    #print(cv_folds)
     result_path = pathlib.Path(os.path.join(result_path, "Learning"))
     result_path.mkdir(parents=True, exist_ok=True)
 
@@ -106,35 +108,30 @@ def learning_models(cv_folds: int = 1,
     logger.info(f"Results path: {result_path}")
     result_path.mkdir(parents=True, exist_ok=True)
 
-    logger = utils.init_logger(f'train_{0}', str(result_path))
-
     logger.info("Script to train a ElasticNet")
 
     logger.info(f"FeaturePath is {feature_path}")
     # read features and clinical data frame the path is defined in the settings.py
     features = pd.read_csv(os.path.expandvars(feature_path), index_col=0)
-
-    logger.info(f"number of features is {len(features.index)}")
-    clinical_df = pd.read_csv(os.path.expandvars(target_path), index_col=0)
     logger.info("read Feature DataFrame")
-
-    # read the input path for the time that train and test are splitted before head by train_test_generator.py
+    logger.info(f"number of features is {len(features.index)}")
+    target_df = pd.read_csv(os.path.expandvars(target_path), index_col=0)
 
     number_feature = mrmr_size if mrmr_size > 0 else len(features.index)
-    logger.info(f"number of the features:{features.index}")
+    logger.info(f"number of the features:{features.size}")
     counts = {}
     for key in ['train', 'test', 'mixed']:
         counts[key] = {
             'c_index': []
         }
-    data_set = data.pair_data.SplitPairs()
-    models = {'LR', LogisticRegression(solver='liblinear', multi_class='ovr'),
-              'ElasticNet', ElasticNet(l1_ratio=l1_ratio, alpha=alpha),
-              'LDA', LinearDiscriminantAnalysis(),
-              'KNN', KNeighborsClassifier(),
-              'CART', DecisionTreeClassifier(),
-              'NB', GaussianNB(),
-              'SVM', SVC(gamma='auto')}
+    data_set = data.pair_data.SplitPairs( target_path, False)
+    models = {'LR': LogisticRegression(solver='liblinear', multi_class='ovr'),
+              'ElasticNet': ElasticNet(l1_ratio=l1_ratio, alpha=alpha),
+              'LDA': LinearDiscriminantAnalysis(),
+              'KNN': KNeighborsClassifier(),
+              'CART': DecisionTreeClassifier(),
+              'NB': GaussianNB(),
+              'SVM': SVC(gamma='auto')}
     if read_splits:
         cv_path = os.path.join(input_path, f"cv_{cv_folds}")
         random_path = os.path.join(cv_path, f"random_seed_{split_number}")
@@ -146,11 +143,14 @@ def learning_models(cv_folds: int = 1,
             test_ids['id'] = test_ids['id'].astype(str)
             train_ids['id'] = train_ids['id'].astype(str)
             train_data = data_set.target_data.merge(train_ids, left_on="id", right_on="id", how="inner")
+
             test_data = data_set.target_data.merge(test_ids, left_on="id", right_on="id", how="inner")
             logger.info(f"New fold {i}, {len(train_ids)} train pairs, {len(test_ids)} test pairs")
-            model = models[model_type]
+
+            model = models['ElasticNet']
+            #print(model)
             features_train = pd.merge(df_features.T,
-                                      train_data[['id', 'event', 'time']],
+                                      train_data[['id', 'target']],
                                       how='inner',
                                       left_index=True,
                                       right_on='id')
@@ -158,12 +158,12 @@ def learning_models(cv_folds: int = 1,
             # features_train = features_train.dropna()
             # del_low_var(features_train)
 
-            model.fit(features_train[df_features.T.columns], features_train['time'])
-            features_test = pd.merge(df_features.T, test_data[['id', 'event', 'time']], how='inner',
+            model.fit(features_train[df_features.T.columns], features_train['target'])
+            features_test = pd.merge(df_features.T, test_data[['id',  'target']], how='inner',
                                      left_index=True, right_on='id')
             # features_test.drop(['id'], axis='columns', inplace=True)
 
-            features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
+            features = pd.merge(df_features.T, target_df[['id', 'target']], how='inner',
                                 left_index=True, right_on='id')
             features['predict'] = model.predict(features[df_features.T.columns])
             # features['predict'] = rigid.predict(features[df_features.T.columns])
@@ -200,7 +200,7 @@ def learning_models(cv_folds: int = 1,
             # pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
             logger.info("\r ")
             logger.info(f"Saving results at: {results_save_path}")
-            utils.save_Ml_results(predictions, results_save_path)
+            utils.save_ml_results(predictions, results_save_path)
             logger.info(f"result{counts}")
             logger.info("\r ")
 
@@ -215,7 +215,7 @@ def learning_models(cv_folds: int = 1,
                                             split_seed)
         for i, (train_idx, test_idx) in enum_generator:
             if mrmr_size > 0:
-                df_features = data.select_mrmr_features(features, clinical_df.iloc[train_idx].copy(), mrmr_size).copy()
+                df_features = data.select_mrmr_features(features, target_df.iloc[train_idx].copy(), mrmr_size, survival=False).copy()
             else:
                 df_features = features.copy()
             train_data = data_set.target_data.iloc[train_idx]
@@ -225,18 +225,18 @@ def learning_models(cv_folds: int = 1,
 
             model = models[model_type]
             features_train = pd.merge(df_features.T,
-                                      train_data[['id', 'event', 'time']],
+                                      train_data[['id', 'target']],
                                       how='inner',
                                       left_index=True,
                                       right_on='id')
-            model.fit(features_train[df_features.T.columns], features_train['time'])
-            features_test = pd.merge(df_features.T, test_data[['id', 'event', 'time']], how='inner',
+            model.fit(features_train[df_features.T.columns], features_train['target'])
+            features_test = pd.merge(df_features.T, test_data[['id', 'target']], how='inner',
                                      left_index=True, right_on='id')
-            # features_test.drop(['id'], axis='columns', inplace=True)
 
-            features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
+
+            features = pd.merge(df_features.T, target_df[['id', 'target']], how='inner',
                                 left_index=True, right_on='id')
-            features['predict'] = elastic.predict(features[df_features.T.columns])
+            features['predict'] = model.predict(features[df_features.T.columns])
             # features['predict'] = rigid.predict(features[df_features.T.columns])
             # print(elastic.predict(features))
             # logger.info(radiomic_features.columns)
@@ -246,17 +246,17 @@ def learning_models(cv_folds: int = 1,
             # cph.print_summary()
 
             # clinical = clinical_df.iloc[train_idx]
-            radiomic_features = pd.merge(df_features.T, clinical_df[['id', 'event', 'time']], how='inner',
+            radiomic_features = pd.merge(df_features.T, target_df[['id', 'target']], how='inner',
                                          left_index=True, right_on='id')
 
             # radiomic_features['predict'] = cph.predict_partial_hazard(radiomic_features)
             predictions = {}
             for pairs, name in [(train_pairs, 'train'), (test_pairs, 'test'), (mixed_pairs, 'mixed')]:
                 logger.info(f"Computing {name} c-index")
-                result = pd.merge(features[['id', 'time', 'predict', 'event']], pairs, left_on='id',
+                result = pd.merge(features[['id', 'target', 'predict']], pairs, left_on='id',
                                   right_on='pA', how='inner')
 
-                result = pd.merge(features[['id', 'time', 'predict', 'event']], result, left_on='id',
+                result = pd.merge(features[['id', 'target', 'predict']], result, left_on='id',
                                   right_on='pB', suffixes=('_b', '_a'), how='inner')
 
                 result['predict_comp'] = result['predict_b'] > result['predict_a']
@@ -275,7 +275,7 @@ def learning_models(cv_folds: int = 1,
             # pd.DataFrame(counts).to_csv(os.path.join(results_save_path, 'result.csv'))
             logger.info("\r ")
             logger.info(f"Saving results at: {results_save_path}")
-            utils.save_cox_results(predictions, results_save_path)
+            utils.save_ml_results(predictions, results_save_path)
             logger.info(f"result{counts}")
             logger.info("\r ")
     return counts, predictions
@@ -316,7 +316,9 @@ def main(args: Dict[str, Any]) -> None:
                     split_number=1,
                     mrmr_size=mrmr_size,
                     read_splits=read_splits,
-                    model_type="ElasticNet")
+                    model_type="ElasticNet",
+                    train_distance=0,
+                    test_distance=0)
 
 
 if __name__ == '__main__':

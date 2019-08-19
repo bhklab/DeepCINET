@@ -384,6 +384,7 @@ def deepCinet(model: str,
                 train_ids['id'] = train_ids['id'].astype(str)
                 train_data = data_set.target_data.merge(train_ids, left_on="id", right_on="id", how="inner")
                 test_data = data_set.target_data.merge(test_ids, left_on="id", right_on="id", how="inner")
+                df_features = features.copy()
                 train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,
                                                                                   test_data,
                                                                                   random=random_labels,
@@ -458,6 +459,7 @@ def deepCinet(model: str,
                                                             mrmr_size).copy()
                 else:
                     df_features = features.copy()
+
                 train_data = data_set.target_data.iloc[train_idx]
                 test_data = data_set.target_data.iloc[test_idx]
                 train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,

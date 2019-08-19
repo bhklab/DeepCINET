@@ -9,10 +9,18 @@ import numpy as np
 from moviepy.editor import ImageSequenceClip
 
 from .logger import init_logger
+from .results import save_ml_results
 from .results import all_results, save_results, df_results, save_cox_results
 
 # Only export the functions that we need
-__all__ = ['init_logger', 'movie', 'save_results', 'all_results', 'ArgRange']
+__all__ = ['init_logger',
+           'movie',
+           'save_results',
+           'all_results',
+           'ArgRange',
+           'save_ml_results',
+           'save_cox_results',
+           'df_results']
 
 
 def movie(filename: str, array: np.ndarray, fps: int = 10, scale: float = 1.0):
@@ -70,3 +78,5 @@ class ArgRange(float):
 
     def __str__(self) -> str:
         return self.__repr__()
+
+

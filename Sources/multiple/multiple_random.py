@@ -4,7 +4,7 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-import config as settings
+import tensorflow_src.config as settings
 
 # import STprediction
 from tensorflow_src import train_test_models
@@ -16,15 +16,15 @@ import multiprocessing
 results_all = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
 
-for drug, iter, reg, learning  in [('Doxorubicin',40,10.,0.0003),
-                                   ('Gemcitabine',30,4.,0.00021),
-                                   ('lapatinib',48,6.,0.0001),
-                                   ('Bortezomib',24,3.,0.0003),
-                                   ('Erlotinib',60,20.,0.0002),
-                                   ('Vorinostat',52,10.,0.0003)]:
-    for random_size in [50,100,200,250,300,400]:
+for drug, iter, reg, learning  in [#('Doxorubicin',20,12.,0.0002),
+                                   #('Gemcitabine',30,4.,0.0002),
+                                   ('lapatinib',48,6.,0.0001)]:
+                                   #('Bortezomib',24,3.,0.0003),
+                                   #('Erlotinib',60,20.,0.0002),
+                                   #('Vorinostat',52,10.,0.0003)]:
+    for random_size in [250,300,400]:
         results = pd.DataFrame()
-        epoch = int(iter * 40 / random_size)
+        epoch = 3# int(iter * 40 / random_size)
         running_times = 40
         random_states = list(range(running_times * 2))
         #random.seed(1)
@@ -69,5 +69,5 @@ for drug, iter, reg, learning  in [('Doxorubicin',40,10.,0.0003),
             results_all = results_all.append(result)
             results.to_csv(os.path.join(results_path, "result.csv"))
             pd.DataFrame.from_dict(parameters, orient='index').to_csv(os.path.join(results_path, "config.csv"))
-        results.to_csv(os.path.join(results_path, "result.csv"), index=False)
+        results.to_csv(os.path.join(results_path, f"result_{random_size}.csv"), index=False)
     results_all.to_csv(os.path.join(results_path, "Allresult.csv"), index=False)

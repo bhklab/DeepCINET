@@ -12,9 +12,24 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 
-import config as settings
+import tensorflow_src.config as settings
 
 target_df = None
+
+
+def save_ml_results(results: Dict[str, pd.DataFrame], path: str):
+    """
+    Save the cox results to disk. It creates a CSV file with the pairs and its values. Keeping in
+    mind that the results are pairs it uses the suffixes ``_a`` and ``_b`` to denote each member of the pair
+
+    """
+
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    os.makedirs(path)
+    for name, result in results.items():
+        result = result[['pA', 'pB', 'distance', 'predict_a', 'predict_b', 'target_a', 'target_b', 'comp', 'predict_comp']]
+        result.to_csv(os.path.join(path, f"{name}_results.csv"))
 
 
 # Get the mixed results
@@ -225,16 +240,3 @@ def save_cox_results(results: Dict[str, pd.DataFrame], path: str):
         result.to_csv(os.path.join(path, f"{name}_results.csv"))
 
 
-def save_ML_results(results: Dict[str, pd.DataFrame], path: str):
-    """
-    Save the cox results to disk. It creates a CSV file with the pairs and its values. Keeping in
-    mind that the results are pairs it uses the suffixes ``_a`` and ``_b`` to denote each member of the pair
-
-    """
-
-    if os.path.exists(path):
-        shutil.rmtree(path)
-    os.makedirs(path)
-    for name, result in results.items():
-        result = result[['pA', 'pB', 'distance', 'predict_a', 'predict_b', 'target_a', 'target_b', 'comp', 'predict_comp']]
-        result.to_csv(os.path.join(path, f"{name}_results.csv"))

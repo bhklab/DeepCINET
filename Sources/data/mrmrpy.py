@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 
-#os.environ["RHOME"] = "/Library/Frameworks/R.framework/Resources"
+# os.environ["RHOME"] = "/Library/Frameworks/R.framework/Resources"
 import rpy2.robjects as robjects
 import rpy2.robjects.packages as rpackages
 from rpy2.robjects.packages import importr
@@ -28,12 +28,14 @@ def variance_threshold_selector(data, threshold=0.01):
 
 
 def mrmr_selection(features: pd.DataFrame,
-                   clinical_info: pd.DataFrame,
+                   target_df: pd.DataFrame,
                    solution_count: int,
-                   feature_count: int):
+                   feature_count: int,
+                   survial: bool = False):
     '''
      This function use mrmr feature selection to select specific number of features
 
+     :param survial:
      :param features      : The radiomics features or clinical info dataset
      :param clinical_info : The clinical info dataset (only the 'time' and 'event' field is needed in this function)
      :param solution_count: The number of solution which is used in ensamble function [Currently we only use 1 solution]
@@ -57,11 +59,16 @@ def mrmr_selection(features: pd.DataFrame,
 
                 }
                 ''')
+
     r_mrmrSelection = robjects.r['mrmrSelection']
     # Merge the features and labels (the survival time, which are the 'time' and 'event'  field of clinical information)
-    clinical = clinical_info.copy()
-    clinical.set_index('id', inplace=True)
-    features = features.merge(clinical[['time', 'event']], how='inner', left_index=True, right_index=True)
+    target = target_df.copy()
+    if not survival:
+        target['time'] = target['target']
+        target['event'] = 1
+
+    target.set_index('id', inplace=True)
+    features = features.merge(target[['time', 'event']], how='inner', left_index=True, right_index=True)
     all_features = r_mrmrSelection(features, feature_count=feature_count, solution_count=solution_count)
     selected_features = pandas2ri.ri2py_dataframe(all_features)
     selected_features = selected_features.sub(1)
@@ -69,26 +76,34 @@ def mrmr_selection(features: pd.DataFrame,
 
 
 def select_mrmr_features(dataframe_features: pd.DataFrame,
-                         clinical_df: pd.DataFrame,
+                         target_df: pd.DataFrame,
                          mrmr_size: int,
-                         ):
+                         survival: bool = False):
     """
       select the mrmr features
 
       :param dataframe_features: DataFrame of the features
-      :param clinical_df: DataFrame of the clinical data
+      :param target_df: DataFrame of the target data
       :param mrmr_size: The number of features which should be selected with mrmr
       :param train_ids: List of the train_ids that should be considered in mrmr
       :return: DataFrame that contain selected features
     """
-    clinicals = clinical_df  # clinical_df[train_ids.tolist()]
+    target = target_df  # clinical_df[train_ids.tolist()]
     features = dataframe_features.T  # todo apply on all the model
     features = variance_threshold_selector(features)
     mrmr_list = mrmr_selection(features=features,
-                               clinical_info=clinicals,
+                               clinical_info=target,
                                solution_count=1,
-                               feature_count=mrmr_size)
+                               feature_count=mrmr_size,
+                               survival=survival)
 
     features = dataframe_features.iloc[mrmr_list]  # todo check iloc is better or loc should check
-    #features.to_csv('mrmr.csv')
+    # features.to_csv('mrmr.csv')
     return features
+
+
+def select_valid_features(dataframe_features: pd.DataFrame,
+                          target_df: pd.DataFrame):
+    features = dataframe_features.T
+    features = features.merge(target_df[['time', 'event']], how='inner', left_index=True, right_index=True)
+    return variance_threshold_selector(features).drop(['time', 'event'], axis=1).T
