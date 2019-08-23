@@ -17,12 +17,13 @@ import multiprocessing
 results_all = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
 
-for drug, iter, reg, learning  in [('Doxorubicin',40,10.,0.0003),
-                                   ('Gemcitabine',30,4.,0.00021),
+for drug, iter, reg, learning  in [#('Doxorubicin',40,10.,0.0003),
+                                   #('Gemcitabine',30,4.,0.00021),
                                    ('lapatinib',48,6.,0.0001),
-                                   ('Bortezomib',24,3.,0.0003),
+                                   #('Bortezomib',24,3.,0.0003),
                                    ('Erlotinib',60,20.,0.0002),
-                                   ('Vorinostat',52,10.,0.0003)]:
+                                  # ('Vorinostat',52,10.,0.0003)
+                                    ]:
     for random_size in [50,100,200,250,300,400]:
         results = pd.DataFrame()
         epoch = int(iter * 40 / random_size)
@@ -37,6 +38,7 @@ for drug, iter, reg, learning  in [('Doxorubicin',40,10.,0.0003),
         logger = utils.init_logger("multiple run Ml random")
         model_type = "ElasticNet"
         for i in range(running_times):
+            feature_path = f"{input_train_test}/cv_1/random_seed_{i}/splitting_models_1/gene_expression.csv"
             parameters = { 'target_path': target_path,
                            'feature_path': feature_path,
                            'input_path': input_train_test,

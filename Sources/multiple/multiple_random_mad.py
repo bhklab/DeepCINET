@@ -16,17 +16,17 @@ import multiprocessing
 results_all = pd.DataFrame()
 mixed_c_index, train_c_index, test_c_index = [], [], []
 
-for drug, iter, reg, learning  in [('Doxorubicin',20,12.,0.0002),
-                                   ('Gemcitabine',30,4.,0.0002),
-                                   ('lapatinib',30,10.,0.0002),
-                                   ('Bortezomib',24,3.,0.0003),
-                                   ('Erlotinib',60,20.,0.0002),
-                                   ('Vorinostat',52,10.,0.0003)
+for drug, iter, reg_, learning in [#('Doxorubicin',20,12.,0.0002),
+                                   #('Gemcitabine',30,4.,0.0002),
+                                   #('lapatinib',25,30.,0.0002),
+                                   #('Bortezomib',24,3.,0.0003),
+                                   ('Erlotinib',60,12.,0.0002),
+                                   #('Vorinostat',52,10.,0.0003)
                                   ]:
-    for random_size in [50,100,200,250,300]:
+    for random_size,reg in [(50,30.),(100,25.),(200,20.),(250,20.), (300,12.),(400,10.)]:
         results = pd.DataFrame()
-        epoch = int(iter * 40 / random_size)
-        running_times = 40
+        epoch = int(iter * 30 / random_size)
+        running_times = 20
         random_states = list(range(running_times * 2))
         #random.seed(1)
         #random.shuffle(random_states)

@@ -11,6 +11,7 @@ from tensorflow_src import train_test_models
 import random
 import yaml
 import utils
+import tensorflow_src.config as config
 
 import multiprocessing
 results = pd.DataFrame()
@@ -20,21 +21,21 @@ random_states = list(range(running_times * 2))
 random.seed(1)
 random.shuffle(random_states)
 logger = utils.init_logger("multiple run")
-results_path = settings.SESSION_SAVE_PATH
+results_path = config.SESSION_SAVE_PATH
 for i in range(running_times):
     parameters = dict(model='ClinicalOnlySiamese',
-                      target_path=settings.DATA_PATH_TARGET,
-                      feature_path=settings.DATA_PATH_FEATURE,
-                      input_path=settings.DATA_PATH_INPUT_TEST_TRAIN,
-                      results_path=settings.SESSION_SAVE_PATH,
-                      num_epochs=20,
-                      batch_size=200,
+                      target_path=config.DATA_PATH_TARGET,
+                      feature_path=config.DATA_PATH_FEATURE,
+                      input_path=config.DATA_PATH_INPUT_TEST_TRAIN,
+                      results_path=results_path,
+                      num_epochs=2,
+                      batch_size=40,
                       splitting_model=1,
                       learning_rate=0.0002,
-                      dropout=.3,
+                      dropout=.2,
                       threshold=4,
                       split=i, save_model=True,
-                      regularization=20.0,
+                      regularization=12.,
                       split_seed=random_states[i],
                       initial_seed=None,
                       mrmr_size=0,
@@ -42,7 +43,7 @@ for i in range(running_times):
                       full_summary=True,
                       cv_folds=1,
                       split_number=i,
-                      train_distance=0.2,
+                      train_distance=0.0,
                       test_distance=0.2,
                       survival=False
                      )
