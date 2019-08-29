@@ -9,7 +9,7 @@ import sys
 import shutil
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-import config
+import tensorflow_src.config as config
 # import STprediction
 from tensorflow_src import train_test_models
 
