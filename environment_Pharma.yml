@@ -49,56 +49,57 @@ DATA_CACHE: ${DATA}/.cache
 #ML:
 #   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/Result_ML/lapatinib
 
-#DATA_PROCESSED:
-#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/
-#  CLINICAL_INFO: train_test_response_lapatinib.csv
-#  RADIOMIC: train_test_expression_lapatinib.csv
-#  VOLUME_CLINIC: train_test_expression_lapatinib.csv
-#  CLINIC: CTRPv2_lapatinib.csv
-#  INPUT_TEST_TRAIN: train_test_lapatinib
-#  SPLIT: Split.csv
-#
-#
-#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result/lapatinib
-## Default path to save the summaries
-#SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Summaries/lapatinib
+DATA_PROCESSED:
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/
+  TARGET: drug_response/drug_CTRPv2_lapatinib.csv
+  FEATURE: L1000_gene_expression/gene_CTRPv2_lapatinib.csv
+  VOLUME_CLINIC: train_test_expression_lapatinib.csv
+  CLINIC: CTRPv2_lapatinib.csv
+  INPUT_TEST_TRAIN: train_test_lapatinib
+  SPLIT: Split.csv
+  IMAGE_PATH: aa
+
+
+SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/test/Result/DeepCInet/lapatinib
+# Default path to save the summaries
+SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/test/Result/Summaries/lapatinib
 #RANDOM_SEED:
 #
 #
 #
 ## Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
+LOG:
+  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result/lapatinib/log
+  LEVEL_CONSOLE: 20
+  LEVEL_FILE: 10
+#
+ML:
+   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_ML/lapatinib
+
+
+#DATA_PROCESSED:
+#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/
+#  TARGET: drug_response/
+#  FEATURE: gene_expression/
+#  VOLUME_CLINIC: Bio_gene_expression_CTRPv2_lapatinib.csv
+#  CLINIC: drug_response/CTRPv2_lapatinib_Bio.csv
+#  INPUT_TEST_TRAIN: train_test
+#  SPLIT: Split.csv
+#  IMAGE_PATH: aa
+#
+#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result/rci/
+## Default path to save the summaries
+#SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result/rci/
+#RANDOM_SEED:
+#
+## Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 #LOG:
-#  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/log
+#  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Result/CTRPv2_gCSI/rci/log
 #  LEVEL_CONSOLE: 20
 #  LEVEL_FILE: 10
 #
 #ML:
-#   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_ML/lapatinib
-
-
-DATA_PROCESSED:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/CTRPv2_gCSI/
-  TARGET: drug_response/
-  FEATURE: gene_expression/
-  VOLUME_CLINIC: Bio_gene_expression_CTRPv2_lapatinib.csv
-  CLINIC: drug_response/CTRPv2_lapatinib_Bio.csv
-  INPUT_TEST_TRAIN: train_test
-  SPLIT: Split.csv
-  IMAGE_PATH: aa
-
-SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/
-# Default path to save the summaries
-SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/
-RANDOM_SEED:
-
-# Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
-LOG:
-  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/random/Result/CTRPv2_gCSI/rci/log
-  LEVEL_CONSOLE: 20
-  LEVEL_FILE: 10
-
-ML:
-   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Biomarker/CTRPv2/Result_ML/lapatinib
+#   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result/rci/Result_ML/lapatinib
 
 
 #
@@ -187,29 +188,50 @@ COX:
 
 #These parameter are used for hyper parameter selection in cpu and gpu hyper parameter selection
 HYPER_PARAM:
+  path: "hyperParam_main_path"
   model:
-  - ClinicalOnlySiamese
-  - ClinicalOnlySiamese2
-  - ClinicalOnlySiamese3
-  - ClinicalVolumeSiamese
-  - ClinicalVolumeSiamese2
-  - ClinicalVolumeSiamese3
+  - ScalarOnlySiamese
+  - ScalarOnlySiamese1
+  - ScalarOnlySiamese2
+  - ScalarOnlySiamese3
+  - ScalarOnlySiamese4
+
   cv_folds:
-  - 5
+  - 1
   test_size: .25
   mrmr_size:
   - 0
   num_epochs:
-  - 100
+  - 2
+  - 3
+  - 4
+  - 6
+  - 8
+  - 10
   batch_size:
   - 100
+  - 200
   regularization:
+  - 0.3
   - 0.5
-  - 0.8
+  - 1.0
+  - 2.
+  - 3.
+  - 4.
+  dropout:
+  - 0.1
+  - 0.2
+  - 0.3
   learningRate:
+  - 0.0001
+  - 0.0002
   - 0.0003
-  running_time: 5
+  - 0.001
+  running_times: 3
   log_path: ${Home}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/HYPERPARAM
+  mixed_result_path: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/testHP
+
+
 
 #These parameter are used for generating inputs in "train_test_generators.py"
 GENERATOR:
@@ -217,8 +239,9 @@ GENERATOR:
   MRMR: []
   CV_FOLDS: [1,5]
   TEST_SIZE: 0.20
-  SPLIT_NUMBER: 10
+  SPLIT_NUMBER: 50
   SPLITING_MODEL: [1]
-  OUTPUT_PATH: 'train_test_lapatinib'
-  INPUT_CLINICAL: 'CTRPv2_lapatinib.csv'
-  INPUT_FEATURES: 'L100_gene_expression_CTRPv2_lapatinib.csv'
+  OUTPUT_PATH: 'CTRPv2/train_test_GDC-0941'
+  TARGET_PATH: 'drug_response/drug_CTRPv2_GDC-0941.csv'
+  INPUT_FEATURES: 'L1000_gene_expression/gene_CTRPv2_GDC-0941.csv'
+  SURVIVAL: False
