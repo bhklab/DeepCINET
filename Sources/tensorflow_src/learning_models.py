@@ -4,7 +4,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
-import data
+
 import tensorflow_src.config as settings
 from utils.results import save_ml_results
 import utils
@@ -18,13 +18,12 @@ from typing import Dict, Tuple, Any, Iterator
 from data.train_test import get_sets_generator, get_sets_reader
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import Ridge
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.linear_model import LogisticRegression, BayesianRidge
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC
-
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
+import data
 # !/usr/bin/env python3
 """
 The train module is a script that trains different model for clinical and radiomic data.
@@ -72,7 +71,7 @@ def learning_models(cv_folds: int = 1,
                     initial_seed=None,
                     mrmr_size: int = 0,
                     read_splits=False,
-                    model_type: str="ElasticNet",
+                    model_type: str="RF",
                     l1_ratio: bool =0.01,
                     alpha: float = 0.9,
                     test_distance: float = 0,
@@ -127,11 +126,11 @@ def learning_models(cv_folds: int = 1,
     data_set = data.pair_data.SplitPairs( target_path, False)
     models = {'LR': LogisticRegression(solver='liblinear', multi_class='ovr'),
               'ElasticNet': ElasticNet(l1_ratio=l1_ratio, alpha=alpha),
-              'LDA': LinearDiscriminantAnalysis(),
-              'KNN': KNeighborsClassifier(),
-              'CART': DecisionTreeClassifier(),
+              'Baysian': BayesianRidge(),
+              'KNN': KNeighborsRegressor(),
+              'RF': RandomForestRegressor(max_depth=10, n_estimators=100),
               'NB': GaussianNB(),
-              'SVM': SVC(gamma='auto')}
+              'SVM': SVR(gamma='auto')}
     if read_splits:
         cv_path = os.path.join(input_path, f"cv_{cv_folds}")
         random_path = os.path.join(cv_path, f"random_seed_{split_number}")
@@ -147,7 +146,7 @@ def learning_models(cv_folds: int = 1,
             test_data = data_set.target_data.merge(test_ids, left_on="id", right_on="id", how="inner")
             logger.info(f"New fold {i}, {len(train_ids)} train pairs, {len(test_ids)} test pairs")
 
-            model = models['ElasticNet']
+            model = models[model_type]
             #print(model)
             features_train = pd.merge(df_features.T,
                                       train_data[['id', 'target']],
@@ -299,6 +298,7 @@ def main(args: Dict[str, Any]) -> None:
     feature_path = args['feature_path']
     target_path = args['target_path']
     input_path = args['input_path']
+    model_type = args['model_type']
 
     learning_models(cv_folds=cv_folds,
                     test_size=test_size,
@@ -410,6 +410,13 @@ if __name__ == '__main__':
         help="The way that generate input for the model read split or read from the pre generated inputs",
         action="store_true",
         default=False
+    )
+    optional.add_argument(
+        "--model-type",
+        help="the type of the model",
+        type=str,
+        default="elastic_net"
+
     )
 
     optional.add_argument(
