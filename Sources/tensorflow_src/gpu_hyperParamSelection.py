@@ -1,14 +1,15 @@
 import tensorflow as tf
+
 from test_tube import Experiment, HyperOptArgumentParser
 import pandas as pd
 import random
-import config
+
 import os
 import sys
 import shutil
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-
+import config
 # import STprediction
 from tensorflow_src import train_test_models
 
