@@ -1,2 +1,0 @@
-from tensorflow_src.learning_models import learning_models
-from tensorflow_src.train_test_models import deepCinet
