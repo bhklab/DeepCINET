@@ -21,7 +21,7 @@ cfg = config.HYPER_PARAM
 running_times = cfg['running_times']
 
 models = cfg['model']
-# print(models)
+#print(models)
 # randomly feed random state.
 random_states = list(range(running_times * 2))
 random.seed(1)
@@ -117,8 +117,8 @@ def hyperParamSelection(target_path: str = config.DATA_PATH_TARGET,
     parser.add_argument('--log_path', default=cfg['log_path'])
     parser.add_argument('--target_path', default=target_path)
     parser.add_argument('--feature_path', default=feature_path)
-    parser.add_argument('--input_path', default=input_path)
-    parser.add_argument('--result_path', default=results_path)
+    parser.add_argument('--input_path',default=input_path)
+    parser.add_argument('--result_path', default = results_path)
     parser.opt_list('--model', default='ScalarOnlySiamese', options=cfg['model'], tunable=True)
     parser.opt_list('--mrmr_size', default=0, options=cfg['mrmr_size'], tunable=True)
     parser.opt_list('--num_epochs', default=5, options=cfg['num_epochs'], tunable=True)
@@ -126,11 +126,10 @@ def hyperParamSelection(target_path: str = config.DATA_PATH_TARGET,
     parser.opt_list('--regularization', default=0.5, options=cfg['regularization'], tunable=True)
     parser.opt_list('--learningRate', default=0.0002, options=cfg['learningRate'], tunable=True)
 
+
     hyperparams = parser.parse_args()
 
-    # optimize on 4 gpus at the same time
-    # each gpu will get 1 experiment with a set of hyperparams
-    hyperparams.optimize_parallel_gpu(trainDeepCInet, gpu_ids=['1', '0', '3', '2'])
+    hyperparams.optimize_parallel_gpu(trainDeepCInet, gpu_ids=['1', '0', '3', '2'], nb_trials=10, nb_workers=10)
 
 
 hyperParamSelection()
