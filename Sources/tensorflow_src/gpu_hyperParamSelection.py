@@ -1,6 +1,5 @@
 import tensorflow as tf
 from test_tube import Experiment, HyperOptArgumentParser
-import config
 import pandas as pd
 import random
 import config
