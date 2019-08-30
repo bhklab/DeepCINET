@@ -31,7 +31,7 @@ def mrmr_selection(features: pd.DataFrame,
                    target_df: pd.DataFrame,
                    solution_count: int,
                    feature_count: int,
-                   survial: bool = False):
+                   survival: bool = False):
     '''
      This function use mrmr feature selection to select specific number of features
 
@@ -92,7 +92,7 @@ def select_mrmr_features(dataframe_features: pd.DataFrame,
     features = dataframe_features.T  # todo apply on all the model
     features = variance_threshold_selector(features)
     mrmr_list = mrmr_selection(features=features,
-                               clinical_info=target,
+                               target_df=target,
                                solution_count=1,
                                feature_count=mrmr_size,
                                survival=survival)

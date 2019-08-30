@@ -22,6 +22,7 @@ def get_sets_generator(dataset: data.pair_data.SplitPairs,
     """
     Get the generator that creates the train/test sets and the folds if Cross Validation is used
 
+    :param dataset:
     :param cv_folds: Number of Cross Validation folds
     :param test_size: Number between ``0.0`` and ``1.0`` with a proportion of test size compared against the
                       whole set

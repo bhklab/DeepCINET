@@ -111,21 +111,23 @@ def hyperParamSelection(target_path: str = config.DATA_PATH_TARGET,
     parser = HyperOptArgumentParser(strategy='random_search')
     parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese7')
     parser.add_argument('--log_path', default=cfg['log_path'])
+    parser.add_argument('--target_path', default=target_path)
+    parser.add_argument('--feature_path', default=feature_path)
+    parser.add_argument('--input_path', default=input_path)
+    parser.opt_list('--result_path', default=results_path)
     parser.opt_list('--model', default='ScalarOnlySiamese', options=cfg['model'], tunable=True)
     parser.opt_list('--mrmr_size', default=0, options=cfg['mrmr_size'], tunable=True)
     parser.opt_list('--num_epochs', default=5, options=cfg['num_epochs'], tunable=True)
     parser.opt_list('--batch_size', default=40, options=cfg['batch_size'], tunable=True)
     parser.opt_list('--regularization', default=0.5, options=cfg['regularization'], tunable=True)
     parser.opt_list('--learningRate', default=0.0002, options=cfg['learningRate'], tunable=True)
-    parser.opt_list('--target_path', default=target_path)
-    parser.opt_list('--feature_path', default=feature_path)
-    parser.opt_list('--input_path',default=input_path)
-    parser.opt_list('--result_path', default = results_path)
+    parser.opt_list('--drug')
 
     hyperparams = parser.parse_args()
 
     # optimize on 4 gpus at the same time
     # each gpu will get 1 experiment with a set of hyperparams
     hyperparams.optimize_parallel_cpu(trainDeepCInet, nb_trials=100, nb_workers=2)
+
 
 hyperParamSelection()

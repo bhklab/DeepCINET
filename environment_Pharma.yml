@@ -228,6 +228,12 @@ HYPER_PARAM:
   - 0.0003
   - 0.001
   running_times: 3
+  drug:
+  -Paclitaxel', 'Methotrexate', 'Erlotinib', 'Bortezomib', 'TGX221',
+       'Pictilisib', 'Idelalisib', 'Crizotinib', 'Dasatinib', '5-Fluorouracil',
+       'Azacitidine', 'Gemcitabine', 'Oligomycin A', 'JQ1 compound',
+       'Ibrutinib', 'Narciclasine', 'Tanespimycin', 'GSK2636771',
+       'Doxorubicin', 'Lapatinib', 'Entinostat', 'Sirolimus', 'Vorinostat'
   log_path: ${Home}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/HYPERPARAM
   mixed_result_path: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/testHP
 
