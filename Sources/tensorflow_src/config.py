@@ -45,9 +45,9 @@ DATA_PATH_RADIOMIC = os.path.expandvars(cfg['DATA_RAW']['RADIOMIC'])
 DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
 
 DATA_PATH_PROCESSED = os.path.expandvars(cfg['DATA_PROCESSED']['ROOT'])
-DATA_PATH_TARGET = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['TARGET'])
-DATA_PATH_FEATURE = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['FEATURE'])
-DATA_PATH_INPUT_TEST_TRAIN = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['INPUT_TEST_TRAIN'])
+DATA_PATH_TARGET = os.path.join(os.path.expandvars(DATA_PATH_PROCESSED), os.path.expandvars(cfg['DATA_PROCESSED']['TARGET']))
+DATA_PATH_FEATURE = os.path.join(os.path.expandvars(DATA_PATH_PROCESSED), os.path.expandvars(cfg['DATA_PROCESSED']['FEATURE']))
+DATA_PATH_INPUT_TEST_TRAIN = os.path.join(os.path.expandvars(DATA_PATH_PROCESSED), os.path.expandvars(cfg['DATA_PROCESSED']['INPUT_TEST_TRAIN']))
 
 #DATA_PATH_CLINICAL_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['CLINICAL_INFO'])
 #DATA_PATH_RADIOMIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['RADIOMIC'])
@@ -56,7 +56,7 @@ DATA_PATH_VOLUME_CLINIC_PROCESSED = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_
 DATA_PATH_INPUT_TEST_TRAIN = os.path.join(DATA_PATH_PROCESSED, cfg['DATA_PROCESSED']['INPUT_TEST_TRAIN'])
 DATA_PATH_IMAGE = os.path.join(cfg['DATA_PROCESSED']['IMAGE_PATH'])
 
-LOG_DIR = os.path.join(cfg['LOG']['DIR'])
+LOG_DIR = os.path.join(os.path.expandvars(cfg['LOG']['DIR']))
 # Log dir, fallback to current directory or we can specify it in the batch file or in the yaml file
 # LOG_DIR = os.path.abspath(os.getenv('LOG_DIR', './'))
 LOG_LEVEL_CONSOLE = int(cfg['LOG']['LEVEL_CONSOLE'])
