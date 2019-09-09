@@ -8,8 +8,6 @@ import os
 import sys
 import shutil
 import pathlib
-import logger
-
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 import tensorflow_src.config as config
 # import STprediction
@@ -137,6 +135,4 @@ def hyperParamSelection():
 
 
 hyperParamSelection()
-
-
 
