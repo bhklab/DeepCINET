@@ -119,7 +119,7 @@ def hyperParamSelection():
 
     parser = HyperOptArgumentParser(strategy='random_search')
     parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese')
-    parser.add_argument('--log_path', default=cfg['log_path'])
+    parser.add_argument('--log_path', default=os.path.expandvars(cfg['log_path']))
     parser.opt_list('--model', default='ScalarOnlySiamese', options=cfg['model'], tunable=True)
     parser.opt_list('--mrmr_size', default=0, options=cfg['mrmr_size'], tunable=True)
     parser.opt_list('--num_epochs', default=5, options=cfg['num_epochs'], tunable=True)
