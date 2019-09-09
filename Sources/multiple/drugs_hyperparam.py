@@ -40,11 +40,10 @@ def trainDeepCInet(hparams):
     results1 = pd.DataFrame()
     exp.argparse(hparams)
     results_path = os.path.join(pathlib.Path(config.DATA_PATH_PROCESSED), 'Result')
-    input_path = os.path.join(pathlib.Path(config.DATA_PATH_PROCESSED))
-    results_path = os.path.join(results_path, f"{drug}")
-    target_path = os.path.join(input_path, f"drug_response/drug_CTRPv2_{drug}.csv")
-    feature_path = os.path.join(input_path, f"L1000_gene_expression/gene_CTRPv2_{drug}.csv")
-    input_path = os.path.join(input_path, f"train_test_{drug}")
+    results_path = os.path.join(config.SESSION_SAVE_PATH)
+    target_path = config.DATA_PATH_TARGET
+    feature_path = config.DATA_PATH_FEATURE
+    input_path = config.DATA_PATH_INPUT_TEST_TRAIN
 
     for i in range(running_times):
         parameters = dict(model=hparams.model,
@@ -126,9 +125,6 @@ def hyperParamSelection():
     parser.opt_list('--batch_size', default=40, options=cfg['batch_size'], tunable=True)
     parser.opt_list('--regularization', default=0.5, options=cfg['regularization'], tunable=True)
     parser.opt_list('--learningRate', default=0.0002, options=cfg['learningRate'], tunable=True)
-    parser.opt_list('--drug',default='lapatinib', options=cfg['drug'], tunable=True)
-
-
     hyperparams = parser.parse_args()
 
     hyperparams.optimize_parallel_gpu(trainDeepCInet, gpu_ids=['1', '0', '3', '2'], nb_trials=10, nb_workers=10)
