@@ -88,7 +88,7 @@ def trainDeepCInet(hparams):
         # if (i % 3 == 0):
         # os.path.join(cfg['mixed_result_path'], f"epoch{hparams.num_epochs}",.csv"
         # results1.to_csv(pd.read_csv()))
-    path = os.path.join(cfg['mixed_result_path'], f"model{hparams.model}_"
+    path = os.path.join(os.path.expandvars(cfg['mixed_result_path']), f"model{hparams.model}_"
                                                   f"epoch{hparams.num_epochs}_"
                                                   f"batch{hparams.batch_size}_"
                                                   f"regularization{hparams.regularization}_"
@@ -110,7 +110,7 @@ def hyperParamSelection(target_path: str = config.DATA_PATH_TARGET,
     # Use either random_search or grid_search for tuning
     parser = HyperOptArgumentParser(strategy='random_search')
     parser.add_argument('--test_tube_exp_name', default='DeepCINET_ScalarOnlySiamese7')
-    parser.add_argument('--log_path', default=cfg['log_path'])
+    parser.add_argument('--log_path', default=os.path.expandvars(cfg['log_path']))
     parser.add_argument('--target_path', default=target_path)
     parser.add_argument('--feature_path', default=feature_path)
     parser.add_argument('--input_path', default=input_path)
@@ -121,13 +121,12 @@ def hyperParamSelection(target_path: str = config.DATA_PATH_TARGET,
     parser.opt_list('--batch_size', default=40, options=cfg['batch_size'], tunable=True)
     parser.opt_list('--regularization', default=0.5, options=cfg['regularization'], tunable=True)
     parser.opt_list('--learningRate', default=0.0002, options=cfg['learningRate'], tunable=True)
-    parser.opt_list('--drug')
 
     hyperparams = parser.parse_args()
 
     # optimize on 4 gpus at the same time
     # each gpu will get 1 experiment with a set of hyperparams
-    hyperparams.optimize_parallel_cpu(trainDeepCInet, nb_trials=10000, nb_workers=4)
+    hyperparams.optimize_parallel_cpu(trainDeepCInet, nb_trials=10, nb_workers=4)
 
 
 hyperParamSelection()
