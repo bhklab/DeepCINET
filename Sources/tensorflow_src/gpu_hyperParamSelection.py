@@ -63,7 +63,8 @@ def trainDeepCInet(hparams):
                           split_number=i,
                           train_distance=0.2,
                           test_distance=0.2,
-                          survival=False
+                          survival=False,
+                          gpu_allow_growth=True
                           )
         counts, predictions = train_test_models.deepCinet(**parameters)
 
