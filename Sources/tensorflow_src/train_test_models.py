@@ -297,7 +297,7 @@ def deepCinet(model: str,
               cv_folds: int = 1,
               test_size: float = .2,
               gpu_level: int = 0,
-              gpu_allow_growth=False,
+              gpu_allow_growth=True,
               num_epochs: int = 1,
               batch_size: int = 20,
               target_path: str = settings.DATA_PATH_TARGET,
@@ -370,6 +370,7 @@ def deepCinet(model: str,
                                  seed=initial_seed)
     conf = tf.ConfigProto(log_device_placement=log_device)
     conf.gpu_options.allow_growth = gpu_allow_growth
+    conf.gpu_options.per_process_gpu_memory_fraction = 0.25
 
     with tf.Session(config=conf) as sess:
         counts = {}
