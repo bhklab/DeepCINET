@@ -126,7 +126,7 @@ def hyperParamSelection(target_path: str = config.DATA_PATH_TARGET,
 
     # optimize on 4 gpus at the same time
     # each gpu will get 1 experiment with a set of hyperparams
-    hyperparams.optimize_parallel_cpu(trainDeepCInet, nb_trials=10, nb_workers=4)
+    hyperparams.optimize_parallel_cpu(trainDeepCInet, nb_trials=10000, nb_workers=4)
 
 
 hyperParamSelection()

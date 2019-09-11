@@ -59,7 +59,7 @@ def trainDeepCInet(hparams):
                           mrmr_size=hparams.mrmr_size,
                           read_splits=True,
                           full_summary=False,
-                          cv_folds=1,
+                          cv_folds=5,
                           split_number=i,
                           train_distance=0.2,
                           test_distance=0.2,
@@ -130,7 +130,7 @@ def hyperParamSelection(target_path: str = config.DATA_PATH_TARGET,
 
     hyperparams = parser.parse_args()
 
-    hyperparams.optimize_parallel_gpu(trainDeepCInet, gpu_ids=['1', '0', '3', '2'], nb_trials=10, nb_workers=10)
+    hyperparams.optimize_parallel_gpu(trainDeepCInet, gpu_ids=['1', '0', '3', '2'], nb_trials=10000, nb_workers=10)
 
 
 hyperParamSelection()
