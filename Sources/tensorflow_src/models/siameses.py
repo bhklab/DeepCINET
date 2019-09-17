@@ -985,11 +985,6 @@ class ScalarOnlySiamese(BasicSiamese):
             rate=self._dropout,
             training=self.training
         )
-        y = self._dense(
-            x,
-            20,
-            "fcY"
-        )
 
         x = self._dense(
             x,
@@ -1031,13 +1026,6 @@ class ScalarOnlySiamese(BasicSiamese):
         )
         return x
 
-        x = self._dense(
-            x ,
-            1,
-            "fc7",
-            activation=tf.nn.relu
-        )
-        return x
 
     def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
         return tf.layers.dense(
@@ -1065,6 +1053,7 @@ class ScalarOnlySiamese(BasicSiamese):
         return False
 
 
+
 class ScalarOnlySiamese1(BasicSiamese):
     def __init__(self, number_features: int, **kwargs):
         #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
@@ -1084,11 +1073,6 @@ class ScalarOnlySiamese1(BasicSiamese):
             x,
             rate=self._dropout,
             training=self.training
-        )
-        y = self._dense(
-            x,
-            20,
-            "fcY"
         )
 
         x = self._dense(
@@ -1141,7 +1125,287 @@ class ScalarOnlySiamese1(BasicSiamese):
             x,
             1,
             "fc7",
-            activation=tf.nn.relu
+            activation=tf.nn.selu
+        )
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+        return {
+            **super().feed_dict(batch, training),
+            self.x_scalar: np.stack(batch.patients["features"]),
+        }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
+
+class ScalarOnlySiamese2(BasicSiamese):
+    r"""
+    Model that uses only radiomic features as input to train
+
+    It has the same parameters as :class:`BasicSiamese`
+
+    It only uses the radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+
+    **Attributes**:
+
+    Includes the same attributes as :class:`BasicSiamese` and adds the following ones:
+
+    :var ScalarOnlySiamese.x_scalar: Radiomic features obtained with
+                                     `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+    :vartype ScalarOnlySiamese.x_scalar: tf.Tensor
+    """
+
+    def __init__(self, number_features: int, **kwargs):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            500,
+            "fc1"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        x = self._dense(
+            x,
+            100,
+            "fc2"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+
+        x = self._dense(
+            x,
+            50,
+            "fc3"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+        x = self._dense(
+            x,
+            20,
+            "fc4"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+        # Out: [batch, 1]
+        x = self._dense(
+            #tf.concat([x , y],1),
+            x,
+            10,
+            "fc5"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+        x = self._dense(
+            x ,
+            1,
+            "fc6",
+            activation=tf.nn.selu
+        )
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.sigmoid) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+
+        return {
+            **super().feed_dict(batch, training),
+            self.x_scalar: np.stack(batch.patients["features"]),
+        }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
+
+
+
+class ScalarOnlySiamese3(BasicSiamese):
+    def __init__(self, number_features: int, **kwargs):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            200,
+            "fc1"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        x = self._dense(
+            x,
+            100,
+            "fc2"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        x = self._dense(
+            x,
+            50,
+            "fc3"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        # Out: [batch, 1]
+        x = self._dense(
+            # tf.concat([x , y],1),
+            x,
+            10,
+            "fc5"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        x = self._dense(
+            x,
+            1,
+            "fc7",
+            activation=tf.nn.selu
+        )
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+        return {
+            **super().feed_dict(batch, training),
+            self.x_scalar: np.stack(batch.patients["features"]),
+        }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
+
+
+class ScalarOnlySiamese4(BasicSiamese):
+    def __init__(self, number_features: int, **kwargs):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            100,
+            "fc1"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        x = self._dense(
+            x,
+            50,
+            "fc2"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        x = self._dense(
+            x,
+            10,
+            "fc3"
+        )
+        x = tf.layers.dropout(
+            x,
+            rate=self._dropout,
+            training=self.training
+        )
+
+        x = self._dense(
+            x,
+            5,
+            "fc7",
+            activation=tf.nn.selu
         )
         return x
 
@@ -1212,12 +1476,6 @@ class ClinicalOnlySiamese(BasicSiamese):
             50,
             "fc2"
         )
-
-  #      x = self._dense(
-  #          x,
-  #          100,
-  #          "fc3"
-  #      )
 
         x = self._dense(
             x,

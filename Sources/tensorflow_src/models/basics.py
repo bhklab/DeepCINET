@@ -84,7 +84,7 @@ class BasicModel:
                  regularization: float = .001,
                  dropout: float = .2,
                  learning_rate: float = 0.001,
-                 threshold: float = .51,
+                 threshold: float = .50,
                  use_distance: bool = False,
                  full_summary: bool = False,
                  seed: int = None,
@@ -334,7 +334,7 @@ class BasicSiamese(BasicModel):
 
         # sub = tf.subtract(self.gathered_a, self.gathered_b, name="contrastive_sub")
         sub = tf.subtract(self.gathered_b, self.gathered_a, name="contrastive_sub")
-        sub *= weight2
+        #sub *= weight2
 
         if self._use_distance:
             return weight1*tf.tanh(sub, name="contrastive_tanh")

@@ -10,6 +10,10 @@ from .siameses import \
     SimpleImageSiamese, \
     ImageScalarSiamese, \
     ScalarOnlySiamese, \
+    ScalarOnlySiamese1, \
+    ScalarOnlySiamese2, \
+    ScalarOnlySiamese3, \
+    ScalarOnlySiamese4, \
     ScalarOnlyDropoutSiamese, \
     ImageSiamese, \
     ResidualImageScalarSiamese, \
