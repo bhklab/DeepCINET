@@ -59,7 +59,7 @@ def learning_models(cv_folds: int = 1,
                     feature_path: str = settings.DATA_PATH_FEATURE,
                     target_path: str = settings.DATA_PATH_TARGET,
                     input_path: str = settings.DATA_PATH_INPUT_TEST_TRAIN,
-                    result_path: str = settings.SESSION_SAVE_PATH,
+                    result_path: str = settings.ML_SAVE_PATH,
                     regularization: float = 0.01,
                     splitting_model: int = 0,
                     threshold: float = 3,
@@ -72,8 +72,8 @@ def learning_models(cv_folds: int = 1,
                     mrmr_size: int = 0,
                     read_splits=False,
                     model_type: str="RF",
-                    l1_ratio: bool =0.01,
-                    alpha: float = 0.9,
+                    l1_ratio: float =0.4,
+                    alpha: float = 0.09,
                     test_distance: float = 0,
                     train_distance: float = 0):
     """
@@ -98,7 +98,7 @@ def learning_models(cv_folds: int = 1,
     :param args: Command Line Arguments
     """
     #print(cv_folds)
-    result_path = pathlib.Path(os.path.join(result_path, "Learning"))
+    result_path = pathlib.Path(os.path.join(result_path, model_type))
     result_path.mkdir(parents=True, exist_ok=True)
 
     logger = utils.init_logger(f'train_{0}', str(result_path))
@@ -316,7 +316,7 @@ def main(args: Dict[str, Any]) -> None:
                     split_number=1,
                     mrmr_size=mrmr_size,
                     read_splits=read_splits,
-                    model_type="ElasticNet",
+                    model_type="KNN",
                     train_distance=0,
                     test_distance=0)
 
@@ -355,7 +355,7 @@ if __name__ == '__main__':
     optional.add_argument(
         "--results-path",
         help="Path where the results and the model should be saved",
-        default=settings.SESSION_SAVE_PATH,
+        default=settings.ML_SAVE_PATH,
         type=str
     )
     optional.add_argument(
