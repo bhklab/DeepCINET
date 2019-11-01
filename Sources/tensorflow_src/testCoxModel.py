@@ -82,7 +82,7 @@ def cox_model(cv_folds: int = 1,
     :param test_size:
     :param args: Command Line Arguments
     """
-    print(cv_folds)
+    #print(cv_folds)
     result_path = pathlib.Path(os.path.join(result_path, "Cox"))
     result_path.mkdir(parents=True, exist_ok=True)
 
