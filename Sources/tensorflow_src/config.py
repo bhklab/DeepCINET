@@ -98,6 +98,7 @@ COX = cfg['COX']
 
 cfg['ML']['RESULT_PATH'] = os.path.expandvars(cfg['ML']['RESULT_PATH'])
 ML = cfg['ML']
+ML_SAVE_PATH = os.path.expandvars(cfg['ML']['RESULT_PATH'])
 
 HYPER_PARAM = cfg['HYPER_PARAM']
 HYPER_PARAM['log_path'] = os.path.expandvars(HYPER_PARAM['log_path'])
