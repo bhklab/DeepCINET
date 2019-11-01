@@ -45,7 +45,7 @@ def generator(mrmr_sizes,
     os.makedirs(output_path)
 
     # results_path.mkdir(parents=True, exist_ok=True)
-    data_set = pair_data.SplitPairs(target_path=target_path, survival=survival)
+   # data_set = pair_data.SplitPairs(target_path=target_path, survival=survival)
     logger.info("read Feature DataFrame")
     for cv_folds in folds:
         cv_path = os.path.join("", f"cv_{cv_folds}")
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     cfg = config.GENERATOR
     split_numbers = cfg['SPLIT_NUMBER']
     # The output path is refer to the folder that all the output are in
-    output_path = cfg['OUTPUT_PATH']
+    output_path = os.path.expandvars(cfg['OUTPUT_PATH'])
     logger.info("output path: {output_path}".format(output_path=output_path))
 
     # we randomly select a number to generate split based on the seed
@@ -108,10 +108,9 @@ if __name__ == '__main__':
     random_states = random.sample(range(1, 100000), split_numbers)
 
     mrmr_sizes = cfg['MRMR']
-    target_path = cfg["TARGET_PATH"]
-    print(target_path)
-    features = pd.read_csv(cfg['INPUT_FEATURES'], index_col=0)
-    survival = True #cfg['SURVIVAL']
+    target_path = os.path.expandvars(cfg["TARGET_PATH"])
+    features = pd.read_csv(os.path.expandvars(cfg['INPUT_FEATURES']), index_col=0)
+    survival = cfg['SURVIVAL']
     test_size = cfg['TEST_SIZE']
     spliting_model = cfg['SPLITING_MODEL']
     cv_fold = cfg['CV_FOLDS']
