@@ -36,7 +36,6 @@ def trainDeepCInet(hparams):
         save_dir=hparams.log_path,
         autosave=True,
     )
-    drug = hparams.drug
     results1 = pd.DataFrame()
     exp.argparse(hparams)
     results_path = os.path.join(pathlib.Path(config.DATA_PATH_PROCESSED), 'Result')
@@ -98,7 +97,7 @@ def trainDeepCInet(hparams):
         # if (i % 3 == 0):
         # os.path.join(cfg['mixed_result_path'], f"epoch{hparams.num_epochs}",.csv"
         # results1.to_csv(pd.read_csv()))
-    path = os.path.join(cfg['mixed_result_path'], f"model{hparams.model}_"
+    path = os.path.join(os.path.expandvars(cfg['mixed_result_path']), f"model{hparams.model}_"
                                                   f"epoch{hparams.num_epochs}_"
                                                   f"batch{hparams.batch_size}_"
                                                   f"regularization{hparams.regularization}_"
