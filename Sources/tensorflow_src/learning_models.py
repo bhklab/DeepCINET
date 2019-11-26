@@ -71,10 +71,10 @@ def learning_models(cv_folds: int = 1,
                     initial_seed=None,
                     mrmr_size: int = 0,
                     read_splits=False,
-                    model_type: str="RF",
-                    l1_ratio: float =0.4,
-                    alpha: float = 0.09,
-                    test_distance: float = 0,
+                    model_type: str="ElasticNet",
+                    l1_ratio: float =0.5,
+                    alpha: float = 0.001,
+                    test_distance: float = 0.2,
                     train_distance: float = 0):
     """
     deepCient
@@ -125,7 +125,7 @@ def learning_models(cv_folds: int = 1,
         }
     data_set = data.pair_data.SplitPairs( target_path, False)
     models = {'LR': LogisticRegression(solver='liblinear', multi_class='ovr'),
-              'ElasticNet': ElasticNet(l1_ratio=l1_ratio, alpha=alpha),
+              'ElasticNet': ElasticNet(l1_ratio=l1_ratio, alpha=alpha, max_iter=10000),
               'Baysian': BayesianRidge(),
               'KNN': KNeighborsRegressor(),
               'RF': RandomForestRegressor(max_depth=10, n_estimators=100),
@@ -316,9 +316,9 @@ def main(args: Dict[str, Any]) -> None:
                     split_number=1,
                     mrmr_size=mrmr_size,
                     read_splits=read_splits,
-                    model_type="KNN",
+                    model_type="RF",
                     train_distance=0,
-                    test_distance=0)
+                    test_distance=0.2)
 
 
 if __name__ == '__main__':
