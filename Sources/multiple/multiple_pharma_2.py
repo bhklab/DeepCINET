@@ -22,10 +22,10 @@ random.seed(1)
 random.shuffle(random_states)
 logger = utils.init_logger("multiple run")
 
-for drug in ['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib',
-'Gemcitabine', 'Crizotinib', 'MK-2206', 'Dasatinib', 'Nilotinib', 'Docetaxel', 'PLX4720']:
-    results_path = f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_2/DeepCINET/{drug}"
-
+for i,drug in enumerate(['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib',
+'Gemcitabine', 'Crizotinib', 'MK-2206', 'Dasatinib', 'Nilotinib', 'Docetaxel', 'PLX4720']):
+    results_path = f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_4/DeepCINET/{drug}"
+    results = pd.DataFrame()
     parameters = dict(model='ScalarOnlySiamese',
                       target_path=config.DATA_PATH_TARGET,
                       feature_path=config.DATA_PATH_FEATURE,
@@ -50,11 +50,11 @@ for drug in ['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib',
                       test_distance=0.2,
                       survival=False
                      )
-    parameters = pd.read_csv(f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result/DeepCINET/{drug}/config.csv",
+    parameters = pd.read_csv(f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData_main/CTRPv2_gCSI/Result/DeepCINET/{drug}/config.csv",
                              index_col=0)
     parameters = parameters.to_dict()['0']
     parameters["num_epochs"] = int(parameters["num_epochs"])
-    parameters["batch_size"] = 125
+    parameters["batch_size"] = int(parameters["batch_size"])
     parameters["splitting_model"] = int(parameters["splitting_model"])
     parameters["learning_rate"] = float(parameters["learning_rate"])
     parameters["dropout"] = float(parameters["dropout"])
@@ -67,12 +67,12 @@ for drug in ['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib',
     parameters["cv_folds"]=  int(parameters["cv_folds"])
     parameters["split_number"] =  int(parameters["split_number"])
     parameters["train_distance"]= float(parameters["train_distance"])
-    parameters["test_distance"]= float(parameters["test_distance"])
+    parameters["test_distance"]= 0.0
     parameters["survival"] = False
     parameters['target_path'] = parameters['target_path'].replace('gCSI','GDSC')
     parameters['feature_path'] = parameters['feature_path'].replace('gCSI', 'GDSC')
     parameters['input_path'] = parameters['input_path'].replace('gCSI', 'GDSC')
-    parameters['results_path'] = f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_2/DeepCINET/{drug}"
+    parameters['results_path'] = f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_4/DeepCINET/{drug}"
     parameters['initial_seed'] = None
     print(parameters['target_path'])
     print("=======================================")
