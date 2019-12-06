@@ -357,7 +357,6 @@ def deepCinet(model: str,
     logger.info("read Feature DataFrame")
 
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
-
     number_feature = mrmr_size if mrmr_size > 0 else len(features.index)
     siamese_model = select_model(model,
                                  number_feature=number_feature,
