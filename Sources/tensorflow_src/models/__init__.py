@@ -15,6 +15,7 @@ from .siameses import \
     ScalarOnlySiamese3, \
     ScalarOnlySiamese4, \
     ScalarOnlyDropoutSiamese, \
+    ScalarOnlySiamese_onelayer, \
     ImageSiamese, \
     ResidualImageScalarSiamese, \
     VolumeOnlySiamese,\
