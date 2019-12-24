@@ -1434,6 +1434,52 @@ class ScalarOnlySiamese4(BasicSiamese):
         return False
 
 
+class ScalarOnlySiamese_onelayer1(BasicSiamese):
+    def __init__(self, number_features: int, **kwargs):
+        #: Radiomic features obtained with `PyRadiomics <https://github.com/Radiomics/pyradiomics>`_
+        self.x_scalar = tf.placeholder(tf.float32, [None, number_features])
+
+        super().__init__(**kwargs)
+
+    def _sister(self):
+        # Out: [batch, 500]
+        x = self.x_scalar
+        x = self._dense(
+            x,
+            5,
+            "fc7",
+            activation=tf.nn.selu
+        )
+        return x
+
+    def _dense(self, x: tf.Tensor, units: int, name: str, activation=tf.nn.tanh) -> tf.Tensor:
+        return tf.layers.dense(
+            x,
+            units=units,
+            activation=activation,
+            kernel_initializer=tf.contrib.layers.xavier_initializer(seed=self.seed),
+            kernel_regularizer=tf.contrib.layers.l2_regularizer(self._regularization),
+            name=name
+        )
+
+    def feed_dict(self, batch: data.PairBatch, training: bool = True):
+        return {
+            **super().feed_dict(batch, training),
+            self.x_scalar: np.stack(batch.patients["features"]),
+        }
+
+    def uses_images(self) -> bool:
+        """
+        Implementation of :func:`BasicModel.uses_images`. This model does not uses images to work.
+
+        :return: :any:`False` since this model does not use images to work
+        """
+        return False
+
+
+
+
+
 class ClinicalOnlySiamese(BasicSiamese):
     r"""
     Model that uses only radiomic features as input to train
