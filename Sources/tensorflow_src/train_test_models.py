@@ -259,6 +259,8 @@ def select_model(model_key: str, number_feature: int, **kwargs) -> tensorflow_sr
         return models.ScalarOnlySiamese3(number_feature, **kwargs)
     elif model_key == "ScalarOnlySiamese4":
         return models.ScalarOnlySiamese4(number_feature, **kwargs)
+    elif model_key == "Linear":
+        return models.ScalarOnlySiamese_onelayer(number_feature, **kwargs)
     elif model_key == "ScalarOnlyDropoutSiamese":
         return models.ScalarOnlyDropoutSiamese(**kwargs)
     elif model_key == "ImageSiamese":
