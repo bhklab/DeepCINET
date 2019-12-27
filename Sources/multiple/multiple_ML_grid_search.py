@@ -85,7 +85,8 @@ def learning_models(cv_folds: int = 1,
                     l1_ratio: float =0.9,
                     alpha: float = 0.01,
                     test_distance: float = 0.2,
-                    train_distance: float = 0):
+                    train_distance: float = 0,
+                    drug: str = ''):
     """
     deepCient
     :param initial_seed:
@@ -144,9 +145,10 @@ def learning_models(cv_folds: int = 1,
               'ElasticNet': ElasticNet(l1_ratio=l1_ratio, alpha=alpha, max_iter=10000),
               'Baysian': BayesianRidge(),
               'KNN': KNeighborsRegressor(),
-              'RF': RandomForestRegressor(max_depth=20, n_estimators=200),
+              'RF': RandomForestRegressor(),
               'NB': GaussianNB(),
-              'SVM': SVR(gamma='auto')}
+              'SVM': SVR(gamma='auto'),
+              'Uni': 1}
     param_grids = {'LR': {'solver':['liblinear'], 'multi_class':['ovr']},
               'ElasticNet': {'l1_ratio': [0.1,0.3,0.5,0.7,0.9], 'alpha':[0.1,0.01,0.9,1,0.5], 'max_iter':[10000,100]},
               'Baysian': BayesianRidge(),
@@ -171,45 +173,59 @@ def learning_models(cv_folds: int = 1,
 
             test_data = data_set.target_data.merge(test_ids, left_on="id", right_on="id", how="inner")
             logger.info(f"New fold {i}, {len(train_ids)} train pairs, {len(test_ids)} test pairs")
+            if model_type == 'Uni':
+                features_train = pd.merge(df_features.T,
+                                          train_data[['id', 'target']],
+                                          how='inner',
+                                          left_index=True,
+                                          right_on='id')
+                features = pd.merge(df_features.T, target_df[['id', 'target']], how='inner',
+                                    left_index=True, right_on='id')
+                uni = pd.read_csv('/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/Univariate/uni_gCSI.csv',index_col=0)
+                features['predict'] = uni[drug]
+                # features['predict'] = rigid.predict(features[df_features.T.columns])
+                # print(elastic.predict(features))
+                #print(features['predict'])
+            else:
 
-            model = models[model_type]
-            #print(model)
-            features_train = pd.merge(df_features.T,
-                                      train_data[['id', 'target']],
-                                      how='inner',
-                                      left_index=True,
-                                      right_on='id')
-            # features_train.drop(['id'], axis='columns', inplace=True)
-            # features_train = features_train.dropna()
-            # del_low_var(features_train)
+                model = models[model_type]
+                #print(model)
+                features_train = pd.merge(df_features.T,
+                                          train_data[['id', 'target']],
+                                          how='inner',
+                                          left_index=True,
+                                          right_on='id')
+                # features_train.drop(['id'], axis='columns', inplace=True)
+                # features_train = features_train.dropna()
+                # del_low_var(features_train)
 
-            model.fit(features_train[df_features.T.columns], features_train['target'])
-            features_test = pd.merge(df_features.T, test_data[['id',  'target']], how='inner',
-                                     left_index=True, right_on='id')
-            # features_test.drop(['id'], axis='columns', inplace=True)
-##################################################################################
-            # from scipy.stats import uniform as sp_rand
-            #
-            # from sklearn.model_selection import RandomizedSearchCV
-            #
-            # # prepare a uniform distribution to sample for the alpha parameter
-            # param_grid = param_grids[model_type]#  {'alpha': [0.2, 0.3, 0.5]}
-            # # create and fit a ridge regression model, testing random alpha values
-            # #model = Ridge()
-            # rsearch = RandomizedSearchCV(estimator=model, param_distributions=param_grid, n_iter=20)
-            # rsearch.fit(features_train[df_features.T.columns], features_train['target'])
-            # print(rsearch)
-            # # summarize the results of the random parameter search
-            # print("0000000000000")
-            # print(rsearch.best_score_)
-            # print(rsearch.best_estimator_)
-##################################################################################
+                model.fit(features_train[df_features.T.columns], features_train['target'])
+                features_test = pd.merge(df_features.T, test_data[['id',  'target']], how='inner',
+                                         left_index=True, right_on='id')
+                # features_test.drop(['id'], axis='columns', inplace=True)
+    ##################################################################################
+                # from scipy.stats import uniform as sp_rand
+                #
+                # from sklearn.model_selection import RandomizedSearchCV
+                #
+                # # prepare a uniform distribution to sample for the alpha parameter
+                # param_grid = param_grids[model_type]#  {'alpha': [0.2, 0.3, 0.5]}
+                # # create and fit a ridge regression model, testing random alpha values
+                # #model = Ridge()
+                # rsearch = RandomizedSearchCV(estimator=model, param_distributions=param_grid, n_iter=20)
+                # rsearch.fit(features_train[df_features.T.columns], features_train['target'])
+                # print(rsearch)
+                # # summarize the results of the random parameter search
+                # print("0000000000000")
+                # print(rsearch.best_score_)
+                # print(rsearch.best_estimator_)
+    ##################################################################################
 
-            features = pd.merge(df_features.T, target_df[['id', 'target']], how='inner',
-                                left_index=True, right_on='id')
-            features['predict'] = model.predict(features[df_features.T.columns])
-            # features['predict'] = rigid.predict(features[df_features.T.columns])
-            # print(elastic.predict(features))
+                features = pd.merge(df_features.T, target_df[['id', 'target']], how='inner',
+                                    left_index=True, right_on='id')
+                features['predict'] = model.predict(features[df_features.T.columns])
+                # features['predict'] = rigid.predict(features[df_features.T.columns])
+                # print(elastic.predict(features))
 
             train_pairs, test_pairs, mixed_pairs = data_set.create_train_test(train_data,
                                                                               test_data,
@@ -245,6 +261,10 @@ def learning_models(cv_folds: int = 1,
             utils.save_ml_results(predictions, results_save_path)
             logger.info(f"result{counts}")
             logger.info("\r ")
+            pathlib.Path(result_path).mkdir(parents=True, exist_ok=True)
+            results = pd.DataFrame()
+            results.append(pd.DataFrame.from_dict(counts))
+            results.to_csv(os.path.join(result_path, 'results.csv'))
 
 
     else:
@@ -346,8 +366,8 @@ def main(args: Dict[str, Any]) -> None:
     target_path = args['target_path']
     input_path = args['input_path']
     model_type = args['model_type']
-    for i,drug in enumerate(['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib',
-                 'Gemcitabine', 'Crizotinib', 'MK-2206', 'Dasatinib', 'Nilotinib', 'Docetaxel', 'PLX4720']):
+    for i,drug in  enumerate(['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib',
+                 'Gemcitabine', 'Crizotinib', 'MK-2206', 'Dasatinib',  'Docetaxel', 'Lapatinib']):
         target_path = target_path.replace('Drug',drug)
         feature_path = feature_path.replace('Drug',drug)
         input_path = input_path.replace('Drug',drug)
@@ -369,9 +389,10 @@ def main(args: Dict[str, Any]) -> None:
                         split_number=0,
                         mrmr_size=mrmr_size,
                         read_splits=read_splits,
-                        model_type="RF",
+                        model_type="Uni",
                         train_distance=0,
-                        test_distance=0.2)
+                        test_distance=0.0,
+                        drug=drug)
         target_path = target_path.replace(drug,'Drug')
         feature_path = feature_path.replace(drug,'Drug')
         input_path = input_path.replace(drug,'Drug')

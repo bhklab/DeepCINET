@@ -22,37 +22,38 @@ random.seed(1)
 random.shuffle(random_states)
 logger = utils.init_logger("multiple run")
 
-for i,drug in enumerate(['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib',
-'Gemcitabine', 'Crizotinib', 'MK-2206', 'Dasatinib', 'Nilotinib', 'Docetaxel', 'PLX4720']):
-    results_path = f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_4/DeepCINET/{drug}"
+for i,drug in enumerate(['Dasatinib', 'Erlotinib',  'Gemcitabine','Gefitinib','Lapatinib']):
+        #enumerate(['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib','Gemcitabine', 'Crizotinib', 'MK-2206', 'Dasatinib', 'Nilotinib', 'Docetaxel', 'PLX4720']):
+    results_path = f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_8/DeepCINET/{drug}"
     results = pd.DataFrame()
-    parameters = dict(model='ScalarOnlySiamese',
-                      target_path=config.DATA_PATH_TARGET,
-                      feature_path=config.DATA_PATH_FEATURE,
-                      input_path=config.DATA_PATH_INPUT_TEST_TRAIN,
-                      results_path=results_path,
-                      num_epochs=8,
-                      batch_size=125,
-                      splitting_model=1,
-                      learning_rate=0.0001,
-                      dropout=.2,
-                      threshold=0.4,
-                      split=1, save_model=True,
-                      regularization=3.,
-                      split_seed=random_states[1],
-                      initial_seed=None,
-                      mrmr_size=0,
-                      read_splits=True,
-                      full_summary=True,
-                      cv_folds=1,
-                      split_number=1,
-                      train_distance=0.15,
-                      test_distance=0.2,
-                      survival=False
-                     )
-    parameters = pd.read_csv(f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData_main/CTRPv2_gCSI/Result/DeepCINET/{drug}/config.csv",
+    # parameters = dict(model='ScalarOnlySiamese',
+    #                   target_path=config.DATA_PATH_TARGET,
+    #                   feature_path=config.DATA_PATH_FEATURE,
+    #                   input_path=config.DATA_PATH_INPUT_TEST_TRAIN,
+    #                   results_path=results_path,
+    #                   num_epochs=8,
+    #                   batch_size=125,
+    #                   splitting_model=1,
+    #                   learning_rate=0.0001,
+    #                   dropout=.2,
+    #                   threshold=0.4,
+    #                   split=1, save_model=True,
+    #                   regularization=3.,
+    #                   split_seed=random_states[1],
+    #                   initial_seed=None,
+    #                   mrmr_size=0,
+    #                   read_splits=True,
+    #                   full_summary=True,
+    #                   cv_folds=1,
+    #                   split_number=1,
+    #                   train_distance=0.15,
+    #                   test_distance=0.2,
+    #                   survival=False
+    #                  )
+    parameters = pd.read_csv(f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result_8/{drug}/config.csv",
                              index_col=0)
     parameters = parameters.to_dict()['0']
+    parameters["model"] = "Linear"
     parameters["num_epochs"] = int(parameters["num_epochs"])
     parameters["batch_size"] = int(parameters["batch_size"])
     parameters["splitting_model"] = int(parameters["splitting_model"])
@@ -60,7 +61,7 @@ for i,drug in enumerate(['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortez
     parameters["dropout"] = float(parameters["dropout"])
     parameters["threshold"] = float(parameters["threshold"])
     parameters["split"] = int(parameters["split"])
-    parameters["regularization"]= float(parameters["regularization"])
+    parameters["regularization"]= float(parameters["regularization"]) * 3
     parameters["mrmr_size"] =  int(parameters["mrmr_size"])
     parameters["read_splits"] =  bool(parameters["read_splits"])
     parameters["full_summary"] =  bool(parameters["full_summary"]),
@@ -72,7 +73,7 @@ for i,drug in enumerate(['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortez
     parameters['target_path'] = parameters['target_path'].replace('gCSI','GDSC')
     parameters['feature_path'] = parameters['feature_path'].replace('gCSI', 'GDSC')
     parameters['input_path'] = parameters['input_path'].replace('gCSI', 'GDSC')
-    parameters['results_path'] = f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_4/DeepCINET/{drug}"
+    parameters['results_path'] = f"/Users/farnoosh/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_8/DeepCINET/{drug}"
     parameters['initial_seed'] = None
     print(parameters['target_path'])
     print("=======================================")

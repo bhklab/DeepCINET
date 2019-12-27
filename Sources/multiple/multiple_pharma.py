@@ -23,19 +23,19 @@ random.shuffle(random_states)
 logger = utils.init_logger("multiple run")
 results_path = config.SESSION_SAVE_PATH
 for i in range(running_times):
-    parameters = dict(model='ScalarOnlySiamese',
+    parameters = dict(model='ScalarOnlySiamese4',
                       target_path=config.DATA_PATH_TARGET,
                       feature_path=config.DATA_PATH_FEATURE,
                       input_path=config.DATA_PATH_INPUT_TEST_TRAIN,
                       results_path=results_path,
-                      num_epochs=8,
+                      num_epochs=12,
                       batch_size=125,
                       splitting_model=1,
-                      learning_rate=0.0001,
+                      learning_rate=0.0003,
                       dropout=.2,
                       threshold=0.4,
                       split=i, save_model=True,
-                      regularization=3.,
+                      regularization=0.5,
                       split_seed=random_states[i],
                       initial_seed=None,
                       mrmr_size=0,
@@ -43,9 +43,9 @@ for i in range(running_times):
                       full_summary=True,
                       cv_folds=1,
                       split_number=i,
-                      train_distance=0.15,
-                      test_distance=0.2,
-                      survival=False
+                      train_distance=0.0,
+                      test_distance=0.0,
+                      survival=False,
                      )
     counts, predictions = train_test_models.deepCinet(**parameters)
     logger.info(f"Parameters: {parameters}")
