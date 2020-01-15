@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 
-import tensorflow_src.config as settings
+import config as settings
 
 target_df = None
 
@@ -109,64 +109,6 @@ def all_results(path, select_type, predictions=False, elem_folds=False):
 
     logger.info(f"Finished {path} {select_type}\n")
     return (results_df, no_cens_results), predictions_df, elem_comparisons
-
-
-def save_results(sess: tf.Session,
-                 results: Dict[str, pd.DataFrame],
-                 path: str,
-                 save_model: bool,
-                 survival: bool,
-                 target_path: str):
-    """
-    Save the current results to disk. It creates a CSV file with the pairs and its values. Keeping in
-    mind that the results are pairs it uses the suffixes ``_a`` and ``_b`` to denote each member of the pair
-        - ``target_value_a``: Survival time/drug sensitivity of pair's member A
-        - ``target_value_b``: Survival time/drug sensitivity of pair's member B
-        - ``pairs_a``: Key of pair's member A
-        - ``pairs_b``: Key of pair's member B
-        - ``labels``: Labels that are true if :math:`T(p_a) < T(p_b)`
-        - ``predictions``: Predictions made by the current model
-        - ``predicted_value_a``: Predicted value for the pair's member A
-        - ``predicted_value_b``: Predicted value for the pair's member B
-
-    Moreover, the model is also saved into disk. It can be found in the ``path/weights/`` directory and can
-    loaded with Tensorflow using the following commands:
-
-    >>> import tensorflow as tf
-    >>> saver = tf.train.Saver()
-    >>> with tf.Session() as sess:
-    >>>     saver.restore(sess, "<path>/weights/weights.ckpt")
-
-    :param sess: Current session that should be saved when saving the model
-    :param results: List with tuples with a name and a :class:`pandas.DataFrame` of results that should be saved.
-                    the :class:`pandas.DataFrame` should contain at least the columns
-                    ``pairs_a``, ``pairs_b``, ``labels`` and ``predictions``.
-    :param path: Directory path where all the results should be saved
-    :param save_model: If :any:`True` save the model to disk
-    :param survival: It specify that whether the results are related to the survival prediction or not
-    :param target_path: This is showing the path to the target dataframe
-    """
-    weights_dir = os.path.join(path, 'weights')
-
-    # Always overwrite the previous weights
-    if os.path.exists(path):
-        shutil.rmtree(path)
-    os.makedirs(path)
-    os.makedirs(weights_dir)
-
-    if save_model:
-        saver = tf.train.Saver()
-        saver.save(sess, os.path.join(weights_dir, 'weights.ckpt'))
-
-    # Load clinical info
-    clinical_info = pd.read_csv(target_path, index_col=0)
-
-    for name, result in results.items():
-        if survival:
-            merged = _select_time(clinical_info, result)
-        else:
-            merged = _select_target(clinical_info, result)
-        merged.to_csv(os.path.join(path, f"{name}_results.csv"))
 
 
 def _select_time(target_data_frame: pd.DataFrame, results_df: pd.DataFrame) -> pd.DataFrame:

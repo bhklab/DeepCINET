@@ -39,9 +39,9 @@ DATA_PATH_CACHE = os.path.abspath(os.getenv('DATA_CACHE'))
 DATA_PATH_PROCESSED = os.path.abspath(os.getenv('DATA_PROCESSED'))
 DATA_PATH_CLINICAL_PROCESSED = os.path.abspath(os.getenv('DATA_CLINICAL_PROCESSED'))
 DATA_PATH_RADIOMIC_PROCESSED = os.path.abspath(os.getenv('DATA_RADIOMIC_PROCESSED'))
-DATA_PATH_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_PATH_CLINIC_PROCESSED'))
-DATA_PATH_VOLUME_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_VOLUME_CLINIC_PROCESSED'))
-DATA_PATH_INPUT_TEST_TRAIN = os.path.abspath(os.getenv('DATA_PATH_INPUT_TEST_TRAIN'))
+# DATA_PATH_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_PATH_CLINIC_PROCESSED'))
+# DATA_PATH_VOLUME_CLINIC_PROCESSED = os.path.abspath(os.getenv('DATA_VOLUME_CLINIC_PROCESSED'))
+# DATA_PATH_INPUT_TEST_TRAIN = os.path.abspath(os.getenv('DATA_PATH_INPUT_TEST_TRAIN'))
 
 # Log dir, fallback to current directory
 LOG_DIR = os.path.abspath(os.getenv('LOG_DIR', './'))

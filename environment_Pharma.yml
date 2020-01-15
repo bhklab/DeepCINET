@@ -1,8 +1,7 @@
 
 # Change this line to your root directory location
 # ${Home}
-ROOT_DIR: ${HOME}/Documents/Projects/
-
+ROOT_DIR: ${HOME}/DeepCINET
 
 DATA: ${DATA}
 

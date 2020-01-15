@@ -12,7 +12,7 @@ from joblib import delayed, Parallel
 #from skimage import transform as skt
 
 from data.data_structures import PseudoDir
-from tensorflow_src.settings import \
+from config import \
     DATA_PATH_CACHE, \
     DATA_PATH_CLINICAL, \
     DATA_PATH_CLINICAL_PROCESSED, \
