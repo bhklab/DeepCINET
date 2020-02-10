@@ -5,12 +5,11 @@ class FullyConnected(nn.Module):
     def __init__(self):
         super(FullyConnected, self).__init__()
         self.layer1 = nn.Sequential(
-            nn.Linear(1, 100)
+            nn.Linear(50, 32),
             nn.Tanh(),
-            nn.Linear(100, 50),
+            nn.Linear(32, 16),
             nn.Tanh(),
-            nn.Linear(50,1),
-            nn.ReLU()
+            nn.Linear(16, 1),
         )
 
 

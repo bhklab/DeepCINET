@@ -95,7 +95,13 @@ import pytorch_src.models.base_model as models
 import config as settings
 import utils
 import data
+import numpy as np
 from data.train_test import get_sets_generator, get_sets_reader
+
+import torch
+import torch.nn as nn
+
+from pytorch_lightning import Trainer
 
 from typing import Tuple, Dict, Any
 
@@ -128,6 +134,14 @@ def train_iterations(model: models.ImageSiamese,
 
     # Train iterations
     final_iterations = 0
+    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
+    model = model.to(device)
+    criterion = nn.BCELoss()
+    optim = torch.optim.SGD(model.parameters(), lr = 0.0005)
+
+    # trainer = Trainer(max_epochs=epochs)
+    # trainer.fit(model)
+
     for epoch in range(epochs):
         total_pairs = len(pairs) * (settings.TOTAL_ROTATIONS if model.uses_images() else 1)
         for i, batch in enumerate(batch_data.batches(pairs,
@@ -136,11 +150,22 @@ def train_iterations(model: models.ImageSiamese,
                                                      train=True)):
 
             total_pairs -= len(batch.pairs)
-            print(batch)
-            exit(0)
+            labels = torch.tensor(batch.pairs['labels'].values, device = device, dtype=torch.float32)
+            pA = torch.tensor(batch.pairs['pA_id'].values, device = device)
+            pB = torch.tensor(batch.pairs['pB_id'].values, device = device)
+            tensors = torch.tensor(batch.patients['images'], device = device, dtype=torch.float32)
+            tensors = tensors.permute(0,4,1,2,3)
+            optim.zero_grad()
+            output = model(tensors, pA, pB)
+            loss = criterion(output.view(-1), labels)
+            loss.backward()
+            if final_iterations%10 == 9:
+                print(loss.item(), flush=True)
+            optim.step()
 
             # Execute graph operations but only write summaries once every 5 iterations
             final_iterations += 1
+        # calculate C index
 
 
 def select_model(model_key: str, number_feature: int, **kwargs):
@@ -150,7 +175,7 @@ def select_model(model_key: str, number_feature: int, **kwargs):
     :param model_key: String key to select the model
     :return: Instance of `models.BasicSiamese` with the proper subclass selected
     """
-    return models.ImageSiamese
+    return models.ImageSiamese()
 
 ################
 #     MAIN     #
@@ -338,6 +363,7 @@ def main(args: Dict[str, Any]) -> None:
     target_path = args['target_path']
     image_path = args['image_path']
     survival = args['survival']
+    print(survival)
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
     deepCinet(model=model,

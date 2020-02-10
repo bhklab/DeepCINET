@@ -1,17 +1,21 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
+from pytorch_src.models.conv_model import ConvolutionLayer
+from pytorch_src.models.fc_model import FullyConnected
 
 class ImageSiamese(nn.Module):
     def __init__(self):
+        super(ImageSiamese, self).__init__()
         self.convolution = ConvolutionLayer()
         self.fc = FullyConnected()
 
-    def forward(self, x, y):
+    def forward(self, x, pA, pB):
         x = self.fc(self.convolution(x))
-        y = self.fc(self.convolution(y))
-        z = torch.sub(x, y)
-        return F.sigmoid(z)
+        xA = torch.index_select(x, 0, pA)
+        xB = torch.index_select(x, 0, pB)
+        z = torch.sub(xA, xB)
+        return torch.sigmoid(z)
 
-    def uses_images():
-        return true
+    def uses_images(self):
+        return True

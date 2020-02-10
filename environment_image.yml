@@ -1,10 +1,10 @@
-
 # Change this line to your root directory location
 # ${Home}
-ROOT_DIR: ${HOME}/Documents/Projects/
+HOME: /cluster/home/dzhu
+ROOT_DIR: /cluster/home/dzhu/Documents/Projects/
 
 
-DATA: ${DATA}
+DATA: /cluster/home/dzhu/DATA
 
 # Original data variables (before pre-processing)
 DATA_RAW:
@@ -17,24 +17,27 @@ DATA_CACHE: ${DATA}/.cache
 
 # Pre-processed files location
 
-#DATA_PROCESSED:
-#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
-#  CLINICAL_INFO: clinical_info.csv
-#  RADIOMIC: OPC1_radiomic_features_mad.csv
-#  VOLUME_CLINIC: VolumeAndClinic_OPC1_subsite.csv
-#  CLINIC: Clinic_OPC1.csv
-#  INPUT_TEST_TRAIN: train_test
-#  SPLIT: Split.csv
-
 DATA_PROCESSED:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
-  IMAGE_PATH: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/images
-  TARGET: clinical_info.csv
-  FEATURE: OPC1_radiomic_features_mad.csv
-  VOLUME_CLINIC: VolumeAndClinic_OPCs.csv
+  ROOT: /cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
+  CLINICAL_INFO: clinical_info.csv
+  RADIOMIC: OPC1_radiomic_features_mad.csv
+  VOLUME_CLINIC: VolumeAndClinic_OPC1_subsite.csv
   CLINIC: Clinic_OPC1.csv
   INPUT_TEST_TRAIN: train_test
   SPLIT: Split.csv
+  TARGET: clinical_info.csv
+  FEATURE: OPC1_radiomic_features_mad.csv
+  IMAGE_PATH: /cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/images
+
+#DATA_PROCESSED:
+#   ROOT: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
+#   IMAGE_PATH: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/images
+#   TARGET: clinical_info.csv
+#   FEATURE: OPC1_radiomic_features_mad.csv
+#   VOLUME_CLINIC: VolumeAndClinic_OPCs.csv
+#   CLINIC: Clinic_OPC1.csv
+#   INPUT_TEST_TRAIN: train_test
+#   SPLIT: Split.csv
 
 #DATA_PROCESSED:
 #  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/
@@ -68,7 +71,7 @@ LOG_LEVEL_FILE: 10
 DATA_BATCH_SIZE: 2
 
 # Default path to save the results
-SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPCs/Result
+SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/Result
 
 #SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result/Erlotinib
 # Default path to save the summaries
