@@ -66,7 +66,7 @@ class SplitPairs:
     def get_n_splits(self, n_folds: int = 4, random_seed=RANDOM_SEED) -> int:
         return self._get_folds_generator(n_folds, random_seed).get_n_splits(self.total_y, self.total_y)
 
-    def survival_categorizing(self, models, threshold, category: int = 5):
+    def survival_categorizing(self, models, threshold, category: int = 10):
         """
          Designed for define the way of splitting data based on the survival distribution or based on the
          categorizing data by considering threshold. Setting classification to use in splitting data
@@ -78,12 +78,14 @@ class SplitPairs:
          :param threshold: the threshold that is used in the second model for spliting data
          :param number of bins that is used for distribution
          """
+
         self.target_data['category'] = self.target_data['event']
         if models == 1:
             clinic_time = self.target_data['time'].copy()
             clinic_time.sort_values(inplace=True)
             clinic_time = clinic_time.reset_index(drop=True)
             block = int(clinic_time.size / category)
+            print(block)
             for i in range(0, category):
                 self.target_data.loc[self.target_data['time'] > clinic_time[
                     i * block], 'category'] = i  # +(self.clinical_data['event']) * category

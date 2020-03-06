@@ -33,6 +33,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression
 import data
 # !/usr/bin/env python3
 """
@@ -142,6 +143,7 @@ def learning_models(cv_folds: int = 1,
         }
     data_set = data.pair_data.SplitPairs( target_path, False)
     models = {'LR': LogisticRegression(solver='liblinear', multi_class='ovr'),
+              'linear': LinearRegression(),
               'ElasticNet': ElasticNet(l1_ratio=l1_ratio, alpha=alpha, max_iter=10000),
               'Baysian': BayesianRidge(),
               'KNN': KNeighborsRegressor(),
@@ -366,37 +368,42 @@ def main(args: Dict[str, Any]) -> None:
     target_path = args['target_path']
     input_path = args['input_path']
     model_type = args['model_type']
-    for i,drug in  enumerate(['AZD7762', 'Erlotinib', 'AZD8055', 'Gefitinib', 'Bortezomib',
-                 'Gemcitabine', 'Crizotinib', 'MK-2206', 'Dasatinib',  'Docetaxel', 'Lapatinib']):
-        target_path = target_path.replace('Drug',drug)
-        feature_path = feature_path.replace('Drug',drug)
-        input_path = input_path.replace('Drug',drug)
-        results_path = results_path.replace('Drug',drug)
-        print(target_path)
-        learning_models(cv_folds=cv_folds,
-                        test_size=test_size,
-                        feature_path=feature_path,
-                        target_path=target_path,
-                        input_path=input_path,
-                        result_path=results_path,
-                        regularization=regularization,
-                        splitting_model=splitting_model,
-                        threshold=threshold,
-                        bin_number=4,
-                        log_device=log_device,
-                        split=1,
-                        split_seed=None,
-                        split_number=0,
-                        mrmr_size=mrmr_size,
-                        read_splits=read_splits,
-                        model_type="Uni",
-                        train_distance=0,
-                        test_distance=0.0,
-                        drug=drug)
-        target_path = target_path.replace(drug,'Drug')
-        feature_path = feature_path.replace(drug,'Drug')
-        input_path = input_path.replace(drug,'Drug')
-        results_path = results_path.replace(drug,'Drug')
+    for i,drug in  enumerate(['AZD7762','Dasatinib', 'Erlotinib', 'Gefitinib', 'Gemcitabine', 'Lapatinib',]):
+        for j, model in enumerate(
+                ['linear',
+                 'ElasticNet',
+                 'RF',
+                 'SVM',
+                 'Uni']):
+            target_path = target_path.replace('Drug',drug)
+            feature_path = feature_path.replace('Drug',drug)
+            input_path = input_path.replace('Drug',drug)
+            results_path = results_path.replace('Drug',drug)
+            print(target_path)
+            learning_models(cv_folds=cv_folds,
+                            test_size=test_size,
+                            feature_path=feature_path,
+                            target_path=target_path,
+                            input_path=input_path,
+                            result_path=results_path,
+                            regularization=regularization,
+                            splitting_model=splitting_model,
+                            threshold=threshold,
+                            bin_number=4,
+                            log_device=log_device,
+                            split=1,
+                            split_seed=None,
+                            split_number=0,
+                            mrmr_size=mrmr_size,
+                            read_splits=read_splits,
+                            model_type=model,
+                            train_distance=0,
+                            test_distance=0.0,
+                            drug=drug)
+            target_path = target_path.replace(drug,'Drug')
+            feature_path = feature_path.replace(drug,'Drug')
+            input_path = input_path.replace(drug,'Drug')
+            results_path = results_path.replace(drug,'Drug')
 
 
 if __name__ == '__main__':

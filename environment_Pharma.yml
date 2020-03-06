@@ -42,7 +42,7 @@ DATA_CACHE: ${DATA}/.cache
 #
 ## Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 #LOG:
-#  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/log
+#  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/log
 #  LEVEL_CONSOLE: 20
 #  LEVEL_FILE: 10
 #
@@ -50,9 +50,9 @@ DATA_CACHE: ${DATA}/.cache
 #   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/Result_ML/lapatinib
 
 DATA_PROCESSED:
-  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2/
-  TARGET: drug_response/drug_CTRPv2_${Drug}.csv
-  FEATURE: L1000_gene_expression/gene_CTRPv2_${Drug}.csv
+  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/
+  TARGET: drug_response/train_test_response_${Drug}.csv
+  FEATURE: gene_expression/train_test_expression_${Drug}.csv
   VOLUME_CLINIC: train_test_expression_${Drug}.csv
   CLINIC: CTRPv2_${Drug}.csv
   INPUT_TEST_TRAIN: train_test_${Drug}
@@ -60,21 +60,21 @@ DATA_PROCESSED:
   IMAGE_PATH: aa
 
 
-SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/test/Result/DeepCInet/${Drug}
+SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result_mrmr/${Drug}
 # Default path to save the summaries
-SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/test/Result/Summaries/${Drug}
+SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result_mrmr/Summaries/${Drug}
 #RANDOM_SEED:
 #
 #
 #
 ## Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 LOG:
-  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result/${Drug}/log
+  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result__/${Drug}/log
   LEVEL_CONSOLE: 20
   LEVEL_FILE: 10
 #
 ML:
-   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_GDSC/Result_ML/${Drug}
+   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result__/ML/${Drug}
 
 
 #DATA_PROCESSED:
@@ -86,7 +86,7 @@ ML:
 #  INPUT_TEST_TRAIN: train_test
 #  SPLIT: Split.csv
 #  IMAGE_PATH: aa
-#
+
 #SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result/rci/
 ## Default path to save the summaries
 #SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/CTRPv2_gCSI/Result/rci/
@@ -129,7 +129,7 @@ ML:
 
 
 #DATA_PROCESSED:
-#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/
+#  ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_gCSI/
 #  CLINICAL_INFO: train_test_response_lapatinib.csv
 #  RADIOMIC: train_test_expression_lapatinib.csv
 #  VOLUME_CLINIC: train_test_expression_lapatinib.csv
@@ -138,21 +138,21 @@ ML:
 #  SPLIT: Split.csv
 #
 #
-#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/Result/lapatinib
+#SESSION_SAVE_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_gCSI/Result/lapatinib
 ## Default path to save the summaries
-#SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/Summaries/lapatinib
+#SUMMARIES_DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_gCSI/Summaries/lapatinib
 #RANDOM_SEED:
 #
 #
 #
 ## Set log level according to https://docs.python.org/3/library/logging.html#logging-levels
 #LOG:
-#  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/log
+#  DIR: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_gCSI/log
 #  LEVEL_CONSOLE: 20
 #  LEVEL_FILE: 10
 #
 #ML:
-#   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_GDSC/Result_ML/lapatinib
+#   RESULT_PATH: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/3DataSets/CTRPv2_gCSI/Result_ML/lapatinib
 #
 #
 #
@@ -205,36 +205,28 @@ HYPER_PARAM:
   - 2
   - 3
   - 4
-  - 6
+  - 5
   - 8
   - 10
+  - 12
   batch_size:
   - 100
-  - 200
   regularization:
-  - 0.3
   - 0.5
-  - 1.0
-  - 2.
   - 3.
   - 4.
+  - 5.
   dropout:
-  - 0.1
   - 0.2
   - 0.3
   learningRate:
   - 0.0001
-  - 0.0002
   - 0.0003
   - 0.001
+  - 0.003
   running_times: 3
-  drug:
-  - Paclitaxel
-# , 'Methotrexate', 'Bortezomib', 'Bortezomib', 'TGX221'
-#       'Pictilisib', 'Idelalisib', 'Crizotinib', 'Dasatinib', '5-Fluorouracil',
-#       'Azacitidine', 'Gemcitabine', 'Oligomycin A', 'JQ1 compound',
-#       'Ibrutinib', 'Narciclasine', 'Tanespimycin', 'GSK2636771',
-#       'Doxorubicin', 'Lapatinib', 'Entinostat', 'Sirolimus', 'Vorinostat'
+  train_distance:
+  - 0.0
   log_path: ${Home}/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1/HYPERPARAM/${Drug}
   mixed_result_path: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData/testHP/${Drug}
 
@@ -244,11 +236,12 @@ HYPER_PARAM:
 GENERATOR:
   ROOT: ${HOME}/Documents/DATA/UHN-Project/Genomic/Processed/GeneratedData
   MRMR: []
-  CV_FOLDS: [1,5]
+  CV_FOLDS: [1,5,10]
   TEST_SIZE: 0.20
   SPLIT_NUMBER: 50
   SPLITING_MODEL: [1]
-  OUTPUT_PATH: 'CTRPv2/train_test_GDC-0941'
-  TARGET_PATH: 'drug_response/drug_CTRPv2_GDC-0941.csv'
-  INPUT_FEATURES: 'L1000_gene_expression/gene_CTRPv2_GDC-0941.csv'
+  OUTPUT_PATH: 'CTRPv2/train_test_${Drug}'
+  TARGET_PATH: 'drug_response/drug_CTRPv2_${Drug}.csv'
+  INPUT_FEATURES: 'L1000_gene_expression/gene_CTRPv2_${Drug}.csv'
   SURVIVAL: False
+  

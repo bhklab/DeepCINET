@@ -3,7 +3,7 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-
+sys.path.append(os.path.join('/Users/farnoosh/Projects/pymrmre_original'))
 
 import tensorflow_src.config as settings
 from utils.results import save_ml_results
@@ -23,6 +23,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
+import mrmr
 import data
 # !/usr/bin/env python3
 """
@@ -214,7 +215,8 @@ def learning_models(cv_folds: int = 1,
                                             split_seed)
         for i, (train_idx, test_idx) in enum_generator:
             if mrmr_size > 0:
-                df_features = data.select_mrmr_features(features, target_df.iloc[train_idx].copy(), mrmr_size, survival=False).copy()
+                #df_features = data.select_mrmr_features(features, target_df.iloc[train_idx].copy(), mrmr_size, survival=False).copy()
+                df_features = mrmr()
             else:
                 df_features = features.copy()
             train_data = data_set.target_data.iloc[train_idx]
@@ -228,14 +230,37 @@ def learning_models(cv_folds: int = 1,
                                       how='inner',
                                       left_index=True,
                                       right_on='id')
-            model.fit(features_train[df_features.T.columns], features_train['target'])
+
+            features_train.drop("id", axis=1, inplace=True)
+            print(features_train.columns)
+            #features_train.to_csv()
+            solutions = mrmr.mrmr_ensemble(features = features_train,
+                  target_features= [features_train.shape[1]-1],
+                  fixed_features  = ['ENSG00000141736.13',
+                                     'ENSG00000146648.15',
+                                     'ENSG00000171791.11',
+                                     'ENSG00000138798.11',
+                                     'ENSG00000065361.14',
+                                     'ENSG00000142208.15',
+                                     'ENSG00000121879.3',
+                                     'ENSG00000168610.14',
+                                     'ENSG00000141510.15',
+                                     'ENSG00000140443.13',
+                                     'ENSG00000111276.10',
+                                     'ENSG00000066468.20',
+                                     'ENSG00000197122.11'],
+                  feature_types= [0]*features_train.shape[1],
+                  solution_length= 300,
+                  solution_count =1,)
+            selected_feature = solutions.iloc[0][0]
+            model.fit(features_train[selected_feature], features_train['target'])
             features_test = pd.merge(df_features.T, test_data[['id', 'target']], how='inner',
                                      left_index=True, right_on='id')
 
 
             features = pd.merge(df_features.T, target_df[['id', 'target']], how='inner',
                                 left_index=True, right_on='id')
-            features['predict'] = model.predict(features[df_features.T.columns])
+            features['predict'] = model.predict(features[selected_feature])
             # features['predict'] = rigid.predict(features[df_features.T.columns])
             # print(elastic.predict(features))
             # logger.info(radiomic_features.columns)
@@ -316,7 +341,7 @@ def main(args: Dict[str, Any]) -> None:
                     split_number=1,
                     mrmr_size=mrmr_size,
                     read_splits=read_splits,
-                    model_type="ElasticNet",
+                    model_type="RF",
                     train_distance=0,
                     test_distance=0.0)
 

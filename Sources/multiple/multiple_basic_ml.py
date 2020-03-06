@@ -38,7 +38,7 @@ for i in range(running_times):
                                        feature_path=config.DATA_PATH_FEATURE,
                                        target_path=config.DATA_PATH_TARGET,
                                        result_path=config.SESSION_SAVE_PATH,
-                                       model_type="ElasticNet"
+                                       model_type="learning"
                                        )
     print(f"test{[v[1] for v in counts['test']['c_index']]}")
     print(f"test{len([v[1] for v in counts['test']['c_index']])}")

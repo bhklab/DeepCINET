@@ -23,7 +23,7 @@ random.shuffle(random_states)
 logger = utils.init_logger("multiple run")
 results_path = config.SESSION_SAVE_PATH
 for i in range(running_times):
-    parameters = dict(model='ScalarOnlySiamese4',
+    parameters = dict(model='Linear',
                       target_path=config.DATA_PATH_TARGET,
                       feature_path=config.DATA_PATH_FEATURE,
                       input_path=config.DATA_PATH_INPUT_TEST_TRAIN,
@@ -35,7 +35,7 @@ for i in range(running_times):
                       dropout=.2,
                       threshold=0.4,
                       split=i, save_model=True,
-                      regularization=0.5,
+                      regularization=5.,
                       split_seed=random_states[i],
                       initial_seed=None,
                       mrmr_size=0,
