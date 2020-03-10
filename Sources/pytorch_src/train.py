@@ -92,6 +92,7 @@ import pathlib
 import pandas as pd
 
 import pytorch_src.models.base_model as models
+from pytorch_src.models.lightning import ImageSiameseL
 import config as settings
 import utils
 import data
@@ -109,9 +110,6 @@ logger = utils.init_logger("start")
 
 
 def train_iterations(model: models.ImageSiamese,
-                     batch_data: data.BatchData,
-                     pairs: pd.DataFrame,
-                     batch_size: int,
                      epochs: int):
     """
     Execute the train iterations with all the epochs
@@ -133,39 +131,9 @@ def train_iterations(model: models.ImageSiamese,
     """
 
     # Train iterations
-    final_iterations = 0
-    device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-    model = model.to(device)
-    criterion = nn.BCELoss()
-    optim = torch.optim.SGD(model.parameters(), lr = 0.0005)
-
-    # trainer = Trainer(max_epochs=epochs)
-    # trainer.fit(model)
-
-    for epoch in range(epochs):
-        total_pairs = len(pairs) * (settings.TOTAL_ROTATIONS if model.uses_images() else 1)
-        for i, batch in enumerate(batch_data.batches(pairs,
-                                                     batch_size=batch_size,
-                                                     load_images=model.uses_images(),
-                                                     train=True)):
-
-            total_pairs -= len(batch.pairs)
-            labels = torch.tensor(batch.pairs['labels'].values, device = device, dtype=torch.float32)
-            pA = torch.tensor(batch.pairs['pA_id'].values, device = device)
-            pB = torch.tensor(batch.pairs['pB_id'].values, device = device)
-            tensors = torch.tensor(batch.patients['images'], device = device, dtype=torch.float32)
-            tensors = tensors.permute(0,4,1,2,3)
-            optim.zero_grad()
-            output = model(tensors, pA, pB)
-            loss = criterion(output.view(-1), labels)
-            loss.backward()
-            if final_iterations%10 == 9:
-                print(loss.item(), flush=True)
-            optim.step()
-
-            # Execute graph operations but only write summaries once every 5 iterations
-            final_iterations += 1
-        # calculate C index
+    trainer = Trainer(min_epochs = 8, max_nb_epochs = 8, gpus=1)
+    trainer.fit(model)
+    # calculate C index
 
 
 def select_model(model_key: str, number_feature: int, **kwargs):
@@ -175,7 +143,7 @@ def select_model(model_key: str, number_feature: int, **kwargs):
     :param model_key: String key to select the model
     :return: Instance of `models.BasicSiamese` with the proper subclass selected
     """
-    return models.ImageSiamese()
+    return ImageSiameseL
 
 ################
 #     MAIN     #
@@ -245,15 +213,6 @@ def deepCinet(model: str,
 
     # read the input path for the time that train and test are splitted before head by train_test_generator.py
     number_feature = mrmr_size if mrmr_size > 0 else len(features.index)
-    siamese_model = select_model(model,
-                                 number_feature=number_feature,
-                                 gpu_level=gpu_level,
-                                 regularization=regularization,
-                                 dropout=dropout,
-                                 learning_rate=learning_rate,
-                                 use_distance=use_distance,
-                                 full_summary=full_summary,
-                                 seed=initial_seed)
 
     counts = {}
     for key in ['train', 'test', 'mixed']:
@@ -285,12 +244,9 @@ def deepCinet(model: str,
             summaries_dir = os.path.join(results_path, f"split_{split:0>2}")
             summaries_dir = os.path.join(summaries_dir, 'summaries', f'fold_{i:>2}')
             logger.info(f"Saving results at: {summaries_dir}")
-            batch_data = data.BatchData(df_features,image_path=image_path)
             #Epoch iterations
+            siamese_model = ImageSiameseL(train_pairs, batch_size, image_path)
             train_iterations(siamese_model,
-                             batch_data,
-                             train_pairs,
-                             batch_size,
                              num_epochs)
 
     else:
@@ -319,14 +275,10 @@ def deepCinet(model: str,
             summaries_dir = os.path.join(results_path, 'summaries', f'fold_{i}')
             summaries_dir = os.path.join(summaries_dir, f"split_{split:0>2}")
             logger.info(f"Saving results at: {summaries_dir}")
-            batch_data = data.BatchData(df_features,image_path=image_path)
 
             # Epoch iterations
-            train_iterations(siamese_model,
-                             batch_data,
-                             train_pairs,
-                             batch_size,
-                             num_epochs)
+            siamese_model = ImageSiameseL(train_pairs, batch_size, image_path)
+            train_iterations(siamese_model, num_epochs)
 
 def main(args: Dict[str, Any]) -> None:
     """
@@ -363,7 +315,6 @@ def main(args: Dict[str, Any]) -> None:
     target_path = args['target_path']
     image_path = args['image_path']
     survival = args['survival']
-    print(survival)
     number_feature = mrmr_size if mrmr_size > 0 else settings.NUMBER_FEATURES
 
     deepCinet(model=model,
