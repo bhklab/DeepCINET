@@ -1,0 +1,35 @@
+# Change this line to your root directory location
+# ${Home}
+DATA: /cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
+
+DATA_PROCESSED:
+  CLINICAL_PATH: clinical_info.csv
+  RADIOMICS_PATH: hn_radiomics_opc1.csv
+
+PATH:
+  IMAGE: images/
+
+HPARAMS:
+  EPOCHS: 10
+  USE_IMAGES: True
+  USE_RADIOMICS: False
+
+  FCLAYERS:
+    1: 1671
+    2: 480
+    3: 128
+  DLAYERS:
+    1: 128
+    2: 64
+    3: 1
+  CONVLAYERS:
+    1: 1
+    2: 20
+    3: 40
+
+  DROPOUT: 0.2
+
+  TEST_RATIO: 0.1
+  BATCH_SIZE: 16
+
+

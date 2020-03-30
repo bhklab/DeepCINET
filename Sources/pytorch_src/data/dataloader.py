@@ -33,7 +33,6 @@ class Dataset(torch.utils.data.Dataset):
             image1 = self.loadImage(idA)
             image2 = self.loadImage(idB)
         if(self.pyRadiomics_path != None):
-            row = self.pairlist[index]
             radiomics1 = self.loadPyRadiomics(idA)
             radiomics2 = self.loadPyRadiomics(idB)
         label = torch.tensor(row['label'], dtype=torch.float32)
@@ -64,7 +63,9 @@ class Dataset(torch.utils.data.Dataset):
 
     def buildpairs(self, id_list):
         for i in range(len(id_list)):
-            for j in range(i+1, len(id_list)):
+            for j in range(len(id_list)):
+                if(i == j):
+                    continue
                 id1 = id_list[i]
                 id2 = id_list[j]
                 patient1 = self.clinical_csv[self.clinical_csv['id'] == id1].iloc[0]

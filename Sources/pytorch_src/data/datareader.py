@@ -2,18 +2,13 @@ import pandas as pd
 import math
 
 class PairProcessor:
-    # STATIC VARIABLES
     TIME_SPLIT = 1
-    THRESHOLD_SPLIT = 2
+
     def __init__(self, target_path):
-        #READ CSV
-        #Categorize based on threshhold/TIME
-        #Compute Pairs
         self.clinical_info = pd.read_csv(target_path, index_col = 0)
 
     def train_test_split(self, test_ratio = 0.25,
                          split_model = TIME_SPLIT,
-                         treshhold = 2,
                          random_seed = 520):
         train_ids, test_ids = self.split(test_ratio, split_model)
         return train_ids, test_ids

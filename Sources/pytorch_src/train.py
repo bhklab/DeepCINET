@@ -91,8 +91,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 import pathlib
 import pandas as pd
 
-import pytorch_src.models.base_model as models
-from pytorch_src.models.lightning import ImageSiameseL
+from pytorch_src.models.lightning import ImageSiamese
 import config as settings
 import utils
 import data
@@ -131,7 +130,7 @@ def train_iterations(model: models.ImageSiamese,
     """
 
     # Train iterations
-    trainer = Trainer(min_epochs = 8, max_nb_epochs = 8, gpus=1)
+    trainer = Trainer(min_epochs = 20, max_nb_epochs = 100, gpus=1)
     trainer.fit(model)
     # calculate C index
 
@@ -277,7 +276,7 @@ def deepCinet(model: str,
             logger.info(f"Saving results at: {summaries_dir}")
 
             # Epoch iterations
-            siamese_model = ImageSiameseL(train_pairs, batch_size, image_path)
+            siamese_model = RadiomicsModel(train_pairs, test_pairs, batch_size, image_path)
             train_iterations(siamese_model, num_epochs)
 
 def main(args: Dict[str, Any]) -> None:
