@@ -6,11 +6,9 @@ class DistanceLayer(nn.Module):
         super(DistanceLayer, self).__init__()
 
         self.layer1 = nn.Sequential(
-            nn.Linear(32, 16, bias = False),
+            nn.Linear(32, 8, bias = False),
             nn.Tanh(),
-            nn.Linear(16, 4, bias = False),
-            nn.Tanh(),
-            nn.Linear(4, 1, bias = False),
+            nn.Linear(8, 1, bias = False)
         )
 
     def forward(self, x):

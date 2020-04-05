@@ -26,7 +26,7 @@ def deepCinet(args):
     hdict['use_radiomics'] = config.USE_RADIOMICS
     hparams = argparse.Namespace(**hdict)
     siamese_model = ImageSiamese(hparams=hparams)
-    trainer = Trainer(min_epochs = args.epochs, max_epochs=args.epochs, gpus=1, accumulate_grad_batches = 4)
+    trainer = Trainer(min_epochs = args.epochs, max_epochs=args.epochs, gpus=1, accumulate_grad_batches = 1)
     trainer.fit(siamese_model)
 
 def main(args) -> None:
@@ -48,7 +48,6 @@ if __name__ == '__main__':
 
         # Dataloader
         data_arg = add_argument_group('Data')
-        data_arg.add_argument('--root-path', type=str, default=config.DATA_ROOT, help='Path to root')
         data_arg.add_argument('--clinical-path', type=str, default=config.CLINICAL_PATH, help='Path to clinical variables')
         data_arg.add_argument('--radiomics-path', type=str, default=config.RADIOMICS_PATH, help='Path to radiomics features')
         data_arg.add_argument('--image-path', type=str, default=config.IMAGE_PATH, help='Path to patient CTs')
