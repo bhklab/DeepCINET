@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.model_selection import train_test_split, KFold
 import math
 
 class PairProcessor:
@@ -15,10 +16,21 @@ class PairProcessor:
         train_ids, val_ids, test_ids = self.split(val_ratio, test_ratio, split_model)
         return train_ids, val_ids, test_ids
 
+    def k_cross_validation(self,
+                          test_ratio = 0.3,
+                          n_splits = 5,
+                          random_seed = 520):
+        pd_size = len(self.clinical_info.index)
+        idx = list(range(pd_size))
+        train_idx, test_idx = train_test_split(idx, test_size = test_ratio, random_state=random_seed)
+        kfold = KFold(n_splits = 5, shuffle = True, random_state=random_seed).split(train_idx)
+        return kfold, test_idx
+
     def split(self, val_ratio, test_ratio, split_model):
         pd_size = len(self.clinical_info.index)
-        train_idx = math.ceil(pd_size * (1-test_ratio-val_ratio))
-        val_idx = math.ceil(pd_size * (1-test_ratio))
-        return list(range(train_idx)), list(range(train_idx, val_idx)), list(range(val_idx, pd_size))
+        idx = list(range(pd_size))
+        train_idx, test_idx = train_test_split(idx, test_size = test_ratio, random_state=random_seed)
+        train_idx, val_idx = train_test_split(train_idx, test_size = val_ratio/(1-test_ratio), random_state=random_seed)
+        return train_idx, val_idx, test_idx
 
 

@@ -14,44 +14,19 @@ from pytorch_src.models.distance_model import DistanceLayer
 
 import pytorch_src.default_settings as config
 
-from pytorch_src.data.dataloader import Dataset
-from pytorch_src.data.datareader import PairProcessor
 
 class ImageSiamese(pl.LightningModule):
     def __init__(self, hparams):
         super(ImageSiamese, self).__init__()
         self.hparams = hparams
-        print(hparams)
 
-        pairProcessor = PairProcessor(hparams.clinical_path)
-        train_ids, val_ids, test_ids = pairProcessor.train_test_split(
-            val_ratio = 0.2,
-            test_ratio = hparams.test_ratio,
-            split_model = PairProcessor.TIME_SPLIT,
-            random_seed = 520)
-
-        print(train_ids[0])
-        print(train_ids[-1])
-        print(val_ids[0])
-        print(val_ids[-1])
-        print(test_ids[0])
-        print(test_ids[-1])
-
-        self.train_set = Dataset(train_ids, hparams.clinical_path, hparams.image_path, hparams.radiomics_path, hparams)
-        self.val_set = Dataset(val_ids, hparams.clinical_path, hparams.image_path, hparams.radiomics_path, hparams)
-        self.test_set = Dataset(test_ids, hparams.clinical_path, hparams.image_path, hparams.radiomics_path, hparams)
-
-
-        print(len(self.train_set))
-        print(len(self.val_set))
-        print(len(self.test_set))
         self.use_images = hparams.use_images
         self.use_radiomics = hparams.use_radiomics
 
         self.criterion = nn.BCELoss()
-        self.convolution = ConvolutionLayer()
-        self.fc = FullyConnected()
-        self.distance = DistanceLayer()
+        self.convolution = ConvolutionLayer() if hparams.use_images else nn.Identity()
+        self.fc = FullyConnected(hparams)
+        self.distance = DistanceLayer() if hparams.use_distance else nn.Identity()
         self.log_model_parameters()
 
     def forward(self, iA, iB, rA, rB):
@@ -70,15 +45,15 @@ class ImageSiamese(pl.LightningModule):
             y = self.convolution(iB)
         x = self.fc(x)
         y = self.fc(y)
-        np_x = x.view(-1).detach().cpu().numpy()
-        np_y = y.view(-1).detach().cpu().numpy()
-        # print(np_x)
-        # print(np_y)
-        z = torch.sub(x, y)
+        z = (x - y)
 
         z = self.distance(z)
 
         return torch.sigmoid(z)
+
+    def on_epoch_start(self):
+        print("")
+        print("EPOCH START")
 
     def training_step(self, batch, batch_idx):
         iA = batch['imageA']
@@ -92,12 +67,26 @@ class ImageSiamese(pl.LightningModule):
         output = self.forward(iA, iB, rA, rB)
         loss = self.criterion(output.view(-1), labels.view(-1))
 
-        if(batch_idx % 1000 == 0):
+        if(batch_idx % 1000 == -1):
             np_output = output.view(-1).detach().cpu().numpy()
             print(np_output)
 
-        tensorboard_logs = {'train_loss': loss}
-        return {'loss': loss, 'log': tensorboard_logs}
+        np_output = output.view(-1).detach().cpu().numpy()
+        output_class = np.where(np_output < 0.5, 0, 1)
+
+        correct = np.sum(output_class == labels.view(-1).detach().cpu().numpy())
+        total = len(np_output)
+        tensorboard_logs = {'train_loss': loss.item(), 'correct' : correct, 'total': total}
+        return {'loss': loss, 'custom_logs': tensorboard_logs}
+
+    def training_epoch_end(self, outputs):
+        avg_loss = np.mean([x['custom_logs']['train_loss'] for x in outputs])
+        correct = np.sum([x['custom_logs']['correct'] for x in outputs])
+        total =   np.sum([x['custom_logs']['total'  ] for x in outputs])
+        tensorboard_logs = {
+            'avg_loss' : avg_loss,
+            'train_CI' : correct/total}
+        return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
     def validation_step(self, batch, batch_idx):
         iA = batch['imageA']
@@ -123,7 +112,7 @@ class ImageSiamese(pl.LightningModule):
         correct = np.sum([x['correct'] for x in outputs])
         tensorboard_logs = {'val_loss': avg_loss,
                             'val_CI' : correct/total}
-        return {'val_loss' : avg_loss, 'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
+        return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
     def test_step(self, batch, batch_idx):
         iA = batch['imageA']
@@ -151,48 +140,40 @@ class ImageSiamese(pl.LightningModule):
                             'test_CI' : correct/total}
         return {'test_loss' : avg_loss, 'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
-
     def configure_optimizers(self):
-        return torch.optim.SGD(self.parameters(), lr=1e-4, momentum=0.9)
+        optimizer = torch.optim.SGD(self.parameters(),
+                                    lr=self.hparams.learning_rate,
+                                    momentum=self.hparams.momentum,
+                                    weight_decay = self.hparams.weight_decay)
 
-    def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.train_set,
-                                           batch_size = self.hparams.batch_size,
-                                           shuffle = True,
-                                           num_workers=self.hparams.num_workers)
+        scheduler = torch.optim.lr_scheduler .MultiStepLR(
+            optimizer,
+            milestones=self.hparams.sc_milestones,
+            gamma=self.hparams.sc_gamma)
 
-    def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.val_set,
-                                           batch_size = self.hparams.batch_size,
-                                           shuffle = True,
-                                           num_workers=self.hparams.num_workers)
-
-    def test_dataloader(self):
-        return torch.utils.data.DataLoader(self.test_set,
-                                           batch_size = self.hparams.batch_size,
-                                           shuffle = True,
-                                           num_workers=self.hparams.num_workers)
-
-
+        return [optimizer], [scheduler]
 
     def add_model_specific_args(parent_parser):
         parser = argparse.ArgumentParser(parents=[parent_parser], add_help=False)
-        ## DATALOADER
-        parser.add_argument("--num-workers", default=16, type=int)
-        parser.add_argument("--batch-size", default=config.BATCH_SIZE, type=int)
-        parser.add_argument("--test-ratio", default=0.3, type=float)
 
         ## NETWORK
-        # parser.add_argument('--fc-layers', type=int, nargs='+', default=[1671, 480, 240, 128])
-        # parser.add_argument('--d-layers', type=int, nargs='+', default=[128, 48, 16, 1])
+        parser.add_argument('--fc-layers', type=int, nargs='+',
+                            default = config.FC_LAYERS)
+        parser.add_argument('--dropout', type=float, nargs='+',
+                            default = config.DROPOUT)
 
-        parser.add_argument('--dropout', type=float, default = 0.2)
+        ## OPTIMIZER
+        parser.add_argument('--learning-rate', type=float, default=config.LR)
+        parser.add_argument('--momentum', type=float, default=config.MOMENTUM)
+        parser.add_argument('--weight-decay', type=float, default=config.WEIGHT_DECAY)
+        parser.add_argument('--sc-milestones', type=int, nargs='+',
+                            default = config.SC_MILESTONES)
+        parser.add_argument('--sc-gamma', type=float, default=config.SC_GAMMA)
 
-        ## Training
-        parser.add_argument("--epochs", default=10, type=int)
-        # network params
+        parser.add_argument('--use-distance', action='store_true', default=config.USE_DISTANCE)
+        ##TODO: implement Distance layer
+        parser.add_argument('--d-layers', type=int, nargs='+', default=config.D_LAYERS)
         return parser
-
 
     def log_model_parameters(self):
         print("PARAMETERS**********************************************")
