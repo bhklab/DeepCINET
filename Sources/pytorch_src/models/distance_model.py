@@ -2,18 +2,20 @@ import torch
 import torch.nn as nn
 
 class DistanceLayer(nn.Module):
-    def __init__(self):
+    def __init__(self, hparams):
         super(DistanceLayer, self).__init__()
-
-        self.layer1 = nn.Sequential(
-            nn.Linear(32, 16, bias = False),
-            nn.Tanh(),
-            nn.Linear(16, 16, bias = False),
-            nn.Tanh(),
-            nn.Linear(16, 8, bias = False),
-            nn.Tanh(),
-            nn.Linear(8, 1, bias = False)
-        )
+        self.layers = nn.ModuleList()
+        ##WARN: If number of distance layers is larger than 2,
+        ##F(x-y) >= 0, F(y-z) >= 0 ==> F(x-z) >=0 does no wold
+        for i in range(len(hparams.d_layers) - 1):
+            layer = nn.Sequential(
+                nn.Linear(hparams.d_layers[i], hparams.d_layers[i+1], bias = False),
+                nn.Identity() if i == len(hparams.d_layers) - 2 else nn.Tanh(),
+                nn.Dropout(hparams.d_dropout[i])
+            )
+            self.layers.append(layer)
 
     def forward(self, x):
-        return self.layer1(x)
+        for layer in self.layers:
+            x = layer(x)
+        return x

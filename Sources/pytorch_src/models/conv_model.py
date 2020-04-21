@@ -5,20 +5,29 @@ from pytorch_src.models.residualblock import ResidualBlock3d
 from pytorch_src.models.bottleneckblock import BottleneckBlock3d
 
 class ConvolutionLayer(nn.Module):
-    def __init__(self):
+    def __init__(self, hparams):
         super(ConvolutionLayer, self).__init__()
 
         # Define the convolutions
-        self.layer1 = nn.Sequential(
-            BottleneckBlock3d(1, 4, 4, 3),
-            nn.MaxPool3d(2),
-            BottleneckBlock3d(4, 8, 8, 3),
-            nn.MaxPool3d(2),
-            BottleneckBlock3d(8, 16, 16, 3),
-            nn.MaxPool3d(2),
-            BottleneckBlock3d(16, 32, 16, 3),
-            nn.MaxPool3d(2)
-        )
+        channels_size = hparams.conv_layers
+        self.layers = nn.ModuleList()
+        for i in range(len(channels_size) - 1):
+            layer = nn.Sequential(
+                self.ConvModel(channels_size[i], channels_size[i+1]),
+                nn.MaxPool3d(2)
+            )
+            self.layers.append(layer)
 
     def forward(self, x):
-        return self.layer1(x)
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+    def ConvModel(self, in_channels, out_channels, model="Bottleneck"):
+        if(model == "Bottleneck"):
+            return BottleneckBlock3d(in_channels, 2 * out_channels, out_channels, 3)
+        if(model == "ResNet"):
+            return ResidualBlock3d(in_channels, out_channels)
+
+
+

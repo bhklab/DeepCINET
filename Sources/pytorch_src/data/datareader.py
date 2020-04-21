@@ -23,10 +23,10 @@ class PairProcessor:
         pd_size = len(self.clinical_info.index)
         idx = list(range(pd_size))
         train_idx, test_idx = train_test_split(idx, test_size = test_ratio, random_state=random_seed)
-        kfold = KFold(n_splits = 5, shuffle = True, random_state=random_seed).split(train_idx)
+        kfold = KFold(n_splits = n_splits, shuffle = True, random_state=random_seed).split(train_idx)
         return kfold, test_idx
 
-    def split(self, val_ratio, test_ratio, split_model):
+    def split(self, val_ratio, test_ratio, split_model,random_seed = 520):
         pd_size = len(self.clinical_info.index)
         idx = list(range(pd_size))
         train_idx, test_idx = train_test_split(idx, test_size = test_ratio, random_state=random_seed)

@@ -9,7 +9,7 @@ class FullyConnected(nn.Module):
         self.layers = nn.ModuleList();
         for i in range(len(layers_size)-1):
             layer1 = nn.Sequential(
-                Residual(layers_size[i], layers_size[i+1], last_layer = (i == len(layers_size) - 1)),
+                Residual(layers_size[i], layers_size[i+1], last_layer = (i+1 == len(layers_size) - 1)),
                 nn.Dropout(hparams.dropout[i])
             )
             self.layers.append(layer1)
