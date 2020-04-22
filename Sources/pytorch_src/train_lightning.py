@@ -24,11 +24,11 @@ from pytorch_lightning import Trainer
 #     MAIN     #
 ################
 def Create_Dataloader(ids, hparams, is_train = False):
-        dataset = Dataset(ids, hparams, is_train)
-        return torch.utils.data.DataLoader(dataset,
-                                           batch_size = hparams.batch_size,
-                                           shuffle = True,
-                                           num_workers= hparams.num_workers)
+    dataset = Dataset(ids, hparams, is_train)
+    return torch.utils.data.DataLoader(dataset,
+                                       batch_size = hparams.batch_size,
+                                       shuffle = False,
+                                       num_workers= hparams.num_workers)
 
 def deepCinet(args):
     pairProcessor = PairProcessor(args.clinical_path)
@@ -40,7 +40,7 @@ def deepCinet(args):
         folds, test_ids = pairProcessor.k_cross_validation(
             test_ratio = hparams.test_ratio,
             n_splits = hparams.folds,
-            random_seed = 520)
+            random_seed = hparams.seed)
         test_dl = Create_Dataloader(test_ids, hparams)
 
         cvdata = []
@@ -56,6 +56,7 @@ def deepCinet(args):
                               distributed_backend='dp',
                               weights_summary ='full',
                               enable_benchmark = False,
+			      auto_find_lr = hparams.auto_find_lr,
                               overfit_pct = hparams.overfit_pct)
             trainer.fit(siamese_model,
                         train_dataloader = train_dl,
@@ -66,13 +67,14 @@ def deepCinet(args):
             correct = torch.stack(([x[i]['correct'] for x in cvdata])).sum().item()
             total = torch.stack(([x[i]['total'] for x in cvdata])).sum().item()
             avg_ci = correct/total
-            print("EPOCH %d -- Average loss: %.4f -- CI: %.4f" % (i+1, avg_loss, avg_ci))
+            print("EPOCH %d -- Average loss: %.4f -- CI: %.4f"
+				  % (i+1, avg_loss, avg_ci))
     else:
         train_ids, val_ids, test_ids = pairProcessor.train_test_split(
             val_ratio = hparams.val_ratio,
             test_ratio = hparams.test_ratio,
-            split_model = PairProcessor.TIME_SPLIT,
-            random_seed = 520)
+            random_seed = hparams.seed,
+            split_model = PairProcessor.TIME_SPLIT)
         train_dl = Create_Dataloader(train_ids, hparams, True)
         val_dl = Create_Dataloader(val_ids, hparams)
         test_dl = Create_Dataloader(test_ids, hparams)
@@ -90,29 +92,29 @@ def deepCinet(args):
                     val_dataloaders = val_dl)
 
 def cox(hparams):
-        pairProcessor = PairProcessor(args.clinical_path)
-        folds, test_ids = pairProcessor.k_cross_validation(
-                test_ratio = hparams.test_ratio,
-                n_splits = hparams.folds,
-        random_seed = 520)
-        cvdata = []
-        for train_ids, val_ids in folds:
-            cox = CoxModel(hparams)
-            data = cox.fit(train_ids, val_ids)
-            cvdata.append(data)
-            print(data)
+    pairProcessor = PairProcessor(args.clinical_path)
+    folds, test_ids = pairProcessor.k_cross_validation(
+        test_ratio = hparams.test_ratio,
+        n_splits = hparams.folds,
+        random_seed = hparams.seed)
+    cvdata = []
+    for train_ids, val_ids in folds:
+        cox = CoxModel(hparams)
+        data = cox.fit(train_ids, val_ids)
+        cvdata.append(data)
+        print(data)
         avg_ci = np.mean([x for x in cvdata])
         print("CI: %.4f" % (avg_ci))
 
 def main(args) -> None:
     """
-    Main function
-    :param args: Command Line Arguments
-    """
+        Main function
+        :param args: Command Line Arguments
+        """
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
-    np.random.seed(520)
-    torch.manual_seed(520)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
     if(args.use_cox):
         cox(args)
     else:
@@ -152,11 +154,16 @@ if __name__ == '__main__':
 
         ## TRAINING ########
         parser.add_argument("--epochs", default=config.EPOCHS, type=int)
+        data_arg.add_argument('--auto-find-lr', action='store_true', default=False)
         parser.add_argument("--gpus", default=config.EPOCHS, type=int)
         ####################
 
         ## DEBUG ###########
         parser.add_argument("--overfit-pct", default=0, type=float)
+        ####################
+
+        ## MISC ############
+        data_arg.add_argument("--seed", default=520, type=int)
         ####################
 
 

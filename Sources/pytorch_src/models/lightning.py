@@ -32,22 +32,19 @@ class ImageSiamese(pl.LightningModule):
         self.log_model_parameters()
 
     def forward(self, iA, iB, rA, rB):
-        if(self.use_images and (self.use_radiomics or self.use_clinical)):
-            x = self.convolution(iA)
-            y = self.convolution(iB)
-            x.view(x.size(0), -1)
-            y.view(y.size(0), -1)
-            x = torch.cat((x, rA), dim=1)
-            y = torch.cat((y, rB), dim=1)
-        elif(self.use_radiomics or self.use_clinical):
-            x = rA
-            y = rB
-        elif(self.use_images):
-            x = self.convolution(iA)
-            y = self.convolution(iB)
-        x = self.fc(x)
-        y = self.fc(y)
-        z = (x - y)
+        tA = torch.empty(0).to(iA.device)
+        tB = torch.empty(0).to(iB.device)
+        if(self.use_images):
+            x = self.convolution(iA).view(iA.size(0), -1)
+            y = self.convolution(iB).view(iB.size(0), -1)
+            tA = torch.cat((tA, x), dim=1)
+            tB = torch.cat((tB, y), dim=1)
+        if(self.use_radiomics or self.use_clinical):
+            tA = torch.cat((tA, rA), dim=1)
+            tB = torch.cat((tB, rB), dim=1)
+        tA = self.fc(tA)
+        tB = self.fc(tB)
+        z = (tA - tB)
 
         z = self.distance(z)
 
@@ -186,6 +183,7 @@ class ImageSiamese(pl.LightningModule):
 
         parser.add_argument('--use-images', action='store_true', default=config.USE_IMAGES)
         parser.add_argument('--conv-layers', type=int, nargs='+', default=[1,4,8,16])
+        parser.add_argument('--conv-model', type = str, default="Bottleneck")
         ## OPTIMIZER
         parser.add_argument('--learning-rate', type=float, default=config.LR)
         parser.add_argument('--momentum', type=float, default=config.MOMENTUM)

@@ -1,0 +1,417 @@
+|     id | img | rad | cli | epoch |   loss |     CI |
+|--------+-----+-----+-----+-------+--------+--------|
+| 864753 |   1 |   0 |   0 | 2/7   | 1.7400 | 0.5736 |
+| 868012 |   1 |   0 |   0 | 7/7   | 2.5063 | 0.5795 |
+| 868015 |   1 |   0 |   0 | 2/7   | 0.7109 | 0.5990 |
+| 879466 |   0 |   1 |   0 | 2/5   | 0.7581 | 0.7071 |
+| 879467 |   0 |   1 |   0 | 2/5   | 0.9257 | 0.7113 |
+| 871275 |   1 |   0 |   0 | 3/7   | 0.9014 | 0.5904 |
+| 871500 |   1 |   0 |   0 | 3/7   | 0.7548 | 0.5598 |
+| 871520 |   1 |   0 |   0 | 5/7   | 1.0777 | 0.5579 |
+| 871565 |   1 |   0 |   1 | 7/7   | 3.5067 | 0.5901 |
+| 871566 |   1 |   0 |   1 | 7/7   | 1.4570 | 0.5850 |
+
+*** 864753
+		- Only Images
+		- Neural Net size: 1 4 8 8 8 8 -> 64 16 4 -> 4 1
+		- Conv model: Bottleneck
+		- Parameters:
+			- Convolution: 2037
+			- FC: 2488
+			- Distance 4
+		- Script:
+		#+begin_src bash
+			#!/bin/bash
+			#SBATCH -t 48:00:00
+			#SBATCH --mem=80G
+			#SBATCH -o outputs/output-image.txt
+			#SBATCH -e outputs/error-image.txt
+			#SBATCH -J DeepCINET-Image
+			#SBATCH -c 32
+			#SBATCH -N 1
+			#SBATCH --account=radiomics_gpu
+			#SBATCH --partition=gpu_radiomics
+			#SBATCH --gres=gpu:4
+			OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_images_sort.csv
+							 --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
+							 --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
+
+							 --batch-size 64
+							 --epochs 7
+
+							 --transitive-pairs 30
+
+							 --use-kfold
+							 --folds 5
+
+							 --use-images
+							 --conv-layers 1 4 8 8 8 8
+
+							 --fc-layers 64 16  4
+							 --dropout      0.8 0
+
+							 --use-distance
+							 --d-layers  4 1
+							 --d-dropout   0
+
+							 --gpus=3
+			'
+			mkdir log/${SLURM_JOBID}
+			cp scripts/script-Image.sh log/${SLURM_JOBID}/
+			cat scripts/script-Dist.sh
+			echo 'Starting Shell Script with the following options'
+			source /cluster/home/dzhu/.bashrc
+			python pytorch_src/train_lightning.py $OPTIONS
+			echo 'Python script finished.'
+			mv outputs/*image.txt log/${SLURM_JOBID}/
+		#+end_src
+
+*** 868012
+		- Image only
+		- 50 pairs per image
+		- 1 4 4 4 4 4 -> 32 8 4 1
+		- Conv Model: Bottleneck
+		#+begin_src bash
+#!/bin/bash
+#SBATCH -t 48:00:00
+#SBATCH --mem=80G
+#SBATCH -o outputs/output-image-%j.txt
+#SBATCH -e outputs/error-image-%j.txt
+#SBATCH -J DeepCINET-Image
+#SBATCH -c 32
+#SBATCH -N 1
+#SBATCH --account=radiomics_gpu
+#SBATCH --partition=gpu_radiomics
+#SBATCH --gres=gpu:4
+OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_images_sort.csv
+         --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
+         --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
+
+         --batch-size 64
+         --epochs 7
+
+         --transitive-pairs 50
+
+         --use-kfold
+         --folds 5
+
+         --use-images
+         --conv-layers 1 4 4 4 4 4
+
+         --fc-layers 32  8   4   1
+         --dropout       0.6 0.3 0
+
+         --gpus=4
+'
+mkdir log/${SLURM_JOBID}
+cp scripts/script-Image.sh log/${SLURM_JOBID}/
+cat scripts/script-Dist.sh
+echo 'Starting Shell Script with the following options'
+source /cluster/home/dzhu/.bashrc
+python pytorch_src/train_lightning.py $OPTIONS
+echo 'Python script finished.'
+mv outputs/*image-${SLURM_JOBID}.txt log/${SLURM_JOBID}/
+		#+end_src
+
+*** 868015
+		- Image only
+		- 50 pairs per image
+		- 1 4 4 4 4 -> 256 8 4 1
+		- Conv Model: Bottleneck
+		
+		#+begin_src bash
+			#!/bin/bash
+			#SBATCH -t 48:00:00
+			#SBATCH --mem=80G
+			#SBATCH -o outputs/output-image-%j.txt
+			#SBATCH -e outputs/error-image-%j.txt
+			#SBATCH -J DeepCINET-Image
+			#SBATCH -c 32
+			#SBATCH -N 1
+			#SBATCH --account=radiomics_gpu
+			#SBATCH --partition=gpu_radiomics
+			#SBATCH --gres=gpu:4
+			OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_images_sort.csv
+							 --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
+							 --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
+
+							 --batch-size 64
+							 --epochs 7
+
+							 --transitive-pairs 50
+
+							 --use-kfold
+							 --folds 5
+
+							 --use-images
+							 --conv-layers 1 4 4 4 4
+
+							 --fc-layers 256 8   4   1
+							 --dropout       0.6 0.3 0
+
+							 --gpus=4
+			'
+			mkdir log/${SLURM_JOBID}
+			cp scripts/script-Image.sh log/${SLURM_JOBID}/
+			cat scripts/script-Dist.sh
+			echo 'Starting Shell Script with the following options'
+			source /cluster/home/dzhu/.bashrc
+			python pytorch_src/train_lightning.py $OPTIONS
+			echo 'Python script finished.'
+			mv outputs/*image-${SLURM_JOBID}.txt log/${SLURM_JOBID}/
+		#+end_src
+
+*** 870466
+		- Radiomics model
+		- 1556 16 8 4 1
+		#+begin_src bash
+#!/bin/bash
+#SBATCH -t 24:00:00
+#SBATCH --mem=40G
+#SBATCH -o outputs/output-deep-%j.txt
+#SBATCH -e outputs/error-deep-%j.txt
+#SBATCH -J DeepCINET
+#SBATCH -c 16
+#SBATCH -N 1
+#SBATCH --account=radiomics_gpu
+#SBATCH --partition=gpu_radiomics
+#SBATCH --gres=gpu:3
+OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_sort.csv
+
+         --use-radiomics
+         --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_sort.csv
+
+         --epochs=5
+
+         --batch-size 1024
+
+         --use-kfold
+         --folds=20
+
+         --transitive-pairs 10000
+
+         --fc-layers 1556 16  8   4 1
+         --dropout        0.7 0.3 0 0
+
+         --gpus 3
+'
+mkdir log/${SLURM_JOBID}
+cp scripts/script-RADCURE.sh log/${SLURM_JOBID}/
+cat scripts/script-RADCURE.sh
+echo 'Starting Shell Script with the following options'
+source /cluster/home/dzhu/.bashrc
+conda activate pytorchbug
+python pytorch_src/train_lightning.py $OPTIONS
+echo 'Python script finished.'
+mv outputs/*deep-${SLURM_JOBID}.txt log/${SLURM_JOBID}/
+		#+end_src
+
+*** 870467
+		- Radiomics model
+		- 1556 16 4 8 -> 8 1
+		#+begin_src bash 
+			#!/bin/bash
+			#SBATCH -t 24:00:00
+			#SBATCH --mem=24G
+			#SBATCH -o outputs/output-dist-%j.txt
+			#SBATCH -e outputs/error-dist-%j.txt
+			#SBATCH -J DeepCINET-Dist
+			#SBATCH -c 16
+			#SBATCH -N 1
+			#SBATCH --account=radiomics_gpu
+			#SBATCH --partition=gpu_radiomics
+			#SBATCH --gres=gpu:4
+			OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_sort.csv
+
+							 --use-radiomics
+							 --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_sort.csv
+
+							 --epochs=5
+
+							 --batch-size 1024
+
+							 --use-kfold
+							 --folds=20
+
+							 --transitive-pairs 10000
+
+							 --fc-layers 1556 16  4   8
+							 --dropout        0.7 0.3 0
+
+							 --use-distance
+							 --d-layers  8 1
+							 --d-dropout   0
+
+							 --gpus 4
+			'
+			mkdir log/${SLURM_JOBID}
+			cp scripts/script-Dist.sh log/${SLURM_JOBID}/
+			cat scripts/script-Dist.sh
+			echo 'Starting Shell Script with the following options'
+			source /cluster/home/dzhu/.bashrc
+			conda activate pytorchbug
+			python pytorch_src/train_lightning.py $OPTIONS
+			echo 'Python script finished.'
+			mv outputs/*dist-${SLURM_JOBID}.txt log/${SLURM_JOBID}/
+		#+end_src
+		
+*** 871275
+		- Images model
+		- 50 Pairs
+		- 1 2 4 8 16 16 -> 128 1
+		- Conv Model: Resnet
+		#+begin_src bash
+			#!/bin/bash
+			#SBATCH -t 48:00:00
+			#SBATCH --mem=80G
+			#SBATCH -o outputs/output-image-%j.txt
+			#SBATCH -e outputs/error-image-%j.txt
+			#SBATCH -J DeepCINET-Image
+			#SBATCH -c 32
+			#SBATCH -N 1
+			#SBATCH --account=radiomics_gpu
+			#SBATCH --partition=gpu_radiomics
+			#SBATCH --gres=gpu:4
+			OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_images_sort.csv
+							 --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
+							 --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
+
+							 --batch-size 128
+							 --epochs 7
+
+							 --transitive-pairs 50
+
+							 --use-kfold
+							 --folds 5
+
+							 --use-images
+							 --conv-layers 1 2 4 8 16 16
+							 --conv-model ResNet
+
+							 --fc-layers 128 1
+							 --dropout       0
+							 --learning-rate 0.001
+							 --sc-milestones 3 10
+							 --weight-decay 0.01
+
+							 --gpus=4
+			'
+			mkdir log/${SLURM_JOBID}
+			cp scripts/script-Image.sh log/${SLURM_JOBID}/
+			cat scripts/script-Dist.sh
+			echo 'Starting Shell Script with the following options'
+			source /cluster/home/dzhu/.bashrc
+			conda activate pytorchbug
+			python pytorch_src/train_lightning.py $OPTIONS
+			echo 'Python script finished.'
+			mv outputs/*image-${SLURM_JOBID}.txt log/${SLURM_JOBID}/
+		#+end_src
+*** 871500
+		- Images only model
+		- 10 pairs per image
+		- 1 2 4 8 8 8 -> 64 1
+		- Conv model: ResNet
+		#+begin_src bash
+			#!/bin/bash
+			#SBATCH -t 48:00:00
+			#SBATCH --mem=80G
+			#SBATCH -o outputs/output-image-%j.txt
+			#SBATCH -e outputs/error-image-%j.txt
+			#SBATCH -J DeepCINET-Image
+			#SBATCH -c 32
+			#SBATCH -N 1
+			#SBATCH --account=radiomics_gpu
+			#SBATCH --partition=gpu_radiomics
+			#SBATCH --gres=gpu:4
+			OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_images_sort.csv
+							 --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
+							 --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
+
+							 --batch-size 128
+							 --epochs 7
+
+							 --transitive-pairs 10
+
+							 --use-kfold
+							 --folds 5
+
+							 --use-images
+							 --conv-layers 1 2 4 8 8 8
+							 --conv-model ResNet
+
+							 --fc-layers 64 1
+							 --dropout      0
+							 --auto-find-lr
+							 --sc-milestones 3 10
+							 --weight-decay 0.05
+
+							 --gpus=4
+			'
+			mkdir log/${SLURM_JOBID}
+			cp scripts/script-Image.sh log/${SLURM_JOBID}/
+			cat scripts/script-Dist.sh
+			echo 'Starting Shell Script with the following options'
+			source /cluster/home/dzhu/.bashrc
+			conda activate pytorchbug
+			python pytorch_src/train_lightning.py $OPTIONS
+			echo 'Python script finished.'
+			mv outputs/*image-${SLURM_JOBID}.txt log/${SLURM_JOBID}/
+		#+end_src
+
+*** 871520
+		- Image only model
+		- 10 pairs
+		- 1 4 4 8 16 -> 1024 16 -> 16 1
+		- Convmodel Bottleneck
+		#+begin_src bash
+#!/bin/bash
+#SBATCH -t 48:00:00
+#SBATCH --mem=80G
+#SBATCH -o outputs/output-image-%j.txt
+#SBATCH -e outputs/error-image-%j.txt
+#SBATCH -J DeepCINET-Image
+#SBATCH -c 32
+#SBATCH -N 1
+#SBATCH --account=radiomics_gpu
+#SBATCH --partition=gpu_radiomics
+#SBATCH --gres=gpu:4
+OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_images_sort.csv
+         --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
+         --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
+
+         --batch-size 128
+         --epochs 7
+
+         --transitive-pairs 10
+
+         --use-kfold
+         --folds 5
+
+         --use-images
+         --conv-layers 1 4 4 8 16
+         --conv-model Bottleneck
+
+         --fc-layers 1024 16
+         --dropout       0.7
+         --auto-find-lr
+         --sc-milestones 3 10
+         --weight-decay 0.05
+
+				 --use-distance
+				 --d-layers 16 1
+				 --d-dropout 0
+         --gpus=4
+'
+mkdir log/${SLURM_JOBID}
+cp scripts/script-Image.sh log/${SLURM_JOBID}/
+cat scripts/script-Image.sh
+echo 'Starting Shell Script with the following options'
+source /cluster/home/dzhu/.bashrc
+conda activate pytorchbug
+python pytorch_src/train_lightning.py $OPTIONS
+echo 'Python script finished.'
+mv outputs/*image-${SLURM_JOBID}.txt log/${SLURM_JOBID}/
+		#+end_src
+*** 871565
+*** 878565
+
