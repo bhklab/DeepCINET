@@ -4,5 +4,4 @@ __pycache__/
 .ipynb_checkpoints/
 format.sh
 save.sh
-log/
 lightning_logs/
