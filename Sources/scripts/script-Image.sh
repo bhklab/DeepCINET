@@ -13,28 +13,25 @@ OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics
          --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
          --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
 
-         --batch-size 192
-         --epochs 10
+         --batch-size 64
+				 --num-workers 16
+         --epochs 20
 
-         --transitive-pairs 10
+         --transitive-pairs 5
 
          --use-kfold
          --folds 5
 
          --use-images
-         --conv-layers 1 4 4 8 16
+         --conv-layers 1 8 16 32 64 64
          --conv-model Bottleneck
 
-         --fc-layers 1032 16
-         --dropout       0.7
-         --auto-find-lr
-         --sc-milestones 3 10
-         --weight-decay 0.05
-         --use-clinical
+         --fc-layers 512 256 128 64  1
+         --dropout       0.8 0.7 0.6 0
+				 --learning-rate 0.03
+         --weight-decay 0.001
+         --sc-milestones 10
 
-				 --use-distance
-				 --d-layers 16 1
-				 --d-dropout 0
          --gpus=4
 '
 mkdir log/${SLURM_JOBID}

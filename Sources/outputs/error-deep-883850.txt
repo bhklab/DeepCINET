@@ -1,0 +1,514 @@
+/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/site-packages/pymrmre/MrmreFilter.py:158: RuntimeWarning: invalid value encountered in greater
+  causality_dropped = np.where(np.array(self._causality_list.loc[target_index]) > causality_threshold)
+/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/site-packages/pymrmre/MrmreFilter.py:159: RuntimeWarning: invalid value encountered in less
+  mi_dropped = np.where(-.5 * np.log(1 - np.square(self._mi_matrix[:, target_index])) < mi_threshold)
+INFO:lightning:GPU available: True, used: True
+INFO:lightning:VISIBLE GPUS: 0
+INFO:lightning:Set SLURM handle signals.
+INFO:lightning:
+   | Name                     | Type           | Params
+--------------------------------------------------------
+0  | criterion                | BCELoss        | 0     
+1  | convolution              | Identity       | 0     
+2  | fc                       | FullyConnected | 25 K  
+3  | fc.layers                | ModuleList     | 25 K  
+4  | fc.layers.0              | Sequential     | 6 K   
+5  | fc.layers.0.0            | Residual       | 6 K   
+6  | fc.layers.0.0.fc1        | Linear         | 1 K   
+7  | fc.layers.0.0.fc2        | Linear         | 4 K   
+8  | fc.layers.0.0.activation | LeakyReLU      | 0     
+9  | fc.layers.0.0.shortcut   | Linear         | 1 K   
+10 | fc.layers.0.1            | Dropout        | 0     
+11 | fc.layers.1              | Sequential     | 8 K   
+12 | fc.layers.1.0            | Residual       | 8 K   
+13 | fc.layers.1.0.fc1        | Linear         | 4 K   
+14 | fc.layers.1.0.fc2        | Linear         | 4 K   
+15 | fc.layers.1.0.activation | LeakyReLU      | 0     
+16 | fc.layers.1.0.shortcut   | Identity       | 0     
+17 | fc.layers.1.1            | Dropout        | 0     
+18 | fc.layers.2              | Sequential     | 8 K   
+19 | fc.layers.2.0            | Residual       | 8 K   
+20 | fc.layers.2.0.fc1        | Linear         | 4 K   
+21 | fc.layers.2.0.fc2        | Linear         | 4 K   
+22 | fc.layers.2.0.activation | LeakyReLU      | 0     
+23 | fc.layers.2.0.shortcut   | Identity       | 0     
+24 | fc.layers.2.1            | Dropout        | 0     
+25 | fc.layers.3              | Sequential     | 2 K   
+26 | fc.layers.3.0            | Residual       | 2 K   
+27 | fc.layers.3.0.fc1        | Linear         | 1 K   
+28 | fc.layers.3.0.fc2        | Linear         | 272   
+29 | fc.layers.3.0.activation | LeakyReLU      | 0     
+30 | fc.layers.3.0.shortcut   | Linear         | 1 K   
+31 | fc.layers.3.1            | Dropout        | 0     
+32 | fc.layers.4              | Sequential     | 35    
+33 | fc.layers.4.0            | Residual       | 35    
+34 | fc.layers.4.0.fc1        | Linear         | 17    
+35 | fc.layers.4.0.fc2        | Linear         | 2     
+36 | fc.layers.4.0.activation | LeakyReLU      | 0     
+37 | fc.layers.4.0.shortcut   | Linear         | 16    
+38 | fc.layers.4.1            | Dropout        | 0     
+39 | distance                 | Identity       | 0     
+Validation sanity check:   0%|          | 0/5 [00:00<?, ?it/s]Validation sanity check:  20%|██        | 1/5 [00:01<00:07,  1.99s/it]Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000315a0cd320005bf7b'
+                                                                      /cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/site-packages/pytorch_lightning/utilities/warnings.py:18: RuntimeWarning: Displayed epoch numbers in the progress bar start from "1" until v0.6.x, but will start from "0" in v0.8.0.
+  warnings.warn(*args, **kwargs)
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003215952490005bf80'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000320cdae900005bf81'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000320cdae8f0005bf7f'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000031635d1950005bf84'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003248427ad0005bf83'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000032159524b0005bf8b'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003248523240005bf88'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000031cbd98ff0005bf7e'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003276004690005bf89'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000320cdae8e0005bf7d'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000032159524d0005bf7c'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000032159524c0005bf87'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000320cdae920005bf85'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000324965e620005bf82'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000031cbd99000005bf86'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000315a0cd360005bf8a'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003248427ae0005bf8c'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003215952540005bf8e'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000320cdae940005bf90'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000320cdae960005bf97'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000315a0cd3b0005bf94'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000315a0cd3c0005bf95'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000031cbd99020005bf8d'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003215952530005bf96'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000315a0cd390005bf9b'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003215952510005bf99'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000320cdae970005bf9a'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000032760046d0005bf91'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000031635d1960005bf92'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs00000003215952550005bf93'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000000324965e670005bf8f'
+Traceback (most recent call last):
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 277, in _run_finalizers
+    finalizer()
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 201, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/multiprocessing/util.py", line 110, in _remove_temp_dir
+    rmtree(tempdir)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 494, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 452, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/cluster/home/dzhu/anaconda3/envs/pytorchbug/lib/python3.7/shutil.py", line 450, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs000000032760046b0005bf98'

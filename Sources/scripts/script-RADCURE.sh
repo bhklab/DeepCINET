@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -t 24:00:00
-#SBATCH --mem=40G
+#SBATCH --mem=16G
 #SBATCH -o outputs/output-deep-%j.txt
 #SBATCH -e outputs/error-deep-%j.txt
 #SBATCH -J DeepCINET
@@ -8,25 +8,28 @@
 #SBATCH -N 1
 #SBATCH --account=radiomics_gpu
 #SBATCH --partition=gpu_radiomics
-#SBATCH --gres=gpu:3
+#SBATCH --gres=gpu:1
 OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_sort.csv
 
+         --use-clinical
          --use-radiomics
          --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_sort.csv
 
-         --epochs=5
-
-         --batch-size 1024
-
-         --use-kfold
-         --folds=20
-
+         --epochs 100
          --transitive-pairs 10000
 
-         --fc-layers 1556 16  8   4 1
-         --dropout        0.7 0.3 0 0
+         --batch-size 1024
+         --use-kfold
+         --folds 5
+         --learning-rate 0.01
 
-         --gpus 3
+				 --mrmr 10
+         --fc-layers 18 64 64 64 16 1
+         --dropout      0  0  0  0  0
+         --weight-decay 0
+         --sc-milestones 1000
+				 --check-val-every-n-epoch 10
+         --gpus 1
 '
 mkdir log/${SLURM_JOBID}
 cp scripts/script-RADCURE.sh log/${SLURM_JOBID}/
