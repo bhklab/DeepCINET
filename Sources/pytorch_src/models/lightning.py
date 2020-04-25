@@ -14,41 +14,42 @@ from pytorch_src.models.distance_model import DistanceLayer
 
 import pytorch_src.default_settings as config
 
+from lifelines.utils import concordance_index
 
 class ImageSiamese(pl.LightningModule):
     def __init__(self, hparams):
         super(ImageSiamese, self).__init__()
         self.hparams = hparams
 
-        self.use_images = hparams.use_images
-        self.use_radiomics = hparams.use_radiomics
-        self.use_clinical = hparams.use_clinical
         self.cvdata = []
 
         self.criterion = nn.BCELoss()
         self.convolution = ConvolutionLayer(hparams) if hparams.use_images else nn.Identity()
         self.fc = FullyConnected(hparams)
+        ## It's actually useless due to linearity!
         self.distance = DistanceLayer(hparams) if hparams.use_distance else nn.Identity()
         self.log_model_parameters()
 
     def forward(self, iA, iB, rA, rB):
-        tA = torch.empty(0).to(iA.device)
-        tB = torch.empty(0).to(iB.device)
-        if(self.use_images):
-            x = self.convolution(iA).view(iA.size(0), -1)
-            y = self.convolution(iB).view(iB.size(0), -1)
-            tA = torch.cat((tA, x), dim=1)
-            tB = torch.cat((tB, y), dim=1)
-        if(self.use_radiomics or self.use_clinical):
-            tA = torch.cat((tA, rA), dim=1)
-            tB = torch.cat((tB, rB), dim=1)
-        tA = self.fc(tA)
-        tB = self.fc(tB)
+        tA = self.computeEnergy(iA, rA)
+        tB = self.computeEnergy(iB, rB)
         z = (tA - tB)
-
         z = self.distance(z)
-
         return torch.sigmoid(z)
+
+    def computeEnergy(self, iA, rA):
+        tA = torch.empty(0).to(iA.device)
+        if(self.hparams.use_images):
+            x = self.convolution(iA).view(iA.size(0), -1)
+            tA = torch.cat((tA, x), dim=1)
+        if(self.hparams.use_radiomics or self.hparams.use_clinical):
+            tA = torch.cat((tA, rA), dim=1)
+        tA = self.fc(tA)
+
+        if(self.hparams.use_exp):
+            tA = torch.exp(tA).sum(dim = 1)
+        return tA
+
 
     def on_epoch_start(self):
         print("")
@@ -90,39 +91,25 @@ class ImageSiamese(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         iA = batch['imageA']
-        iB = batch['imageB']
         rA = batch['radiomicsA']
-        rB = batch['radiomicsB']
-        idA = batch['idA']
-        idB = batch['idB']
-        labels = batch['labels']
+        Tevent = batch['Tevent']
+        event = batch['event']
 
-        output = self.forward(iA, iB, rA, rB)
-        loss = self.criterion(output.view(-1), labels.view(-1))
+        output = self.computeEnergy(iA, rA).view(-1)
 
-        np_output = output.view(-1).detach()
-        output_class = torch.where(np_output < 0.5,
-                                   torch.tensor(0).type_as(np_output),
-                                   torch.tensor(1).type_as(np_output))
-
-        correct = torch.sum(output_class == labels).type_as(np_output)
-        total = torch.tensor(np_output.size(0)).type_as(np_output)
-
-        return {'val_loss' : loss, 'correct' : correct, 'total': total}
+        return {'Tevents': Tevent, 'Events': event, 'Energies': output}
 
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['val_loss'].mean() for x in outputs]).mean()
-        correct = torch.stack(([x['correct'].sum()  for x in outputs])).sum()
-        total = torch.stack(([x['total'].sum() for x in outputs])).sum()
+        Tevents = torch.cat([x['Tevents'] for x in outputs]).cpu().numpy()
+        Events = torch.cat([x['Events']  for x in outputs]).cpu().numpy()
+        Energies = torch.cat([x['Energies']  for x in outputs]).cpu().numpy()
 
-        tensorboard_logs = {'val_loss': avg_loss,
-                            'val_CI' : correct/total}
+        CI = concordance_index(Tevents, Energies, Events)
+        tensorboard_logs = {'val_CI' : CI}
 
         if(self.hparams.use_kfold):
             self.cvdata.append({
-                'val_loss': avg_loss,
-                'correct' : correct,
-                'total': total
+                'CI': CI
             })
         return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
@@ -156,6 +143,7 @@ class ImageSiamese(pl.LightningModule):
 
 
     def configure_optimizers(self):
+        print(self.hparams.learning_rate)
         optimizer = torch.optim.SGD(self.parameters(),
                                     lr=self.hparams.learning_rate,
                                     momentum=self.hparams.momentum,
@@ -191,6 +179,7 @@ class ImageSiamese(pl.LightningModule):
         parser.add_argument('--sc-milestones', type=int, nargs='+',
                             default = config.SC_MILESTONES)
         parser.add_argument('--sc-gamma', type=float, default=config.SC_GAMMA)
+        parser.add_argument('--use-exp', action='store_true', default=config.USE_IMAGES)
 
         return parser
 
