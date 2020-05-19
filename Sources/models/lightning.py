@@ -8,11 +8,11 @@ import numpy as np
 
 import pytorch_lightning as pl
 
-from pytorch_src.models.conv_model import ConvolutionLayer
-from pytorch_src.models.fc_model import FullyConnected
-from pytorch_src.models.distance_model import DistanceLayer
+from models.conv_model import ConvolutionLayer
+from models.fc_model import FullyConnected
+from models.distance_model import DistanceLayer
 
-import pytorch_src.default_settings as config
+import default_settings as config
 
 from lifelines.utils import concordance_index
 
@@ -20,6 +20,7 @@ class ImageSiamese(pl.LightningModule):
     def __init__(self, hparams):
         super(ImageSiamese, self).__init__()
         self.hparams = hparams
+        self.t_steps = 0
 
         self.cvdata = []
 
@@ -66,6 +67,7 @@ class ImageSiamese(pl.LightningModule):
 
         output = self.forward(iA, iB, rA, rB)
         loss = self.criterion(output.view(-1), labels.view(-1))
+        self.t_steps += 1
 
         np_output = output.view(-1).detach()
         output_class = torch.where(np_output < 0.5,
@@ -109,7 +111,8 @@ class ImageSiamese(pl.LightningModule):
 
         if(self.hparams.use_kfold):
             self.cvdata.append({
-                'CI': CI
+                'CI': CI,
+                't_steps': self.t_steps
             })
         return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
@@ -172,6 +175,7 @@ class ImageSiamese(pl.LightningModule):
         parser.add_argument('--use-images', action='store_true', default=config.USE_IMAGES)
         parser.add_argument('--conv-layers', type=int, nargs='+', default=[1,4,8,16])
         parser.add_argument('--conv-model', type = str, default="Bottleneck")
+        parser.add_argument('--pool', type=int, nargs='+', default=[1,1,1,1])
         ## OPTIMIZER
         parser.add_argument('--learning-rate', type=float, default=config.LR)
         parser.add_argument('--momentum', type=float, default=config.MOMENTUM)

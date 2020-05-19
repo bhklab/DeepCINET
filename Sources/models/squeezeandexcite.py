@@ -8,7 +8,7 @@ class SqueezeAndExcite(nn.Module):
         self.fc1 = nn.Linear(in_channels, in_channels // r)
         self.fc2 = nn.Linear(in_channels // r, in_channels)
         self.avgPool = nn.AdaptiveAvgPool3d(1)
-        self.act = nn.ReLU()
+        self.act = nn.ReLU(inplace = True)
         self.sig = nn.Sigmoid()
 
     def forward(self, x):

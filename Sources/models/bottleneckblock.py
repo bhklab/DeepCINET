@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from pytorch_src.models.squeezeandexcite import SqueezeAndExcite
+from models.squeezeandexcite import SqueezeAndExcite
 
 class BottleneckBlock3d(nn.Module):
     def __init__(self, in_channels, expansion_channels, out_channels, kernel_size):
@@ -9,13 +9,13 @@ class BottleneckBlock3d(nn.Module):
         self.conv1x1 = nn.Sequential(
             nn.Conv3d(in_channels, expansion_channels, kernel_size = 1),
             nn.BatchNorm3d(expansion_channels),
-            nn.LeakyReLU()
+            nn.LeakyReLU(inplace = True)
         )
 
         self.dwconv = nn.Sequential(
             nn.Conv3d(expansion_channels, expansion_channels, kernel_size = kernel_size, padding=1, groups = expansion_channels),
             nn.BatchNorm3d(expansion_channels),
-            nn.LeakyReLU()
+            nn.LeakyReLU(inplace = True)
         )
 
         self.convsqueeze = nn.Sequential(
@@ -28,12 +28,8 @@ class BottleneckBlock3d(nn.Module):
             nn.BatchNorm3d(out_channels)) if in_channels != out_channels else nn.Identity()
         self.SE = SqueezeAndExcite(out_channels)
 
-
     def forward(self, x):
         residual = self.shortcut(x)
-        x = self.conv1x1(x)
-        x = self.dwconv(x)
-        x = self.convsqueeze(x)
-        x = self.SE(x)
+        x = self.SE(self.convsqueeze(self.dwconv(self.conv1x1(x))))
         x += residual
         return x

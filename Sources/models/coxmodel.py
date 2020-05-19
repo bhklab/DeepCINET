@@ -1,6 +1,7 @@
 from lifelines import CoxPHFitter
 from lifelines.utils import concordance_index
 import pandas as pd
+from pymrmre import mrmr
 
 
 class CoxModel():
@@ -28,38 +29,39 @@ class CoxModel():
                        'lbp-3D-m2_glcm_JointEntropy',
                        'lbp-3D-m2_glcm_SumEntropy',
                        'wavelet-HHH_glcm_ClusterProminence']
-        self.categorical = ['Sex', 'ECOG PS', 'Smoking Hx', 'Drinking hs', 'T', 'N', 'Stage', 'Subsite']
 
         self.clinical_var = ['id', 'event', 'time']
-        self.clinical_full = ['Age', 'Sex', 'ECOG PS', 'Smoking Hx', 'Drinking hx', 'Subsite', 'T', 'N', 'Stage']
+        self.clinical_full = ['Age', 'Sex', 'ECOG PS', 'Smoking Hx', 'Drinking hx', 'T', 'N', 'Stage']
+        self.categorical = ['Sex']
         if(hparams.use_clinical):
             self.clinical_var.extend(self.clinical_full)
+        self.clinical_csv = pd.get_dummies(self.clinical_csv[self.clinical_var].fillna(0), columns = self.categorical if hparams.use_clinical else [])
 
         if(self.hparams.use_radiomics):
             self.radiomics_csv = pd.read_csv(self.radiomics_path, index_col=0)
             self.radiomics_csv.drop(columns = cols, inplace= True)
             self.radiomics_csv.drop(columns = low_var_col, inplace= True)
 
-        self.clinical_csv.get_dummies(columns = categorical)
         self.features = None
 
     def fit(self, train_ids, val_ids):
-        if(hparams.mrmr > 0):
+        if(self.hparams.mrmr > 0):
             if(self.features == None):
                 features = self.radiomics_csv.iloc[train_ids]
                 targets = self.clinical_csv[['event', 'time']].iloc[train_ids]
                 targets.event = targets.event.astype(int)
-                solutions = mrmr.mrmr_ensemble_survival(
+                self.features = mrmr.mrmr_ensemble_survival(
                     features = features,
                     targets = targets,
                     solution_count = 1,
                     solution_length = self.hparams.mrmr).iloc[0][0]
-            self.radiomics_csv = self.merge_csv[self.features]
+            self.radiomics_csv = self.radiomics_csv[['id', *self.features]]
 
-        self.merge_csv = pd.merge(self.radiomics_csv, self.clinical_csv[self.clinical_var].fillna(0), on='id')
+        self.merge_csv = pd.merge(self.radiomics_csv, self.clinical_csv, on='id') if self.hparams.use_radiomics else self.clinical_csv
         self.merge_csv.drop(columns = 'id', inplace=True)
 
-        cph = CoxPHFitter(penalizer = 0.1)
+        cph = CoxPHFitter(penalizer=0.1)
+        print(self.merge_csv.columns)
         cph.fit(self.merge_csv.iloc[train_ids], duration_col='time', event_col='event', show_progress=True, step_size=0.2)
         val_csv = self.merge_csv.iloc[val_ids]
         CI = concordance_index(val_csv['time'], -cph.predict_partial_hazard(val_csv).values, val_csv['event'])

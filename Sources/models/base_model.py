@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from pytorch_src.models.conv_model import ConvolutionLayer
-from pytorch_src.models.fc_model import FullyConnected
+from models.conv_model import ConvolutionLayer
+from models.fc_model import FullyConnected
 
 class ImageSiamese(nn.Module):
     def __init__(self):

@@ -7,16 +7,16 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 import pandas as pd
 
-from pytorch_src.models.lightning import ImageSiamese
-from pytorch_src.models.coxmodel import CoxModel
+from models.lightning import ImageSiamese
+from models.coxmodel import CoxModel
 import numpy as np
 
 import torch
 import torch.nn as nn
 
-import pytorch_src.default_settings as config
-from pytorch_src.data.datareader import PairProcessor
-from pytorch_src.data.dataloader import Dataset
+import default_settings as config
+from data.datareader import PairProcessor
+from data.dataloader import Dataset
 
 from pytorch_lightning import Trainer
 
@@ -54,24 +54,38 @@ def deepCinet(args):
             val_dl = Create_Dataloader(val_ds, hparams)
 
             siamese_model = ImageSiamese(hparams=hparams)
-            trainer = Trainer(min_epochs = hparams.epochs,
-                              max_epochs = hparams.epochs,
+            trainer = Trainer(min_epochs = hparams.min_epochs,
+                              max_epochs = hparams.max_epochs,
+                              min_steps = hparams.min_steps,
+                              max_steps = hparams.max_steps,
                               gpus=list(range(hparams.gpus)),
                               accumulate_grad_batches = 1,
                               distributed_backend='dp',
                               weights_summary ='full',
                               enable_benchmark = False,
+                              num_sanity_val_steps = 0,
 			                  auto_find_lr = hparams.auto_find_lr,
                               check_val_every_n_epoch = hparams.check_val_every_n_epoch,
                               overfit_pct = hparams.overfit_pct)
             trainer.fit(siamese_model,
                         train_dataloader = train_dl,
                         val_dataloaders = val_dl)
-            cvdata.append(siamese_model.cvdata)
-        for i in range(hparams.epochs):
-            avg_ci = np.mean([x[i]['CI'] for x in cvdata])
-            print("EPOCH %d -- CI: %.4f"
-				  % ((i+1)*hparams.check_val_every_n_epoch, avg_ci))
+            for i in range(len(siamese_model.cvdata)):
+                if(len(cvdata) < i + 1):
+                    cvdata.append([])
+                cvdata[i].append(siamese_model.cvdata[i])
+        paired_data = []
+        print(cvdata)
+        for i in range(len(cvdata)):
+            steps = np.mean([x['t_steps'] for x in cvdata[i]])
+            avg_ci = np.mean([x['CI'] for x in cvdata[i]])
+            print("EPOCH %d -- Steps: %.4f -- CI: %.4f"
+				  % (min((i+1)*hparams.check_val_every_n_epoch, hparams.max_epochs),
+                     steps,
+                     avg_ci))
+            paired_data.append({'steps' : steps, 'CI' : avg_ci})
+        for p in paired_data:
+            print("%.5f, %.5f" % (p['steps'], p['CI']))
     else:
         train_ids, val_ids, test_ids = pairProcessor.train_test_split(
             val_ratio = hparams.val_ratio,
@@ -88,8 +102,8 @@ def deepCinet(args):
         val_dl = Create_Dataloader(val_ds, hparams)
 
         siamese_model = ImageSiamese(hparams=hparams)
-        trainer = Trainer(min_epochs = args.epochs,
-                          max_epochs=args.epochs,
+        trainer = Trainer(min_epochs = args.min_epochs,
+                          max_epochs=args.max_epochs,
                           gpus=list(range(hparams.gpus)),
                           accumulate_grad_batches = 1,
                           distributed_backend='dp',
@@ -101,11 +115,16 @@ def deepCinet(args):
                     val_dataloaders = val_dl)
 
 def cox(hparams):
+    pairProcessor = PairProcessor(args.clinical_path)
     if(hparams.volume_only):
         cox = CoxModel(hparams)
-        print(cox.volume_only)
+        train_ids, val_ids, test_ids = pairProcessor.train_test_split(
+            val_ratio = hparams.val_ratio,
+            test_ratio = hparams.test_ratio,
+            random_seed = hparams.seed,
+            split_model = PairProcessor.TIME_SPLIT)
+        cox.volume_only(train_ids + val_ids)
     else:
-        pairProcessor = PairProcessor(args.clinical_path)
         folds, test_ids = pairProcessor.k_cross_validation(
             test_ratio = hparams.test_ratio,
             n_splits = hparams.folds,
@@ -115,9 +134,10 @@ def cox(hparams):
             cox = CoxModel(hparams)
             data = cox.fit(train_ids, val_ids)
             cvdata.append(data)
-            print(data)
-            avg_ci = np.mean([x for x in cvdata])
-            print("CI: %.6f" % (avg_ci), flush = True)
+            print(data, flush = True)
+        avg_ci = np.mean([x for x in cvdata])
+        print("CI: %.6f" % (avg_ci), flush = True)
+        print(cvdata)
 
 def main(args) -> None:
     """
@@ -167,7 +187,10 @@ if __name__ == '__main__':
         data_arg.add_argument('--use-cox', action='store_true', default=False)
 
         ## TRAINING ########
-        parser.add_argument("--epochs", default=config.EPOCHS, type=int)
+        parser.add_argument("--min-epochs", default=0, type=int)
+        parser.add_argument("--min-steps", default=None, type=int)
+        parser.add_argument("--max-epochs", default=1000, type=int)
+        parser.add_argument("--max-steps", default=None, type=int)
         parser.add_argument("--check-val-every-n-epoch", default=None, type=int)
         parser.add_argument('--auto-find-lr', action='store_true', default=False)
         parser.add_argument("--gpus", default=config.EPOCHS, type=int)

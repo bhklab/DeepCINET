@@ -5,10 +5,10 @@ import torch.nn as nn
 
 import pytorch_lightning as pl
 
-from pytorch_src.models.conv_model import ConvolutionLayer
-from pytorch_src.models.fc_model import FullyConnected
+from models.conv_model import ConvolutionLayer
+from models.fc_model import FullyConnected
 
-from pytorch_src.data.dataloader import RadiomicsData as Dataset
+from data.dataloader import RadiomicsData as Dataset
 
 class RadiomicsModel(pl.LightningModule):
     def __init__(self, train_pairs, val_pairs, batch_size, image_path):

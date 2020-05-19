@@ -15,12 +15,16 @@ import pandas as pd
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, idx_list, hparams, is_train):
+        self.random = random
         self.hparams = hparams
         self.idx_list = idx_list
         self.is_train = is_train
         self.image_path = hparams.image_path
         self.clinical_path = hparams.clinical_path
-        self.clinical_csv = pd.read_csv(self.clinical_path, index_col=0)
+        self.clinical_csv = pd.read_csv(self.clinical_path, index_col=0).drop(columns=['Distant']).fillna(0)
+        categorical_var = ['Sex', 'ECOG PS', 'Smoking Hx', 'Drinking hx', 'Subsite', 'T', 'N', 'Stage']
+        self.clinical_csv = pd.get_dummies(self.clinical_csv, columns = categorical_var)
+
         self.radiomics_path = hparams.radiomics_path
         if(self.hparams.use_radiomics):
             self.radiomics_csv = pd.read_csv(self.radiomics_path, index_col = 0)
@@ -98,22 +102,11 @@ class Dataset(torch.utils.data.Dataset):
                 'Tevent': Tevent}
 
     def loadPyRadiomics(self, idx):
-        data = self.radiomics_csv.iloc[idx]
-        data = data.to_numpy()
+        data = self.radiomics_csv.iloc[idx].to_numpy()
         return torch.tensor(np.nan_to_num(data), dtype = torch.float32)
 
     def loadClinical(self, idx):
-        clinical_var = [
-            'Age',
-            'Sex',
-            'ECOG PS',
-            'Smoking Hx',
-            'Drinking hx',
-            'T',
-            'N',
-            'Stage'
-        ]
-        data = self.clinical_csv[clinical_var].iloc[idx]
+        data = self.clinical_csv.drop(columns=['id', 'time', 'event']).iloc[idx].to_numpy()
         return torch.tensor(np.nan_to_num(data), dtype = torch.float32)
 
     def loadImage(self, idx):
@@ -125,18 +118,18 @@ class Dataset(torch.utils.data.Dataset):
 
         if(self.is_train):
             if(True):
-                npad = ((16,16), (16,16), (16,16))
+                npad = ((0,0), (16,16), (16,16))
                 image = np.pad(image, pad_width = npad, mode='constant', constant_values = 0)
-            if(True): # flip on x
+            if(random.random() < 0.25): # flip on x
                 image = np.flip(image, axis=1)
-            if(False): # flip on y
+            if(random.random() < 0.25): # flip on y
                 image = np.flip(image, axis=2)
-            if(True): # rotate
+            if(random.random() < 0.25): # rotate
                 k = randint(0,3)
                 image = np.rot90(image, k, (1,2))
             if(True):
-                x0,y0,z0 = randint(0,31),randint(0,31),randint(0,31)
-                image = image[z0:z0+64, x0:x0+64 , y0:y0+64]
+                x0,y0 = randint(0,31),randint(0,31)
+                image = image[:, x0:x0+64 , y0:y0+64]
         image = torch.tensor(image.copy(), dtype=torch.float32)
         image = image.view(1, image.size(0), image.size(1), image.size(2))
         # print(image.mean())
@@ -167,3 +160,12 @@ class Dataset(torch.utils.data.Dataset):
                 self.pairlist.append({
                     'pA' : idx_list[i]
                 })
+
+
+    ##UNUSED
+    def get_scalar_feature_length(self):
+        cnt = 0
+        if(self.hparams.use_radiomics):
+            cnt += len(self.radiomics_csv.columns)
+        if(self.haparams.use_clinical):
+            cnt += len(self.clinical_csv.columns) - 2

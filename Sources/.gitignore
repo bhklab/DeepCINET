@@ -1,7 +1,9 @@
-*.err
-*.out
+**/.err
+**/.out
 __pycache__/
 .ipynb_checkpoints/
 format.sh
 save.sh
 lightning_logs/
+log/
+log/log.org

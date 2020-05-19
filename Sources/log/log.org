@@ -415,3 +415,41 @@ mv outputs/*image-${SLURM_JOBID}.txt log/${SLURM_JOBID}/
 *** 871565
 *** 878565
 
+* Experiments
+** Transitivity
+Jobs 883756,883757,883758,884392
+Runnning the same NN with different value for k, see how loss behaves
+Only with radiomic features
+
+Jobs 884563-884566
+Running the same NN wit k {1,10,100,500}
+Radiomics+Clinical
+
+
+** Transitivity
+Jobs 883756,883757,883758,884392
+Runnning the same NN with different value for k, see how loss behaves
+Only with radiomic features
+
+Jobs 884563-884566
+Running the same NN wit k {1,10,100,500}
+Radiomics+Clinical
+
+Jobs 886295-886301
+Running the same NN wit k {1,10,100,500,200, 1000, 5000}
+Radiomics+Clinical
+mrmr 80
+
+
+
+927588
+rad + clin
+
+927595
+rad
+
+927596
+resnet
+
+927610
+conv
