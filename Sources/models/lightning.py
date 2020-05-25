@@ -28,15 +28,13 @@ class DeepCINET(pl.LightningModule):
         self.criterion = nn.BCELoss()
         self.convolution = ConvolutionLayer(hparams) \
             if hparams.use_images else nn.Identity()
-        self.fc = FullyConnected(hparams) \
-            if hparams.use_radiomics or hparams.use_clinical else nn.Identity()
+        self.fc = FullyConnected(hparams)
         self.log_model_parameters()
 
     def forward(self, volumeA, volumeB, scalarA, scalarB):
         tA = self.computeEnergy(volumeA, scalarA)
         tB = self.computeEnergy(volumeB, scalarB)
         z = (tA - tB)
-        z = self.distance(z)
         return torch.sigmoid(z)
 
     def computeEnergy(self, volume, scalar_features):
@@ -111,16 +109,17 @@ class DeepCINET(pl.LightningModule):
         events = torch.cat([x['Events'] for x in outputs]).cpu().numpy()
         energies = torch.cat([x['Energies'] for x in outputs]).cpu().numpy()
         ## Have samples been averaged out??
-        print(tevents.shape)
+        print("")
+        print(tevents.shape[0])
+        print(self.val_size)
 
         ci = concordance_index(tevents, energies, events)
         tensorboard_logs = {'val_CI': ci}
 
-        if self.hparams.use_kfold:
-            self.cvdata.append({
-                'CI': ci,
-                't_steps': self.t_steps
-            })
+        self.cvdata.append({
+            'CI': ci,
+            't_steps': self.t_steps
+        })
         return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
     def configure_optimizers(self):

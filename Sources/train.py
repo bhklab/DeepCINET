@@ -23,11 +23,11 @@ def Create_Dataloader(ds, hparams):
 
 
 def deepCinet():
-    pairProcessor = KFoldGenerator(args.clinical_path)
     hdict = vars(args)
     hparams = argparse.Namespace(**hdict)
     print(hparams)
 
+    pairProcessor = KFoldGenerator(hparams)
     folds = pairProcessor.k_cross_validation(
         n_splits=hparams.folds,
         random_seed=hparams.seed)

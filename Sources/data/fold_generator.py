@@ -8,7 +8,7 @@ class KFoldGenerator(ClinicalReader):
 
     """
     def __init__(self, hparams):
-        super(ClinicalReader).__init__(hparams)
+        ClinicalReader.__init__(self, hparams)
 
     def k_cross_validation(self,
                            n_splits=5,

@@ -12,6 +12,7 @@ class ImageLoader(ClinicalReader):
 
     Provides the method to load an image, and provides a method to augment the images
     """
+    _AIR_CONST = -3024
     def __init__(self, hparams, idxs):
         ClinicalReader.__init__(self, hparams, idxs)
         self._random = random
@@ -20,7 +21,7 @@ class ImageLoader(ClinicalReader):
 
     def load_image_from_index(self, idx, is_train):
         file_id = self.get_id_from_index(idx)
-        file_path = os.path.join(self._image_path, "RADURE" + file_id + ".nrrd")
+        file_path = os.path.join(self._image_path, file_id + ".nrrd")
         image, headers = nrrd.read(file_path)
         image = np.transpose(image, (2, 0, 1))
 
@@ -34,8 +35,12 @@ class ImageLoader(ClinicalReader):
         image = image.view(1, image.size(0), image.size(1), image.size(2))
         return image
 
-    @staticmethod
-    def _preprocess(image):
+    def _preprocess(self, image):
+        if image.shape[0] >= 256:
+            image = image[:256]
+        else:
+            pad_size = ((256 - image.shape[0], 0), (0,0), (0,0))
+            image = np.pad(image, pad_width=pad_size, mode='constant', constant_values=self._AIR_CONST)
         return rescale(image, 0.5, anti_aliasing=True, multichannel=False)
 
     @staticmethod
