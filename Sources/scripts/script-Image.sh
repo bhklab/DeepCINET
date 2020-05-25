@@ -9,18 +9,17 @@
 #SBATCH --account=radiomics_gpu
 #SBATCH --partition=gpu_radiomics
 #SBATCH --gres=gpu:4
-OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/clinical_rad_images_sort.csv
-         --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
+OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/
+         --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/N2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
          --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
 
          --batch-size 256
-				 --num-workers 16
+         --num-workers 16
          --min-epochs 5
          --max-epochs 5
 
          --transitive-pairs 100
 
-         --use-kfold
          --folds 5
 
          --use-images
