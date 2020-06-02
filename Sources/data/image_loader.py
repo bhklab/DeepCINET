@@ -18,8 +18,19 @@ class ImageLoader(ClinicalReader):
         self._random = random
         self._image_path = hparams.image_path
         self.use_images = hparams.use_images
+        self.use_volume_cache = hparams.use_volume_cache
 
     def load_image_from_index(self, idx, is_train):
+        if self.use_volume_cache and self.get_event_from_index(idx):
+            if idx in self._volume_cache:
+                return self._volume_cache[idx]
+            else:
+                image = self._load_image(idx, is_train)
+                self._volume_cache.update(idx = image)
+                return image
+        return self._load_image(idx, is_train)
+
+    def _load_image(self, idx, is_train):
         file_id = self.get_id_from_index(idx)
         file_path = os.path.join(self._image_path, file_id + ".nrrd")
         image, headers = nrrd.read(file_path)
@@ -33,6 +44,7 @@ class ImageLoader(ClinicalReader):
             self._augment(image)
         image = torch.tensor(image.copy(), dtype=torch.float32)
         image = image.view(1, image.size(0), image.size(1), image.size(2))
+
         return image
 
     def _preprocess(self, image):

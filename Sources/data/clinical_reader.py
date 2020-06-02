@@ -1,4 +1,3 @@
-
 import pandas as pd
 
 
@@ -22,6 +21,7 @@ class ClinicalReader:
             list(range(len(self._clinical_csv[self._ID_COL].values)))
             ))
         self._event_list = [x for x in self._clinical_csv[self._DEATH]]
+        self._survival_times_list = [x for x in self._clinical_csv[self._S_TIME]]
 
     def get_id_from_index(self, idx):
         return self._id_list[idx]

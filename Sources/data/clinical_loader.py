@@ -23,16 +23,18 @@ class ClinicalLoader(ClinicalReader):
         pair_list = []
         for i in range(len(self._id_list)):
             for j in range(len(uncen_list)):
+                idxi = i
+                idxj = uncen_list[-j]
                 pair_list.append({
-                    'idxA': i,
-                    'idxB': j,
-                    'label': self.get_relationship_from_index(i, j)}
+                    'idxA': idxi,
+                    'idxB': idxj,
+                    'label': self.get_relationship_from_index(idxi, idxj)}
                 )
                 if num_neighbours == j:
                     break
 
-            if self.get_event_from_index(i):
-                uncen_list.append(i)
+            if self.get_event_from_index(idxi):
+                uncen_list.append(idxi)
 
         return pair_list
 
