@@ -131,6 +131,8 @@ if __name__ == '__main__':
     data_arg.add_argument('--transitive-pairs',
                           default=-1,
                           type=int)
+    data_arg.add_argument('--use-volume-cache',
+                          action='store_true')
     ####################
 
     ## TRAINING ########
