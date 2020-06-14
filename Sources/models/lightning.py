@@ -9,6 +9,7 @@ from models.conv_model import ConvolutionLayer
 from models.fc_model import FullyConnected
 
 import default_settings as config
+import sys
 
 from lifelines.utils import concordance_index
 
@@ -96,8 +97,13 @@ class DeepCINET(pl.LightningModule):
         scalar_features = batch['scalar']
         event_time = batch['event_time']
         event = batch['event']
-
+        # print("", file=sys.stderr)
+        # print("val size", file=sys.stderr)
+        # print(volume.size(0), file=sys.stderr)
+        # print(torch.cuda.current_device(), file=sys.stderr)
+        # print("", file=sys.stderr)
         output = self.computeEnergy(volume, scalar_features).view(-1)
+        print(output.detach().cpu().numpy(), file=sys.stderr)
 
         # TODO: Pytorch currently doesn't reduce the output in validation when
         #       we use more than one GPU, becareful this might not be supported
@@ -109,9 +115,11 @@ class DeepCINET(pl.LightningModule):
         events = torch.cat([x['Events'] for x in outputs]).cpu().numpy()
         energies = torch.cat([x['Energies'] for x in outputs]).cpu().numpy()
         ## Have samples been averaged out??
-        print("")
-        print(tevents.shape[0])
-        print(self.val_size)
+        # print("", file=sys.stderr)
+        # print("Total size", file=sys.stderr)
+        # print(events.shape, file=sys.stderr)
+        # print("", file=sys.stderr)
+        print(energies, file=sys.stderr)
 
         ci = concordance_index(tevents, energies, events)
         tensorboard_logs = {'val_CI': ci}

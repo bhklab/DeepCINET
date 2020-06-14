@@ -17,8 +17,4 @@ class ResidualBlock3d(nn.Module):
 
     def forward(self, x):
         residual = self.shortcut(x)
-        x = self.act(self.bn1(self.conv1(x)))
-        x = self.bn2(self.conv2(x))
-        x += residual
-        x = self.act(x)
-        return x
+        return self.act(self.bn2(self.conv2(self.act(self.bn1(self.conv1(x))))) + self.shortcut(x))

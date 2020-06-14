@@ -22,9 +22,9 @@ class ClinicalLoader(ClinicalReader):
         uncen_list = []
         pair_list = []
         for i in range(len(self._id_list)):
+            idxi = i
             for j in range(len(uncen_list)):
-                idxi = i
-                idxj = uncen_list[-j]
+                idxj = uncen_list[-(j+1)]
                 pair_list.append({
                     'idxA': idxi,
                     'idxB': idxj,

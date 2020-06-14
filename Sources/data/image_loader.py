@@ -3,9 +3,10 @@ import os
 import nrrd
 import torch
 import numpy as np
+import multiprocessing as mp
+from pathos.multiprocessing import ProcessingPool as Pool
 from skimage.transform import rescale
 from data.clinical_reader import ClinicalReader
-
 
 class ImageLoader(ClinicalReader):
     """Class in charge of loading images
@@ -18,16 +19,25 @@ class ImageLoader(ClinicalReader):
         self._random = random
         self._image_path = hparams.image_path
         self.use_images = hparams.use_images
-        self.use_volume_cache = hparams.use_volume_cache
+        self._use_volume_cache = hparams.use_volume_cache
+
+        if self._use_volume_cache:
+            pool = Pool(mp.cpu_count())
+            ## https://stackoverflow.com/questions/54324215/does-pathos-multiprocessing-have-starmap
+            f = lambda x : self._load_image(*x)
+            self._volume_cache = pool.map(f, [(i, False) for i in range(len(self._id_list))])
+            pool.close()
+            pool.join()
+            pool.terminate()
+            pool.restart()
+            # for i in range(len(self._id_list)):
+                # self._volume_cache.append(self._load_image(i, False))
+            print("DONE CACHING IMAGES")
 
     def load_image_from_index(self, idx, is_train):
-        if self.use_volume_cache and self.get_event_from_index(idx):
-            if idx in self._volume_cache:
-                return self._volume_cache[idx]
-            else:
-                image = self._load_image(idx, is_train)
-                self._volume_cache.update(idx = image)
-                return image
+        return self._volume_cache[idx]
+        if self._use_volume_cache: # and self.get_event_from_index(idx):
+            return self._volume_cache[idx]
         return self._load_image(idx, is_train)
 
     def _load_image(self, idx, is_train):

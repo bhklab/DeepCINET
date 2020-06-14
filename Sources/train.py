@@ -46,7 +46,7 @@ def deepCinet():
                           min_steps=hparams.min_steps,
                           max_steps=hparams.max_steps,
                           gpus=list(range(hparams.gpus)),
-                          accumulate_grad_batches=1,
+                          accumulate_grad_batches=hparams.accumulate_grad_batches,
                           distributed_backend='dp',
                           weights_summary='full',
                           enable_benchmark=False,
@@ -133,6 +133,9 @@ if __name__ == '__main__':
                           type=int)
     data_arg.add_argument('--use-volume-cache',
                           action='store_true')
+    data_arg.add_argument('--accumulate-grad-batches',
+                          default=1,
+                          type=int)
     ####################
 
     ## TRAINING ########

@@ -19,7 +19,7 @@ class KFoldGenerator(ClinicalReader):
                                    shuffle=True,
                                    random_state=random_seed) \
                 .split(X=list(range(len(self._clinical_csv))),
-                       y=zip(self._event_list, self._survival_times_list))
+                       y=self._event_list)
         else:
             return KFold(n_splits=n_splits,
                          shuffle=True,
