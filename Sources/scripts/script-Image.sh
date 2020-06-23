@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -t 72:00:00
-#SBATCH --mem=80G
+#SBATCH --mem=160G
 #SBATCH -o outputs/output-image-%j.txt
 #SBATCH -e outputs/error-image-%j.txt
 #SBATCH -J DeepCINET-Image
@@ -9,26 +9,28 @@
 #SBATCH --account=radiomics_gpu
 #SBATCH --partition=gpu_radiomics
 #SBATCH --gres=gpu:4
-OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/
-         --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/N2/Preprocessed/RADCURE/radiomics_st_images_sort.csv
-         --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/RADCURE/RADCURE-64/
+OPTIONS='--clinical-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/RADCURE/clinical.csv
+         --radiomics-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/RAadiomics_HN2/radiomics.csv
+         --image-path=/cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/RADCURE/images/
 
-         --batch-size 256
-         --num-workers 16
+         --batch-size 8
+         --num-workers 32
          --min-epochs 5
          --max-epochs 5
 
-         --transitive-pairs 100
+         --transitive-pairs 30
+         --use-volume-cache
+         --accumulate-grad-batches 10
 
-         --folds 5
+         --folds 3
 
          --use-images
-         --conv-layers 1 8 16 32 64 64
-         --pool          1  1  1  1  1
-         --conv-model Bottleneck
+         --conv-layers 1 8  8  8  16 16 32 32
+         --pool          1  1  1  1  1  1  1
+         --conv-model ResNet
 
-         --fc-layers 512 256 128 64  1
-         --dropout       0.8 0.7 0.6 0
+         --fc-layers 128 64  1
+         --dropout       0.3 0
          --auto-find-lr
          --weight-decay 0.001
          --sc-milestones 10
