@@ -1,23 +1,24 @@
 # Change this line to your root directory location
 # ${Home}
-DATA: /cluster/home/dzhu/Documents/DATA/UHN-Project/Radiomics_HN2/Preprocessed/OPC1
+DATA: /Users/diana/BHK/Preprocessing_R/GeneratedData/L1000_gene_expression
 
 DATA_PROCESSED:
-  CLINICAL_PATH: clinical_info.csv
-  RADIOMICS_PATH: hn_radiomics_opc1.csv
+  GENE_PATH: gene_CCLE_microarray_Gemcitabine_response.csv
+  # CLINICAL_PATH: clinical_info.csv
+  # RADIOMICS_PATH: hn_radiomics_opc1.csv
 
-PATH:
-  IMAGE: images/
+# PATH:
+#   IMAGE: images/
 
 HPARAMS:
   EPOCHS: 10
-  USE_IMAGES: False
-  USE_RADIOMICS: False
+  # USE_IMAGES: False
+  # USE_RADIOMICS: False
 
-  FCLAYERS: [1556, 16, 32, 64, 32, 32, 1]
-  DROPOUT:   [0, 0.9, 0.9, 0.7, 0.7, 0]
+  FCLAYERS: [899, 16, 32, 64, 32, 32, 1]
+  DROPOUT:   [0, 0.2, 0.2, 0.2, 0.2, 0]
 
-  USE_DISTANCE: False
+  # USE_DISTANCE: False
   DLAYERS: [16, 8, 1]
 
 

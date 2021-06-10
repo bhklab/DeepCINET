@@ -30,14 +30,14 @@ def deepCinet():
     pairProcessor = KFoldGenerator(hparams)
     folds = pairProcessor.k_cross_validation(
         n_splits=hparams.folds,
-        random_seed=hparams.seed)
+        random_seed=hparams.seed, stratified=False)
     cvdata = []
     for train_ids, val_ids in folds:
         train_dl = Create_Dataloader(
-            Dataset(train_ids, hparams, True),
+            Dataset(hparams, True, train_ids),
             hparams)
         val_dl = Create_Dataloader(
-            Dataset(val_ids, hparams, False),
+            Dataset(hparams, False, val_ids),
             hparams)
 
         siamese_model = DeepCINET(hparams=hparams)
@@ -45,15 +45,15 @@ def deepCinet():
                           max_epochs=hparams.max_epochs,
                           min_steps=hparams.min_steps,
                           max_steps=hparams.max_steps,
-                          gpus=list(range(hparams.gpus)),
+                          # gpus=list(range(hparams.gpus)),
                           accumulate_grad_batches=hparams.accumulate_grad_batches,
                           distributed_backend='dp',
                           weights_summary='full',
-                          enable_benchmark=False,
+                          # enable_benchmark=False,
                           num_sanity_val_steps=0,
-                          auto_find_lr=hparams.auto_find_lr,
-                          check_val_every_n_epoch=hparams.check_val_every_n_epoch,
-                          overfit_pct=hparams.overfit_pct)
+                          # auto_find_lr=hparams.auto_find_lr,
+                          check_val_every_n_epoch=hparams.check_val_every_n_epoch)
+                          # overfit_pct=hparams.overfit_pct)
         trainer.fit(siamese_model,
                     train_dataloader=train_dl,
                     val_dataloaders=val_dl)
@@ -95,25 +95,25 @@ if __name__ == '__main__':
 
     ## DATALOADER ######
     data_arg = add_argument_group('Data')
-    data_arg.add_argument('--clinical-path', type=str,
-                          default=config.CLINICAL_PATH,
+    data_arg.add_argument('--gene-path', type=str,
+                          default=config.GENE_PATH,
                           help='Path to clinical variables')
-    data_arg.add_argument('--use-clinical',
-                          action='store_true',
-                          default=config.USE_RADIOMICS)
+    # data_arg.add_argument('--use-clinical',
+    #                       action='store_true',
+    #                       default=config.USE_RADIOMICS)
 
-    data_arg.add_argument('--radiomics-path',
-                          type=str,
-                          default=config.RADIOMICS_PATH,
-                          help='Path to radiomics features')
-    data_arg.add_argument('--use-radiomics',
-                          action='store_true',
-                          default=config.USE_RADIOMICS)
+    # data_arg.add_argument('--radiomics-path',
+    #                       type=str,
+    #                       default=config.RADIOMICS_PATH,
+    #                       help='Path to radiomics features')
+    # data_arg.add_argument('--use-radiomics',
+    #                       action='store_true',
+    #                       default=config.USE_RADIOMICS)
 
-    data_arg.add_argument('--image-path',
-                          type=str,
-                          default=config.IMAGE_PATH,
-                          help='Path to patient CTs')
+    # data_arg.add_argument('--image-path',
+    #                       type=str,
+    #                       default=config.IMAGE_PATH,
+    #                       help='Path to patient CTs')
 
     data_arg.add_argument("--num-workers",
                           default=config.NUM_WORKERS,
@@ -128,9 +128,9 @@ if __name__ == '__main__':
     data_arg.add_argument("--folds",
                           default=config.FOLDS,
                           type=int)
-    data_arg.add_argument('--transitive-pairs',
-                          default=-1,
-                          type=int)
+    # data_arg.add_argument('--transitive-pairs',
+    #                       default=-1,
+    #                       type=int)
     data_arg.add_argument('--use-volume-cache',
                           action='store_true')
     data_arg.add_argument('--accumulate-grad-batches',
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     train_arg.add_argument("--min-steps", default=None, type=int)
     train_arg.add_argument("--max-epochs", default=1000, type=int)
     train_arg.add_argument("--max-steps", default=None, type=int)
-    train_arg.add_argument("--check-val-every-n-epoch", default=None, type=int)
+    train_arg.add_argument("--check-val-every-n-epoch", default=1, type=int)
     train_arg.add_argument('--auto-find-lr', action='store_true', default=False)
     train_arg.add_argument("--gpus", default=config.EPOCHS, type=int)
     ####################

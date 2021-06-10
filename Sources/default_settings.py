@@ -13,21 +13,21 @@ with open(os.path.join(CUR_DIR, "environment.yml")) as cfg_file:
 #DATA
 DATA_ROOT = cfg['DATA']
 
-CLINICAL_PATH = os.path.join(DATA_ROOT, cfg['DATA_PROCESSED']['CLINICAL_PATH'])
-RADIOMICS_PATH = os.path.join(DATA_ROOT,cfg['DATA_PROCESSED']['RADIOMICS_PATH'])
+GENE_PATH = os.path.join(DATA_ROOT, cfg['DATA_PROCESSED']['GENE_PATH'])
+# RADIOMICS_PATH = os.path.join(DATA_ROOT,cfg['DATA_PROCESSED']['RADIOMICS_PATH'])
 
 #PATH
-IMAGE_PATH = os.path.join(DATA_ROOT, cfg['PATH']['IMAGE'])
+# IMAGE_PATH = os.path.join(DATA_ROOT, cfg['PATH']['IMAGE'])
 
 #HPARAMS
 hparams = cfg['HPARAMS']
 EPOCHS = int(hparams['EPOCHS'])
-USE_IMAGES = bool(hparams['USE_IMAGES'])
-USE_RADIOMICS = bool(hparams['USE_RADIOMICS'])
+# USE_IMAGES = bool(hparams['USE_IMAGES'])
+# USE_RADIOMICS = bool(hparams['USE_RADIOMICS'])
 FC_LAYERS = hparams['FCLAYERS']
 DROPOUT = hparams['DROPOUT']
 
-USE_DISTANCE = bool(hparams['USE_DISTANCE'])
+# USE_DISTANCE = bool(hparams['USE_DISTANCE'])
 D_LAYERS = hparams['DLAYERS']
 
 TEST_RATIO = hparams['TEST_RATIO']

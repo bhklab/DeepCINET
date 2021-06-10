@@ -5,7 +5,6 @@ import torch.nn as nn
 
 import pytorch_lightning as pl
 
-from models.conv_model import ConvolutionLayer
 from models.fc_model import FullyConnected
 
 import default_settings as config
@@ -23,18 +22,20 @@ class DeepCINET(pl.LightningModule):
 
     def __init__(self, hparams):
         super(DeepCINET, self).__init__()
-        self.hparams = hparams
+        # self.hparams = hparams
+        self.save_hyperparameters(hparams)
+        # for key in hparams.keys():
+        #     self.hparams[key]=hparams[key]
         self.t_steps = 0
         self.cvdata = []
         self.criterion = nn.BCELoss()
-        self.convolution = ConvolutionLayer(hparams) \
-            if hparams.use_images else nn.Identity()
+        self.convolution = nn.Identity()
         self.fc = FullyConnected(hparams)
         self.log_model_parameters()
 
-    def forward(self, volumeA, volumeB, scalarA, scalarB):
-        tA = self.computeEnergy(volumeA, scalarA)
-        tB = self.computeEnergy(volumeB, scalarB)
+    def forward(self, geneA, geneB):
+        tA = self.fc(geneA)
+        tB = self.fc(geneB)
         z = (tA - tB)
         return torch.sigmoid(z)
 
@@ -59,14 +60,12 @@ class DeepCINET(pl.LightningModule):
         print("EPOCH START")
 
     def training_step(self, batch, batch_idx):
-        volumeA = batch['volumeA']
-        volumeB = batch['volumeB']
-        scalarA = batch['scalarA']
-        scalarB = batch['scalarB']
+        geneA = batch['geneA']
+        geneB = batch['geneB']
         labels = batch['labels']
 
-        output = self.forward(volumeA, volumeB, scalarA, scalarB)
-        loss = self.criterion(output.view(-1), labels.view(-1))
+        output = self.forward(geneA, geneB)
+        loss = self.criterion(output.view(-1), labels)
         # loggin number of steps
         self.t_steps += 1
 
@@ -90,38 +89,36 @@ class DeepCINET(pl.LightningModule):
         tensorboard_logs = {
             'avg_loss': avg_loss,
             'train_CI': CI}
-        return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
+        self.log_dict(tensorboard_logs, prog_bar = True)
+        # return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
     def validation_step(self, batch, batch_idx):
-        volume = batch['volume']
-        scalar_features = batch['scalar']
-        event_time = batch['event_time']
-        event = batch['event']
+        gene = batch['gene']
+        drug_response = batch['response']
         # print("", file=sys.stderr)
         # print("val size", file=sys.stderr)
         # print(volume.size(0), file=sys.stderr)
         # print(torch.cuda.current_device(), file=sys.stderr)
         # print("", file=sys.stderr)
-        output = self.computeEnergy(volume, scalar_features).view(-1)
+        output = self.fc(gene).view(-1)
         print(output.detach().cpu().numpy(), file=sys.stderr)
 
         # TODO: Pytorch currently doesn't reduce the output in validation when
         #       we use more than one GPU, becareful this might not be supported
         #       future versions
-        return {'Tevents': event_time, 'Events': event, 'Energies': output}
+        return {'Drug_response': drug_response, 'Drug_response_pred': output}
 
     def validation_epoch_end(self, outputs):
-        tevents = torch.cat([x['Tevents'] for x in outputs]).cpu().numpy()
-        events = torch.cat([x['Events'] for x in outputs]).cpu().numpy()
-        energies = torch.cat([x['Energies'] for x in outputs]).cpu().numpy()
+        drug_response = torch.cat([x['Drug_response'] for x in outputs]).cpu().numpy()
+        drug_response_pred = torch.cat([x['Drug_response_pred'] for x in outputs]).cpu().numpy()
         ## Have samples been averaged out??
         # print("", file=sys.stderr)
         # print("Total size", file=sys.stderr)
         # print(events.shape, file=sys.stderr)
         # print("", file=sys.stderr)
-        print(energies, file=sys.stderr)
+        # print(energies, file=sys.stderr)
 
-        ci = concordance_index(tevents, energies, events)
+        ci = concordance_index(drug_response, drug_response_pred)
         tensorboard_logs = {'val_CI': ci}
 
         self.cvdata.append({
@@ -146,7 +143,7 @@ class DeepCINET(pl.LightningModule):
         print("PARAMETERS**********************************************")
         print("Convolution layer parameters: %d" % (count_parameters(self.convolution)))
         print("FC layer parameters: %d" % (count_parameters(self.fc)))
-        print("*******************************************************")
+        print("********************************************************")
 
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -158,15 +155,15 @@ class DeepCINET(pl.LightningModule):
         parser.add_argument('--dropout', type=float, nargs='+',
                             default=config.DROPOUT)
 
-        parser.add_argument('--use-distance', action='store_true', default=config.USE_DISTANCE)
+        # parser.add_argument('--use-distance', action='store_true', default=config.USE_DISTANCE)
         parser.add_argument('--d-layers', type=int, nargs='+', default=config.D_LAYERS)
         parser.add_argument('--d-dropout', type=float, nargs='+',
                             default=[])
 
-        parser.add_argument('--use-images', action='store_true', default=config.USE_IMAGES)
-        parser.add_argument('--conv-layers', type=int, nargs='+', default=[1, 4, 8, 16])
-        parser.add_argument('--conv-model', type=str, default="Bottleneck")
-        parser.add_argument('--pool', type=int, nargs='+', default=[1, 1, 1, 1])
+        # parser.add_argument('--use-images', action='store_true', default=config.USE_IMAGES)
+        # parser.add_argument('--conv-layers', type=int, nargs='+', default=[1, 4, 8, 16])
+        # parser.add_argument('--conv-model', type=str, default="Bottleneck")
+        # parser.add_argument('--pool', type=int, nargs='+', default=[1, 1, 1, 1])
         ## OPTIMIZER
         parser.add_argument('--learning-rate', type=float, default=config.LR)
         parser.add_argument('--momentum', type=float, default=config.MOMENTUM)
@@ -174,7 +171,7 @@ class DeepCINET(pl.LightningModule):
         parser.add_argument('--sc-milestones', type=int, nargs='+',
                             default=config.SC_MILESTONES)
         parser.add_argument('--sc-gamma', type=float, default=config.SC_GAMMA)
-        parser.add_argument('--use-exp', action='store_true', default=config.USE_IMAGES)
+        # parser.add_argument('--use-exp', action='store_true', default=config.USE_IMAGES)
         return parser
 
 
