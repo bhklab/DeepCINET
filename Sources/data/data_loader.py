@@ -20,6 +20,7 @@ class Dataset(torch.utils.data.Dataset):
             self.gene_exprs = self.gene_exprs.iloc[idxs]
         self.drug_resps = self.gene_exprs["target"].to_numpy()
         self.gene_exprs = self.gene_exprs.drop(["target", "cell_line"], axis=1).to_numpy()
+        self.gene_exprs = (self.gene_exprs - np.mean(self.gene_exprs, axis=0))/np.std(self.gene_exprs, axis=0)
 
         self._is_train = is_train
         # might need to pass in delta in the future

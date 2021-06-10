@@ -119,6 +119,8 @@ class DeepCINET(pl.LightningModule):
         # print(energies, file=sys.stderr)
 
         ci = concordance_index(drug_response, drug_response_pred)
+        print("Validation CI: ")
+        print(ci)
         tensorboard_logs = {'val_CI': ci}
 
         self.cvdata.append({

@@ -45,7 +45,7 @@ def deepCinet():
                           max_epochs=hparams.max_epochs,
                           min_steps=hparams.min_steps,
                           max_steps=hparams.max_steps,
-                          # gpus=list(range(hparams.gpus)),
+                          gpus=list(range(hparams.gpus)),
                           accumulate_grad_batches=hparams.accumulate_grad_batches,
                           distributed_backend='dp',
                           weights_summary='full',
