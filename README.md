@@ -6,8 +6,6 @@ should predict which one will live longer.
 
 This project uses **python3**
 
-More documentation can be found in the documentation page:
-[https://jmigual.github.io/DeepCINET](https://jmigual.github.io/DeepCINET)
 
 ## Installation
 
@@ -157,9 +155,6 @@ so if `IMAGE_ROTATIONS=1,1,4` it means:
 - 4 rotations on the z axis
 
 ## Documentation
-
-The project's documentation can be found at 
-[https://jmigual.github.io/DeepCINET](https://jmigual.github.io/DeepCINET)
 
 To build the documentation install all the `requirements.txt` packages are needed plus graphviz and make. 
 Once you have all the requirements just type: `make docs` to build it. The documentation will be on `docs_build/`.
