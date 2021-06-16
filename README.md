@@ -1,4 +1,4 @@
-# CNNSurv
+# DeepCINET
 Create a Survival Prediction model using a Convolutional Neural Network.
 
 To do so a Siamese network will be used. Two individuals will be used as an input and the network
@@ -7,7 +7,7 @@ should predict which one will live longer.
 This project uses **python3**
 
 More documentation can be found in the documentation page:
-[https://jmigual.github.io/CNNSurv](https://jmigual.github.io/CNNSurv)
+[https://jmigual.github.io/DeepCINET](https://jmigual.github.io/DeepCINET)
 
 ## Installation
 
@@ -15,7 +15,7 @@ To install all the requirements python virtual environment is recommended. Pytho
 for this project. Once the project has been downloaded do:
 
 ```bash
-cd CNNSurv
+cd DeepCINET
 virtualenv venv --python=`which python3`
 source venv/bin/activate
 pip install -r requirements.txt
@@ -25,7 +25,7 @@ The dataset files are in the `Data` folder (which has to be created). The easies
 create a symbolic link to where the data is located, if using Mordor it would be:
 
 ```bash
-cd CNNSurv # Go to project's root directory
+cd DeepCINET # Go to project's root directory
 ln -s /mnt/work1/users/bhklab/Data/HNK Data
 ```
 
@@ -159,7 +159,7 @@ so if `IMAGE_ROTATIONS=1,1,4` it means:
 ## Documentation
 
 The project's documentation can be found at 
-[https://jmigual.github.io/CNNSurv](https://jmigual.github.io/CNNSurv)
+[https://jmigual.github.io/DeepCINET](https://jmigual.github.io/DeepCINET)
 
 To build the documentation install all the `requirements.txt` packages are needed plus graphviz and make. 
 Once you have all the requirements just type: `make docs` to build it. The documentation will be on `docs_build/`.
