@@ -3,6 +3,8 @@ import argparse
 import torch
 import torch.nn as nn
 
+import numpy as np
+
 import pytorch_lightning as pl
 
 from models.fc_model import FullyConnected
@@ -94,14 +96,15 @@ class DeepCINET(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         gene = batch['gene']
-        drug_response = batch['response']
+        drug_response = batch['response'].detach().cpu().numpy()
         # print("", file=sys.stderr)
         # print("val size", file=sys.stderr)
         # print(volume.size(0), file=sys.stderr)
         # print(torch.cuda.current_device(), file=sys.stderr)
         # print("", file=sys.stderr)
-        output = self.fc(gene).view(-1)
-        print(output.detach().cpu().numpy(), file=sys.stderr)
+        output = self.fc(gene).view(-1).detach().cpu().numpy()
+        # print(drug_response)
+        # print(output.detach().cpu().numpy(), file=sys.stderr)
 
         # TODO: Pytorch currently doesn't reduce the output in validation when
         #       we use more than one GPU, becareful this might not be supported
@@ -109,8 +112,8 @@ class DeepCINET(pl.LightningModule):
         return {'Drug_response': drug_response, 'Drug_response_pred': output}
 
     def validation_epoch_end(self, outputs):
-        drug_response = torch.cat([x['Drug_response'] for x in outputs]).cpu().numpy()
-        drug_response_pred = torch.cat([x['Drug_response_pred'] for x in outputs]).cpu().numpy()
+        drug_response = np.concatenate([x['Drug_response'] for x in outputs])
+        drug_response_pred = np.concatenate([x['Drug_response_pred'] for x in outputs])
         ## Have samples been averaged out??
         # print("", file=sys.stderr)
         # print("Total size", file=sys.stderr)
@@ -119,20 +122,21 @@ class DeepCINET(pl.LightningModule):
         # print(energies, file=sys.stderr)
 
         ci = concordance_index(drug_response, drug_response_pred)
-        print("Validation CI: ")
-        print(ci)
+        print("Validation CI: " + str(round(ci, 3)))
+        # print(ci)
         tensorboard_logs = {'val_CI': ci}
 
         self.cvdata.append({
             'CI': ci,
             't_steps': self.t_steps
         })
+        self.log('val_CI', ci)
         return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(),
+        optimizer = torch.optim.Adam(self.parameters(),
                                     lr=self.hparams.learning_rate,
-                                    momentum=self.hparams.momentum,
+                                    #momentum=self.hparams.momentum,
                                     weight_decay=self.hparams.weight_decay)
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer,

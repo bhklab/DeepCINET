@@ -6,6 +6,7 @@ import os
 import numpy as np
 import torch
 from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import EarlyStopping
 
 import default_settings as config
 from models.lightning import DeepCINET
@@ -15,10 +16,10 @@ from data.data_loader import Dataset
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 
-def Create_Dataloader(ds, hparams):
+def Create_Dataloader(ds, hparams, shuffle_ind):
     return torch.utils.data.DataLoader(ds,
                                        batch_size=hparams.batch_size,
-                                       shuffle=True,
+                                       shuffle=shuffle_ind,
                                        num_workers=hparams.num_workers)
 
 
@@ -35,23 +36,24 @@ def deepCinet():
     for train_ids, val_ids in folds:
         train_dl = Create_Dataloader(
             Dataset(hparams, True, train_ids),
-            hparams)
+            hparams, shuffle_ind=True)
         val_dl = Create_Dataloader(
             Dataset(hparams, False, val_ids),
-            hparams)
+            hparams, shuffle_ind=True)
 
         siamese_model = DeepCINET(hparams=hparams)
         trainer = Trainer(min_epochs=hparams.min_epochs,
                           max_epochs=hparams.max_epochs,
                           min_steps=hparams.min_steps,
                           max_steps=hparams.max_steps,
-                          gpus=list(range(hparams.gpus)),
+                          gpus=1,
                           accumulate_grad_batches=hparams.accumulate_grad_batches,
                           distributed_backend='dp',
                           weights_summary='full',
                           # enable_benchmark=False,
                           num_sanity_val_steps=0,
                           # auto_find_lr=hparams.auto_find_lr,
+                          # callbacks=[EarlyStopping('val_CI')],
                           check_val_every_n_epoch=hparams.check_val_every_n_epoch)
                           # overfit_pct=hparams.overfit_pct)
         trainer.fit(siamese_model,
@@ -62,7 +64,7 @@ def deepCinet():
             if len(cvdata) < i + 1:
                 cvdata.append([])
             cvdata[i].append(siamese_model.cvdata[i])
-
+    
     for i in range(len(cvdata)):
         avg_ci = float(np.mean([x['CI'] for x in cvdata[i]]))
         print("EPOCH %d -- CI: %.4f"

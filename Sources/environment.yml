@@ -1,6 +1,6 @@
 # Change this line to your root directory location
 # ${Home}
-DATA: /Users/diana/BHK/Preprocessing_R/GeneratedData/L1000_gene_expression
+DATA: /home/gputwo/bhklab/syan/DeepCinet_project/Preprocessing_R/GeneratedData/L1000_gene_expression
 
 DATA_PROCESSED:
   GENE_PATH: gene_CCLE_microarray_Gemcitabine_response.csv
@@ -11,12 +11,12 @@ DATA_PROCESSED:
 #   IMAGE: images/
 
 HPARAMS:
-  EPOCHS: 10
+  EPOCHS: 10 #(400/500)
   # USE_IMAGES: False
   # USE_RADIOMICS: False
 
   FCLAYERS: [899, 16, 32, 64, 32, 32, 1]
-  DROPOUT:   [0, 0.2, 0.2, 0.2, 0.2, 0]
+  DROPOUT:   [0, 0.2, 0.2, 0.2, 0.2, 0] #(0, 0.1, 0.2, 0.3)
 
   # USE_DISTANCE: False
   DLAYERS: [16, 8, 1]
