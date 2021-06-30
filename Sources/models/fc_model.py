@@ -2,16 +2,24 @@ import torch
 import torch.nn as nn
 
 class FullyConnected(nn.Module):
-    def __init__(self, hparams):
+    def __init__(self, layers_size, dropout, batchnorm):
         super(FullyConnected, self).__init__()
-        layers_size = hparams.fc_layers
-        dropout = hparams.dropout
-        self.layers = nn.ModuleList();
+        self.layers = nn.ModuleList()
         for i in range(len(layers_size)-1):
-            layer1 = nn.Sequential(
-                Residual(layers_size[i], layers_size[i+1], last_layer = (i+1 == len(layers_size) - 1)),
-                nn.Dropout(dropout[i])
-            )
+            if batchnorm:
+                layer1 = nn.Sequential(
+                    nn.Linear(layers_size[i], layers_size[i+1]),
+                    nn.LeakyReLU(),
+                    nn.BatchNorm1d(layers_size[i+1]),
+                    nn.Dropout(dropout[i])
+                )
+            else:
+                layer1 = nn.Sequential(
+                    nn.Linear(layers_size[i], layers_size[i+1]),
+                    nn.LeakyReLU(),
+                    # Residual(layers_size[i], layers_size[i+1], last_layer = (i+1 == len(layers_size) - 1)),
+                    nn.Dropout(dropout[i])
+                )
             self.layers.append(layer1)
 
     def forward(self, x):

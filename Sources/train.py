@@ -8,6 +8,15 @@ import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping
 
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.utilities.cloud_io import load as pl_load
+from ray import tune
+from ray.tune import CLIReporter
+from ray.tune.schedulers import ASHAScheduler, PopulationBasedTraining
+from ray.tune.integration.pytorch_lightning import TuneReportCallback, \
+    TuneReportCheckpointCallback
+
+
 import default_settings as config
 from models.lightning import DeepCINET
 from data.fold_generator import KFoldGenerator
@@ -28,6 +37,13 @@ def deepCinet():
     hparams = argparse.Namespace(**hdict)
     print(hparams)
 
+    config = {
+        "layers_size": [899, 16, 32, 64, 32, 32, 1],
+        "dropout": [0, 0, 0, 0, 0, 0],
+        "lr": 0.01,
+        "batchnorm": False
+    }
+
     pairProcessor = KFoldGenerator(hparams)
     folds = pairProcessor.k_cross_validation(
         n_splits=hparams.folds,
@@ -38,10 +54,10 @@ def deepCinet():
             Dataset(hparams, True, train_ids),
             hparams, shuffle_ind=True)
         val_dl = Create_Dataloader(
-            Dataset(hparams, False, val_ids),
+            Dataset(hparams, True, val_ids), # is_train = true here to get pairs
             hparams, shuffle_ind=True)
 
-        siamese_model = DeepCINET(hparams=hparams)
+        siamese_model = DeepCINET(hparams=hparams, config=config)
         trainer = Trainer(min_epochs=hparams.min_epochs,
                           max_epochs=hparams.max_epochs,
                           min_steps=hparams.min_steps,
@@ -53,7 +69,7 @@ def deepCinet():
                           # enable_benchmark=False,
                           num_sanity_val_steps=0,
                           # auto_find_lr=hparams.auto_find_lr,
-                          # callbacks=[EarlyStopping('val_CI')],
+                          # callbacks=[EarlyStopping(monitor='val_loss', patience=5, mode="min")],
                           check_val_every_n_epoch=hparams.check_val_every_n_epoch)
                           # overfit_pct=hparams.overfit_pct)
         trainer.fit(siamese_model,
@@ -72,6 +88,81 @@ def deepCinet():
                  avg_ci))
 
 
+def deepCinet_tune(config):
+    hdict = vars(args)
+    hparams = argparse.Namespace(**hdict)
+    print(hparams)
+
+    pairProcessor = KFoldGenerator(hparams)
+    folds = pairProcessor.k_cross_validation(
+        n_splits=hparams.folds,
+        random_seed=hparams.seed, stratified=False)
+    cvdata = []
+    for train_ids, val_ids in folds:
+        train_dl = Create_Dataloader(
+            Dataset(hparams, True, train_ids),
+            hparams, shuffle_ind=True)
+        val_dl = Create_Dataloader(
+            Dataset(hparams, True, val_ids), # is_train = true here to get pairs
+            hparams, shuffle_ind=True)
+
+        siamese_model = DeepCINET(hparams=hparams, config=config)
+        trainer = Trainer(min_epochs=hparams.min_epochs,
+                          max_epochs=hparams.max_epochs,
+                          min_steps=hparams.min_steps,
+                          max_steps=hparams.max_steps,
+                          gpus=1,
+                          accumulate_grad_batches=hparams.accumulate_grad_batches,
+                          distributed_backend='dp',
+                          weights_summary='full',
+                          # enable_benchmark=False,
+                          num_sanity_val_steps=0,
+                          # auto_find_lr=hparams.auto_find_lr,
+                          callbacks=[EarlyStopping(monitor='val_ci', patience=5, mode="max"),
+                                     TuneReportCallback({
+                                        "loss": "val_loss",
+                                        "mean_accuracy": "val_ci"
+                                     }, on="validation_end")],
+                          check_val_every_n_epoch=hparams.check_val_every_n_epoch)
+                          # overfit_pct=hparams.overfit_pct)
+        trainer.fit(siamese_model,
+                    train_dataloader=train_dl,
+                    val_dataloaders=val_dl)
+
+def tune_DeepCINET_asha(num_samples=10, num_epochs=10):
+    config = {
+        "layers_size": [899, 32, 32, 1],
+        "dropout": [0, 0.2, 0.2, 0],
+        "lr": tune.choice([0.01, 0.001]),
+        "batchnorm": tune.choice([True, False])
+    }
+    scheduler = ASHAScheduler(
+        max_t=num_epochs,
+        grace_period=1,
+        reduction_factor=2)
+
+    reporter = CLIReporter(
+        parameter_columns=["layers_size", "dropout", "lr", "batchnorm"],
+        metric_columns=["loss", "mean_accuracy", "training_iteration"])
+
+    analysis = tune.run(
+        tune.with_parameters(
+            deepCinet_tune),
+        resources_per_trial={
+            "cpu": 0,
+            "gpu": 1
+        },
+        metric="loss",
+        mode="min",
+        config=config,
+        num_samples=num_samples,
+        scheduler=scheduler,
+        progress_reporter=reporter,
+        name="tune_DeepCINET_asha")
+
+    print("Best hyperparameters found were: ", analysis.best_config)
+
+
 def main() -> None:
     """ Main function
     """
@@ -81,6 +172,7 @@ def main() -> None:
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     deepCinet()
+    # tune_DeepCINET_asha()
 
 
 arg_lists = []
@@ -144,7 +236,7 @@ if __name__ == '__main__':
     train_arg = add_argument_group('Train')
     train_arg.add_argument("--min-epochs", default=0, type=int)
     train_arg.add_argument("--min-steps", default=None, type=int)
-    train_arg.add_argument("--max-epochs", default=1000, type=int)
+    train_arg.add_argument("--max-epochs", default=100, type=int)
     train_arg.add_argument("--max-steps", default=None, type=int)
     train_arg.add_argument("--check-val-every-n-epoch", default=1, type=int)
     train_arg.add_argument('--auto-find-lr', action='store_true', default=False)
