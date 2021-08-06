@@ -29,14 +29,22 @@ class DeepCINET(pl.LightningModule):
         self.save_hyperparameters(hparams)
         # to be tuned hyper-parameters
         self.data_dir = data_dir or os.getcwd()
-        self.layers_size = config["layers_size"]
+        self.hidden_one = config["hidden_one"]
+        self.hidden_two = config["hidden_two"]
+        self.hidden_three = config["hidden_three"]
+        self.hidden_four = config["hidden_four"]
+        self.layers_size = [i for i in [899, self.hidden_one, self.hidden_two, self.hidden_three, self.hidden_four, 1] if i != 0]
+        # self.layers_size = config["layers_size"]
         self.dropout = config["dropout"]
         self.lr = config["lr"]
         self.batchnorm = config["batchnorm"]
 
         self.t_steps = 0
         self.cvdata = []
-        self.criterion = nn.BCELoss()
+        self.best_val_loss = 0
+        self.best_val_ci = -1 # max 1, can't be nagative
+        self.test_results = {"cell_line": [], "y_true": [], "y_hat": []}
+        self.criterion = nn.MarginRankingLoss()
         self.convolution = nn.Identity()
         self.fc = FullyConnected(self.layers_size, self.dropout, self.batchnorm)
         self.log_model_parameters()
@@ -57,7 +65,9 @@ class DeepCINET(pl.LightningModule):
         labels = batch['labels']
 
         output = self.forward(geneA, geneB)
-        loss = self.criterion(output.view(-1), labels)
+        # labels_hinge = labels.view(-1).detach()
+        labels_hinge = torch.where(labels == 0, torch.tensor(-1).type_as(labels), torch.tensor(1).type_as(labels))
+        loss = self.criterion(output.view(-1), torch.zeros(labels_hinge.size()).type_as(labels), labels_hinge)
         # loggin number of steps
         self.t_steps += 1
 
@@ -90,7 +100,9 @@ class DeepCINET(pl.LightningModule):
         labels = batch['labels']
 
         output = self.forward(geneA, geneB)
-        loss = self.criterion(output.view(-1), labels)
+        # labels_hinge = labels.view(-1).detach()
+        labels_hinge = torch.where(labels == 0, torch.tensor(-1).type_as(labels), torch.tensor(1).type_as(labels))
+        loss = self.criterion(output.view(-1), torch.zeros(labels_hinge.size()).type_as(labels), labels_hinge)
         # drug_response = batch['response'].detach().cpu().numpy()
         # print("", file=sys.stderr)
         # print("val size", file=sys.stderr)
@@ -137,9 +149,49 @@ class DeepCINET(pl.LightningModule):
             'CI': ci,
             't_steps': self.t_steps
         })
+        # record the best val loss so far
+        if self.best_val_loss == 0:
+            self.best_val_loss = val_avg_loss
+            self.best_val_ci = ci
+        else:
+            if self.best_val_loss >= val_avg_loss:
+                self.best_val_loss = val_avg_loss
+                self.best_val_ci = ci
+        self.log('best_loss', self.best_val_loss, prog_bar = False)
+        self.log('best_val_ci', self.best_val_ci, prog_bar = False)
         self.log('val_loss', val_avg_loss, prog_bar = True)
         self.log('val_ci', ci, prog_bar = True)
         # return {'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
+
+    def test_step(self, batch, batch_idx):
+        gene = batch['gene']
+        y_true = batch['response']
+        cell_line = batch['cell_line']
+
+        drug_pred = self.fc(gene)
+        # drug_response = batch['response'].detach().cpu().numpy()
+        # print("", file=sys.stderr)
+        # print("val size", file=sys.stderr)
+        # print(volume.size(0), file=sys.stderr)
+        # print(torch.cuda.current_device(), file=sys.stderr)
+        # print("", file=sys.stderr)
+        # output = self.fc(gene).view(-1).detach().cpu().numpy()
+        # print(drug_response)
+        # print(output.detach().cpu().numpy(), file=sys.stderr)
+        # np_output = output.view(-1).detach()
+
+        test_ret_batch = {'cell_line': cell_line, 'y_true': y_true, 'y_hat': drug_pred}
+
+        return test_ret_batch
+
+    def test_epoch_end(self, outputs):
+        cell_line = torch.stack([x['cell_line'] for x in outputs])
+        y_true = torch.stack([x['y_true'] for x in outputs])
+        y_hat = torch.stack([x['y_hat'] for x in outputs])
+        self.test_results["cell_line"] = self.test_results["cell_line"] + cell_line
+        self.test_results["y_true"] = self.test_results["y_true"] + y_true
+        self.test_results["y_hat"] = self.test_results["y_hat"] + y_hat
+
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(),
@@ -164,10 +216,10 @@ class DeepCINET(pl.LightningModule):
         parser = argparse.ArgumentParser(parents=[parent_parser], add_help=False)
 
         ## NETWORK
-        parser.add_argument('--fc-layers', type=int, nargs='+',
-                            default=default_config.FC_LAYERS)
-        parser.add_argument('--dropout', type=float, nargs='+',
-                            default=default_config.DROPOUT)
+        # parser.add_argument('--fc-layers', type=int, nargs='+',
+        #                     default=default_config.FC_LAYERS)
+        # parser.add_argument('--dropout', type=float, nargs='+',
+        #                     default=default_config.DROPOUT)
 
         # parser.add_argument('--use-distance', action='store_true', default=config.USE_DISTANCE)
         # parser.add_argument('--d-layers', type=int, nargs='+', default=config.D_LAYERS)
@@ -179,7 +231,7 @@ class DeepCINET(pl.LightningModule):
         # parser.add_argument('--conv-model', type=str, default="Bottleneck")
         # parser.add_argument('--pool', type=int, nargs='+', default=[1, 1, 1, 1])
         ## OPTIMIZER
-        parser.add_argument('--learning-rate', type=float, default=default_config.LR)
+        # parser.add_argument('--learning-rate', type=float, default=default_config.LR)
         parser.add_argument('--momentum', type=float, default=default_config.MOMENTUM)
         parser.add_argument('--weight-decay', type=float, default=default_config.WEIGHT_DECAY)
         parser.add_argument('--sc-milestones', type=int, nargs='+',

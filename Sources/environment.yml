@@ -1,9 +1,9 @@
 # Change this line to your root directory location
 # ${Home}
-DATA: /home/gputwo/bhklab/syan/DeepCinet_project/Preprocessing_R/GeneratedData/L1000_gene_expression
+DATA: /home/gpudual/bhklab/syan/DeepCinet_project/Preprocessing_R/GeneratedData/L1000_gene_expression
 
 DATA_PROCESSED:
-  GENE_PATH: gene_CCLE_microarray_Gemcitabine_response.csv
+  GENE_PATH: gene_CCLE_microarray_Dasatinib_response.csv
   # CLINICAL_PATH: clinical_info.csv
   # RADIOMICS_PATH: hn_radiomics_opc1.csv
 
@@ -11,28 +11,28 @@ DATA_PROCESSED:
 #   IMAGE: images/
 
 HPARAMS:
-  EPOCHS: 10 #(400/500)
+  # EPOCHS: 2 #(400/500)
   # USE_IMAGES: False
   # USE_RADIOMICS: False
 
-  FCLAYERS: [899, 16, 32, 64, 32, 32, 1]
-  DROPOUT:   [0, 0.2, 0.2, 0.2, 0.2, 0] #(0, 0.1, 0.2, 0.3)
+  # FCLAYERS: [899, 16, 32, 64, 32, 32, 1]
+  # DROPOUT:   [0, 0.2, 0.2, 0.2, 0.2, 0] #(0, 0.1, 0.2, 0.3)
 
   # USE_DISTANCE: False
-  DLAYERS: [16, 8, 1]
+  # DLAYERS: [16, 8, 1]
 
 
-  TEST_RATIO: 0.3
-  VAL_RATIO: 0.2
+  # TEST_RATIO: 0.3
+  # VAL_RATIO: 0.2
   BATCH_SIZE: 256
-  NUM_WORKERS: 16
+  NUM_WORKERS: 10
 
   ### K CROSS VALIDATION
   FOLDS: 5
   USE_FOLDS: False
 
   ### OPTIMIZER
-  LR: 0.01
+  # LR: 0.01
   MOMENTUM: 0.9
   WEIGHT_DECAY: 0
   SC_MILESTONES: [1, 2, 5, 15, 30]

@@ -6,19 +6,23 @@ class FullyConnected(nn.Module):
         super(FullyConnected, self).__init__()
         self.layers = nn.ModuleList()
         for i in range(len(layers_size)-1):
+            if i == 0:
+                curr_dropout = 0
+            else:
+                curr_dropout = dropout
             if batchnorm:
                 layer1 = nn.Sequential(
                     nn.Linear(layers_size[i], layers_size[i+1]),
                     nn.LeakyReLU(),
                     nn.BatchNorm1d(layers_size[i+1]),
-                    nn.Dropout(dropout[i])
+                    nn.Dropout(curr_dropout)
                 )
             else:
                 layer1 = nn.Sequential(
                     nn.Linear(layers_size[i], layers_size[i+1]),
                     nn.LeakyReLU(),
                     # Residual(layers_size[i], layers_size[i+1], last_layer = (i+1 == len(layers_size) - 1)),
-                    nn.Dropout(dropout[i])
+                    nn.Dropout(curr_dropout)
                 )
             self.layers.append(layer1)
 
