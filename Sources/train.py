@@ -52,8 +52,8 @@ def deepCinet():
     }
     gene_data = Dataset(hparams, False)
     train_idx, val_idx = train_test_split(list(range(gene_data.__len__())), test_size=0.2)
-    delta = 0
-    while (delta <= 0.3):
+
+    for delta in np.arange(0, 0.31, 0.01):
         train_dl = Create_Dataloader(
             Dataset(hparams, True, delta, train_idx),
             hparams, shuffle_ind=True)
@@ -63,11 +63,11 @@ def deepCinet():
 
         # cvdata = []
         # best_loss = []
-
+        filename_log = f'Gemcitabine-delta={delta:.2f}'
         checkpoint_callback = ModelCheckpoint(
         monitor='val_loss',
         dirpath='./Saved_models/Gemcitabine/microarray/',
-        filename='Gemcitabine-{delta:.2f}',
+        filename=filename_log,
         save_top_k=1,
         mode='min'
         )
@@ -91,7 +91,6 @@ def deepCinet():
         trainer.fit(siamese_model,
                     train_dataloader=train_dl,
                     val_dataloaders=val_dl)
-        delta += 0.01
 
     # for i in range(len(siamese_model.cvdata)):
     #     if len(cvdata) < i + 1:
