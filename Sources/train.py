@@ -4,6 +4,7 @@ import sys
 import os
 
 import numpy as np
+import pandas as pd
 import torch
 from sklearn.model_selection import train_test_split
 from pytorch_lightning import Trainer
@@ -42,18 +43,18 @@ def deepCinet():
     print(hparams)
 
     config = {
-        "hidden_one": 128,
-        "hidden_two": 512,
-        "hidden_three": 128,
-        "hidden_four": 128,
-        "dropout": 0.21081599189621927,
-        "lr": 0.002224775178989976,
-        "batchnorm": False
+        'hidden_one': 128, 
+        'hidden_two': 512, 
+        'hidden_three': 128, 
+        'hidden_four': 0, 
+        'dropout': 0.029255543838070382, 
+        'lr': 0.03846885084652688, 
+        'batchnorm': True
     }
     gene_data = Dataset(hparams, False)
     train_idx, val_idx = train_test_split(list(range(gene_data.__len__())), test_size=0.2)
 
-    for delta in np.arange(0, 0.31, 0.01):
+    for delta in [0, 0.07491282]:
         train_dl = Create_Dataloader(
             Dataset(hparams, True, delta, train_idx),
             hparams, shuffle_ind=True)
@@ -61,15 +62,13 @@ def deepCinet():
             Dataset(hparams, True, delta, val_idx), # is_train = true here to get pairs
             hparams, shuffle_ind=True)
 
-        # cvdata = []
-        # best_loss = []
-        filename_log = f'Gemcitabine-delta={delta:.2f}'
+        filename_log = f'Vorinostat-delta={delta:.3f}'
         checkpoint_callback = ModelCheckpoint(
-        monitor='val_loss',
-        dirpath='./Saved_models/Gemcitabine/microarray/',
+        monitor='val_ci',
+        dirpath='./Saved_models/Vorinostat/microarray/',
         filename=filename_log,
         save_top_k=1,
-        mode='min'
+        mode='max'
         )
 
         siamese_model = DeepCINET(hparams=hparams, config=config)
@@ -84,8 +83,8 @@ def deepCinet():
                             # enable_benchmark=False,
                             num_sanity_val_steps=0,
                             # auto_find_lr=hparams.auto_find_lr,
-                            callbacks=[EarlyStopping(monitor='val_loss', patience=10, mode="min"),
-                                    checkpoint_callback],
+                            callbacks=[EarlyStopping(monitor='val_ci', mode="max", patience=5),
+                                       checkpoint_callback],
                             check_val_every_n_epoch=hparams.check_val_every_n_epoch)
                             # overfit_pct=hparams.overfit_pct)
         trainer.fit(siamese_model,
@@ -105,7 +104,35 @@ def deepCinet():
     #              avg_ci))
     # for i in range(len(best_loss)):
     #     print("CV %d -- best validation loss: %.4f" %(i, best_loss[i]))
+def deepCinet_test():
+    hdict = vars(args)
+    hparams = argparse.Namespace(**hdict)
+    print(hparams)
+    config = {
+        'hidden_one': 128, 
+        'hidden_two': 512, 
+        'hidden_three': 128, 
+        'hidden_four': 0, 
+        'dropout': 0.029255543838070382, 
+        'lr': 0.03846885084652688, 
+        'batchnorm': True
+    }
+    for delta in [0, 0.07491282]:
+        path = f"./Saved_models/Vorinostat/microarray/Vorinostat-delta={delta:.3f}.ckpt"
+        test_dl = Create_Dataloader(
+                    Dataset(hparams, False, delta),
+                    hparams, shuffle_ind=False)
+        model = DeepCINET(hparams=hparams, config=config).load_from_checkpoint(path, config=config)
+        trainer = Trainer()
+        trainer.test(model, test_dl)
+        test_results_df = pd.DataFrame(model.test_results)
+        outdir = './Saved_results/Vorinostat/microarray'
+        if not os.path.exists(outdir):
+            os.makedirs(outdir, exist_ok=True)
+        outname = f"Vorinostat-delta={delta:.3f}.csv"
+        test_path = os.path.join(outdir, outname)    
 
+        test_results_df.to_csv(test_path, index=False)
 
 def deepCinet_tune(config):
     hdict = vars(args)
@@ -116,10 +143,10 @@ def deepCinet_tune(config):
     train_idx, val_idx = train_test_split(list(range(gene_data.__len__())), test_size=0.2)
 
     train_dl = Create_Dataloader(
-        Dataset(hparams, True, train_idx),
+        Dataset(hparams, True, delta=0, idxs=train_idx),
         hparams, shuffle_ind=True)
     val_dl = Create_Dataloader(
-        Dataset(hparams, True, val_idx), # is_train = true here to get pairs
+        Dataset(hparams, True, delta=0, idxs=val_idx), # is_train = true here to get pairs
         hparams, shuffle_ind=True)
 
     siamese_model = DeepCINET(hparams=hparams, config=config)
@@ -134,7 +161,7 @@ def deepCinet_tune(config):
                         # enable_benchmark=False,
                         num_sanity_val_steps=0,
                         # auto_find_lr=hparams.auto_find_lr,
-                        callbacks=[#EarlyStopping(monitor='val_loss', patience=5, mode="min"),
+                        callbacks=[EarlyStopping(monitor='val_ci', patience=10, mode="max"),
                                     TuneReportCallback({
                                     "best_loss": "best_loss",
                                     "CI": "best_val_ci"
@@ -259,14 +286,14 @@ def tune_DeepCINET_bohb(num_samples=1000):
             "cpu": 0,
             "gpu": 0.1
         },
-        metric="best_loss",
-        mode="min",
+        metric="CI",
+        mode="max",
         config=config,
         num_samples=num_samples,
         scheduler=bohb,
         search_alg = algo,
         progress_reporter=reporter,
-        name="tune_DeepCINET_bohb_dasatinib_best_loss",
+        name="tune_DeepCINET_bohb_Vorinostat_rnaseq_best_ci",
         local_dir="../ray_results")
 
     print("Best hyperparameters found were: ", analysis.best_config)
@@ -281,10 +308,10 @@ def main() -> None:
     torch.backends.cudnn.deterministic = True
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    deepCinet()
+    # deepCinet()
+    deepCinet_test()
     # tune_DeepCINET_asha()
     # tune_DeepCINET_bohb()
-
 
 
 arg_lists = []

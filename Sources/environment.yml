@@ -3,7 +3,9 @@
 DATA: /home/gpudual/bhklab/syan/DeepCinet_project/Preprocessing_R/GeneratedData/L1000_gene_expression
 
 DATA_PROCESSED:
-  GENE_PATH: gene_CCLE_microarray_Dasatinib_response.csv
+  # GENE_PATH: gene_CCLE_microarray_Vorinostat_response.csv
+  # GENE_PATH: gene_gCSI_rnaseq_Vorinostat_response.csv
+  GENE_PATH: gene_GDSC_microarray_Vorinostat_response.csv
   # CLINICAL_PATH: clinical_info.csv
   # RADIOMICS_PATH: hn_radiomics_opc1.csv
 
@@ -25,7 +27,7 @@ HPARAMS:
   # TEST_RATIO: 0.3
   # VAL_RATIO: 0.2
   BATCH_SIZE: 256
-  NUM_WORKERS: 10
+  NUM_WORKERS: 8
 
   ### K CROSS VALIDATION
   FOLDS: 5

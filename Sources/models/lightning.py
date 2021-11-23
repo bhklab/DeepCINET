@@ -33,7 +33,10 @@ class DeepCINET(pl.LightningModule):
         self.hidden_two = config["hidden_two"]
         self.hidden_three = config["hidden_three"]
         self.hidden_four = config["hidden_four"]
-        self.layers_size = [i for i in [899, self.hidden_one, self.hidden_two, self.hidden_three, self.hidden_four, 1] if i != 0]
+        # RNA seq
+        # self.layers_size = [i for i in [949, self.hidden_one, self.hidden_two, self.hidden_three, self.hidden_four, 1] if i != 0]
+        # Microarray
+        self.layers_size = [i for i in [893, self.hidden_one, self.hidden_two, self.hidden_three, self.hidden_four, 1] if i != 0]
         # self.layers_size = config["layers_size"]
         self.dropout = config["dropout"]
         self.lr = config["lr"]
@@ -43,7 +46,7 @@ class DeepCINET(pl.LightningModule):
         self.cvdata = []
         self.best_val_loss = 0
         self.best_val_ci = -1 # max 1, can't be nagative
-        self.test_results = {"cell_line": [], "y_true": [], "y_hat": []}
+        self.test_results = {}
         self.criterion = nn.MarginRankingLoss()
         self.convolution = nn.Identity()
         self.fc = FullyConnected(self.layers_size, self.dropout, self.batchnorm)
@@ -53,7 +56,8 @@ class DeepCINET(pl.LightningModule):
         tA = self.fc(geneA)
         tB = self.fc(geneB)
         z = (tA - tB)
-        return torch.sigmoid(z)
+        # return torch.sigmoid(z)
+        return z
 
     def on_epoch_start(self):
         print("")
@@ -71,7 +75,7 @@ class DeepCINET(pl.LightningModule):
         # loggin number of steps
         self.t_steps += 1
 
-        np_output = output.view(-1).detach()
+        np_output = torch.sigmoid(output.view(-1)).detach()
         output_class = torch.where(np_output < 0.5,
                                    torch.tensor(0).type_as(np_output),
                                    torch.tensor(1).type_as(np_output))
@@ -112,7 +116,7 @@ class DeepCINET(pl.LightningModule):
         # output = self.fc(gene).view(-1).detach().cpu().numpy()
         # print(drug_response)
         # print(output.detach().cpu().numpy(), file=sys.stderr)
-        np_output = output.view(-1).detach()
+        np_output = torch.sigmoid(output.view(-1)).detach()
         output_class = torch.where(np_output < 0.5,
                                    torch.tensor(0).type_as(np_output),
                                    torch.tensor(1).type_as(np_output))
@@ -150,11 +154,18 @@ class DeepCINET(pl.LightningModule):
             't_steps': self.t_steps
         })
         # record the best val loss so far
-        if self.best_val_loss == 0:
+        # if self.best_val_loss == 0:
+        #     self.best_val_loss = val_avg_loss
+        #     self.best_val_ci = ci
+        # else:
+        #     if self.best_val_loss >= val_avg_loss:
+        #         self.best_val_loss = val_avg_loss
+        #         self.best_val_ci = ci
+        if self.best_val_ci == -1:
             self.best_val_loss = val_avg_loss
             self.best_val_ci = ci
         else:
-            if self.best_val_loss >= val_avg_loss:
+            if self.best_val_ci <= ci:
                 self.best_val_loss = val_avg_loss
                 self.best_val_ci = ci
         self.log('best_loss', self.best_val_loss, prog_bar = False)
@@ -165,8 +176,8 @@ class DeepCINET(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         gene = batch['gene']
-        y_true = batch['response']
-        cell_line = batch['cell_line']
+        y_true = np.array(batch['response'])
+        cell_line = np.array(batch['cell_line'])
 
         drug_pred = self.fc(gene)
         # drug_response = batch['response'].detach().cpu().numpy()
@@ -180,17 +191,13 @@ class DeepCINET(pl.LightningModule):
         # print(output.detach().cpu().numpy(), file=sys.stderr)
         # np_output = output.view(-1).detach()
 
-        test_ret_batch = {'cell_line': cell_line, 'y_true': y_true, 'y_hat': drug_pred}
-
+        test_ret_batch = {'cell_line': cell_line, 'y_true': y_true, 'y_hat': drug_pred.numpy()}
         return test_ret_batch
 
     def test_epoch_end(self, outputs):
-        cell_line = torch.stack([x['cell_line'] for x in outputs])
-        y_true = torch.stack([x['y_true'] for x in outputs])
-        y_hat = torch.stack([x['y_hat'] for x in outputs])
-        self.test_results["cell_line"] = self.test_results["cell_line"] + cell_line
-        self.test_results["y_true"] = self.test_results["y_true"] + y_true
-        self.test_results["y_hat"] = self.test_results["y_hat"] + y_hat
+        self.test_results["cell_line"] = np.concatenate([x['cell_line'] for x in outputs])
+        self.test_results["y_true"] = np.concatenate([x['y_true'] for x in outputs])
+        self.test_results["y_hat"] = np.concatenate([x['y_hat'].reshape(-1) for x in outputs])
 
 
     def configure_optimizers(self):
